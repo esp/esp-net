@@ -1,4 +1,5 @@
-﻿#region copyright
+extensions: .cs 
+#region copyright
 // Copyright 2015 Keith Woods
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,29 +14,3 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #endregion
-namespace Esp.Net
-{
-    public interface IRouterScheudler
-    {
-        bool Checkaccess();
-    }
-
-    public class RouterScheudler : IRouterScheudler
-    {
-        public static IRouterScheudler Default { get; private set; }
-
-        static RouterScheudler()
-        {
-            Default  = new RouterScheudler();
-        }
-
-        private RouterScheudler()
-        {
-        }
-        
-        public bool Checkaccess()
-        {
-            return true;
-        }
-    }
-}
