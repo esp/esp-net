@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>esp-net-source</id>
+    <version>$version$</version>
+    <title>esp-net</title>
+    <authors>Keith Woods</authors>
+    <owners>Keith Woods</owners>
+    <licenseUrl>https://github.com/esp-org/esp-net/LICENSE.txt</licenseUrl>
+    <projectUrl>https://github.com/esp-org/esp-net</projectUrl>
+    <iconUrl>https://raw.github.com/esp-org/esp-net/master/package_icon.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Source Only Package - Evented State Processor (ESP) adds specific processing workflow around changes to a model's state</description>
+    <copyright>Copyright Keith Woods 2015</copyright>
+    <tags>evented state processor reactive router event loop</tags>
+  </metadata>
+  <files>
+    <file src="EventContext.cs" target="content\App_Packages\Esp.Net.$version$\EventContext.cs" />
+    <file src="EventProcessors.cs" target="content\App_Packages\Esp.Net.$version$\EventProcessors.cs" />
+    <file src="IClonable.cs" target="content\App_Packages\Esp.Net.$version$\IClonable.cs" />
+    <file src="ObservationStage.cs" target="content\App_Packages\Esp.Net.$version$\ObservationStage.cs" />
+    <file src="Router.cs" target="content\App_Packages\Esp.Net.$version$\Router.cs" />
+    <file src="RouterScheduler.cs" target="content\App_Packages\Esp.Net.$version$\RouterScheduler.cs" />
+    <file src="Reactive\Disposable.cs" target="content\App_Packages\Esp.Net.$version$\Reactive\Disposable.cs" />
+    <file src="Reactive\DisposableCollection.cs" target="content\App_Packages\Esp.Net.$version$\Reactive\DisposableCollection.cs" />
+    <file src="Reactive\EventObservable.cs" target="content\App_Packages\Esp.Net.$version$\Reactive\EventObservable.cs" />
+    <file src="Reactive\EventObserver.cs" target="content\App_Packages\Esp.Net.$version$\Reactive\EventObserver.cs" />
+    <file src="Reactive\EventSubject.cs" target="content\App_Packages\Esp.Net.$version$\Reactive\EventSubject.cs" />
+  </files>
+</package>

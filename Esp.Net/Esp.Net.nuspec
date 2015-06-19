@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>esp-net</id>
+    <version>$version$</version>
+    <title>esp-net</title>
+    <authors>Keith Woods</authors>
+    <owners>Keith Woods</owners>
+    <licenseUrl>https://github.com/esp-org/esp-net/LICENSE.txt</licenseUrl>
+    <projectUrl>https://github.com/esp-org/esp-net</projectUrl>
+    <iconUrl>https://raw.github.com/esp-org/esp-net/master/package_icon.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Evented State Processor (ESP) adds specific processing workflow around changes to a model's state</description>
+    <copyright>Copyright Keith Woods 2015</copyright>
+    <tags>evented state processor reactive router event loop</tags>
+  </metadata>
+  <files>
+    <file src="bin\$target$\Esp.Net.dll" target="lib\net40\Esp.Net.dll" />
+  </files>
+</package>
