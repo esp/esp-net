@@ -21,6 +21,4 @@ after_build:
   - cmd: nuget pack Esp.Net\Esp.Net.nuspec -version "%GitVersion_NuGetVersion%" -prop "target=%CONFIGURATION%"
   - cmd: ECHO nuget pack Esp.Net\Esp.Net.SourcePackage.nuspec -version "%GitVersion_NuGetVersion%"
   - cmd: nuget pack Esp.Net\Esp.Net.SourcePackage.nuspec -version "%GitVersion_NuGetVersion%"
-
-artifacts:
-  - path: Esp.Net\*.nupkg
+  - cmd: appveyor PushArtifact Esp.Net\*.nupkg
