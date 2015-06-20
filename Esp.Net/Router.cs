@@ -31,7 +31,7 @@ namespace Esp.Net
     public class Router<TModel> : IRouter<TModel>
     {
         private readonly TModel _model;
-        private readonly IRouterScheudler _scheudler;
+        private readonly IRouterScheduler _scheduler;
         private readonly IPreEventProcessor<TModel> _preEventProcessor;
         private readonly IPostEventProcessor<TModel> _postEventProcessor;
         private readonly Queue<dynamic> _eventDispatchQueue = new Queue<dynamic>();
@@ -40,25 +40,25 @@ namespace Esp.Net
         private readonly EventSubject<TModel> _modelUpdateSubject = new EventSubject<TModel>();
         private static readonly MethodInfo GetEventStreamMethodInfo = typeof(Router<TModel>).GetMethod("GetEventStream", new[] { typeof(ObservationStage) });
 
-        public Router(TModel model, IRouterScheudler scheudler)
-            : this(model, scheudler, null, null)
+        public Router(TModel model, IRouterScheduler scheduler)
+            : this(model, scheduler, null, null)
         {
         }
 
-        public Router(TModel model, IRouterScheudler scheudler, IPreEventProcessor<TModel> preEventProcessor)
-            : this(model, scheudler, preEventProcessor, null)
+        public Router(TModel model, IRouterScheduler scheduler, IPreEventProcessor<TModel> preEventProcessor)
+            : this(model, scheduler, preEventProcessor, null)
         {
         }
 
-        public Router(TModel model, IRouterScheudler scheudler, IPostEventProcessor<TModel> postEventProcessor)
-            : this(model, scheudler, null, postEventProcessor)
+        public Router(TModel model, IRouterScheduler scheduler, IPostEventProcessor<TModel> postEventProcessor)
+            : this(model, scheduler, null, postEventProcessor)
         {
         }
 
-        public Router(TModel model, IRouterScheudler scheudler, IPreEventProcessor<TModel> preEventProcessor, IPostEventProcessor<TModel> postEventProcessor)
+        public Router(TModel model, IRouterScheduler scheduler, IPreEventProcessor<TModel> preEventProcessor, IPostEventProcessor<TModel> postEventProcessor)
         {
             _model = model;
-            _scheudler = scheudler;
+            _scheduler = scheduler;
             _preEventProcessor = preEventProcessor;
             _postEventProcessor = postEventProcessor;
         }
@@ -212,7 +212,7 @@ namespace Esp.Net
 
         private void ThrowIfInvalidThread()
         {
-            if(!_scheudler.Checkaccess())
+            if(!_scheduler.Checkaccess())
             {
                 throw new InvalidOperationException("Router called on invalid thread");
             }

@@ -15,21 +15,21 @@
 #endregion
 namespace Esp.Net
 {
-    public interface IRouterScheudler
+    public interface IRouterScheduler
     {
         bool Checkaccess();
     }
 
-    public class RouterScheudler : IRouterScheudler
+    public class RouterScheduler : IRouterScheduler
     {
-        public static IRouterScheudler Default { get; private set; }
+        public static IRouterScheduler Default { get; private set; }
 
-        static RouterScheudler()
+        static RouterScheduler()
         {
-            Default  = new RouterScheudler();
+            Default  = new RouterScheduler();
         }
 
-        private RouterScheudler()
+        private RouterScheduler()
         {
         }
         

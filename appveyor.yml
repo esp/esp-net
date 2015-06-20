@@ -1,0 +1,25 @@
+assembly_info:
+  patch: false
+
+platform: Any CPU
+configuration: Release
+
+nuget:
+  account_feed: false
+  project_feed: true
+  disable_publish_on_pr: false
+
+before_build:
+ - nuget restore
+ - ps: ./tools/gitversion.exe /l console /output buildserver /updateAssemblyInfo
+
+build:
+  project: Esp.Net.sln
+
+after_build:
+  - cmd: ECHO nuget pack Esp.Net\Esp.Net.nuspec -version "%GitVersion_NuGetVersion%" -prop "target=%CONFIGURATION%"
+  - cmd: nuget pack Esp.Net\Esp.Net.nuspec -version "%GitVersion_NuGetVersion%" -prop "target=%CONFIGURATION%"
+  - cmd: ECHO nuget pack Esp.Net\Esp.Net.SourcePackage.nuspec -version "%GitVersion_NuGetVersion%"
+  - cmd: nuget pack Esp.Net\Esp.Net.SourcePackage.nuspec -version "%GitVersion_NuGetVersion%"
+  - cmd: appveyor PushArtifact "esp-net.%GitVersion_NuGetVersion%.nupkg"
+  - cmd: appveyor PushArtifact "esp-net-source.%GitVersion_NuGetVersion%.nupkg"

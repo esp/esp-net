@@ -32,7 +32,7 @@ namespace Esp.Net
         public void SetUp()
         {
             _model = new TestModel();
-            _router = new Router<TestModel>(_model, RouterScheudler.Default);
+            _router = new Router<TestModel>(_model, RouterScheduler.Default);
         }
 
         [Test]
@@ -304,7 +304,7 @@ namespace Esp.Net
             {
                 router.Publish(1);
             });
-            router = new Router<TestModel>(model, RouterScheudler.Default, preEventProcessor);
+            router = new Router<TestModel>(model, RouterScheduler.Default, preEventProcessor);
             router.GetEventStream<int>().Observe(context =>
             {
                 receivedEvents.Add(context.Event);
@@ -335,7 +335,7 @@ namespace Esp.Net
                     router.Publish(1);
                 }
             });
-            router = new Router<TestModel>(model, RouterScheudler.Default, postEventProcessor);
+            router = new Router<TestModel>(model, RouterScheduler.Default, postEventProcessor);
             router.GetEventStream<int>().Observe(context =>
             {
                 context.Model.AnInt = context.Event;
@@ -380,7 +380,7 @@ namespace Esp.Net
                     router.Publish(2);
                 }
             });
-            router = new Router<TestModel>(model, RouterScheudler.Default, preEventProcessor, postEventProcessor);
+            router = new Router<TestModel>(model, RouterScheduler.Default, preEventProcessor, postEventProcessor);
             router.GetEventStream<int>().Observe(context =>
             {
                 model.AnInt = context.Event;

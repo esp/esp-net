@@ -9,8 +9,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Esp.Net</RootNamespace>
     <AssemblyName>Esp.Net</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+    <NuGetPackageImportStamp>522f72fb</NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -53,7 +55,13 @@
     <Compile Include="Reactive\EventObserver.cs" />
     <Compile Include="Reactive\EventSubject.cs" />
     <Compile Include="Router.cs" />
-    <Compile Include="RouterScheudler.cs" />
+    <Compile Include="RouterScheduler.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Esp.Net.SourcePackage.nuspec" />
+    <None Include="Esp.Net.nuspec">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Esp.Net.licenseheader">
