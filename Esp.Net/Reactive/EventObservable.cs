@@ -63,6 +63,32 @@ namespace Esp.Net.Reactive
                 }
             );
         }
+
+        public static IEventObservable<T> Take<T>(this IEventObservable<T> source, int number)
+        {
+            return Create<T>(
+                o =>
+                {
+                    int count = 0;
+                    IDisposable disposable = null;
+                    disposable = source.Observe(
+                        i =>
+                        {
+                            count++;
+                            if (count <= number)
+                            {
+                                o.OnNext(i);
+                            }
+                            else
+                            {
+                                disposable.Dispose();
+                            }
+                        }
+                    );
+                    return disposable;
+                }
+            );
+        }
     }
 
     public class EventObservable<T> : IEventObservable<T>

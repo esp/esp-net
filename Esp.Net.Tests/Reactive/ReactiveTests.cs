@@ -86,6 +86,28 @@ namespace Esp.Net.Reactive
             Assert.IsTrue(received.SequenceEqual(new[] { 1, 2, 3, 4 }));
         }
 
+        [Test]
+        public void TakeOnlyTakesGivenNumberOfEvents()
+        {
+            List<int> received = new List<int>();
+            var subject1 = new EventSubject<int>();
+            subject1.Take(3).Observe(i => received.Add(i));
+            subject1.OnNext(1);
+            subject1.OnNext(2);
+            subject1.OnNext(3);
+            subject1.OnNext(4);
+            Assert.IsTrue(received.SequenceEqual(new[] { 1, 2, 3 }));
+        }
+
+        [Test]
+        public void TakeChainsSourceDisposableOnDispose()
+        {
+            var mockIEventObservable = new MockIEventObservable();
+            var disposable = mockIEventObservable.Take(3).Observe(i => { });
+            disposable.Dispose();
+            Assert.IsTrue(mockIEventObservable.IsDisposed);
+        }
+
         private class MockIEventObservable : IEventObservable<int>
         {
             public bool IsDisposed { get; private set; }

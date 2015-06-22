@@ -24,7 +24,8 @@ namespace Esp.Net.Reactive
 
         public void OnNext(T item)
         {
-            foreach(var observer in _observers) 
+            var observers = _observers.ToArray();
+            foreach(var observer in observers) 
 			{
 				observer.OnNext(item);
 			}
