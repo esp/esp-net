@@ -22,10 +22,10 @@ namespace Esp.Net
 {
     public interface IRouter<out TModel>
     {
-        void Publish<TEvent>(TEvent @event);
-        IEventObservable<TModel> GetModelStream();
-        IEventObservable<IEventContext<TModel, TEvent>> GetEventStream<TEvent>(ObservationStage observationStage = ObservationStage.Normal);
-        IEventObservable<IEventContext<TModel, TBaseEvent>> GetEventStream<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal);
+        void PublishEvent<TEvent>(TEvent @event);
+        IEventObservable<TModel> GetModelObservable();
+        IEventObservable<IEventContext<TModel, TEvent>> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal);
+        IEventObservable<IEventContext<TModel, TBaseEvent>> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal);
     }
 
     public class Router<TModel> : IRouter<TModel>
@@ -38,7 +38,7 @@ namespace Esp.Net
         private readonly Dictionary<Type, dynamic> _eventSubjects = new Dictionary<Type, dynamic>();
         private readonly State _state = new State();
         private readonly EventSubject<TModel> _modelUpdateSubject = new EventSubject<TModel>();
-        private static readonly MethodInfo GetEventStreamMethodInfo = typeof(Router<TModel>).GetMethod("GetEventStream", new[] { typeof(ObservationStage) });
+        private static readonly MethodInfo GetEventStreamMethodInfo = typeof(Router<TModel>).GetMethod("GetEventObservable", new[] { typeof(ObservationStage) });
 
         public Router(TModel model, IRouterScheduler scheduler)
             : this(model, scheduler, null, null)
@@ -63,7 +63,7 @@ namespace Esp.Net
             _postEventProcessor = postEventProcessor;
         }
 
-        public void Publish<TEvent>(TEvent @event)
+        public void PublishEvent<TEvent>(TEvent @event)
         {
             ThrowIfHalted();
             ThrowIfInvalidThread();
@@ -119,7 +119,7 @@ namespace Esp.Net
             }
         }
 
-        public IEventObservable<TModel> GetModelStream()
+        public IEventObservable<TModel> GetModelObservable()
         {
             ThrowIfHalted();
             return EventObservable.Create<TModel>(o =>
@@ -130,7 +130,7 @@ namespace Esp.Net
             });
         }
 
-        public IEventObservable<IEventContext<TModel, TBaseEvent>> GetEventStream<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal)
+        public IEventObservable<IEventContext<TModel, TBaseEvent>> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal)
         {
             ThrowIfHalted();
             return EventObservable.Create<IEventContext<TModel, TBaseEvent>>(o =>
@@ -143,7 +143,7 @@ namespace Esp.Net
             });
         }
 
-        public IEventObservable<IEventContext<TModel, TEvent>> GetEventStream<TEvent>(ObservationStage observationStage = ObservationStage.Normal)
+        public IEventObservable<IEventContext<TModel, TEvent>> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal)
         {
             ThrowIfHalted();
             return EventObservable.Create<IEventContext<TModel, TEvent>>(o =>
