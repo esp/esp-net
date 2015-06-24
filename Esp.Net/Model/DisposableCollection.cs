@@ -13,10 +13,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #endregion
+
 using System;
 using System.Collections.Generic;
 
-namespace Esp.Net.Reactive
+namespace Esp.Net.Model
 {
     public class DisposableCollection : IDisposable
     {

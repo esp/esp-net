@@ -402,18 +402,6 @@ namespace Esp.Net
             updateCount.ShouldBe(2);
         }
 
-        public class TestModel
-        {
-            public int AnInt { get; set; }
-            public string AString { get; set; }
-            public decimal ADecimal { get; set; }
-        }
-
-        public class BaseEvent { }
-        public class Event1 : BaseEvent { }
-        public class Event2 : BaseEvent { }
-        public class Event3 : BaseEvent { }
-
         public class DelegeatePreEventProcessor : IPreEventProcessor<TestModel>
         {
             private readonly Action<TestModel> _process;

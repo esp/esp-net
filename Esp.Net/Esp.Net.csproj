@@ -47,10 +47,12 @@
     <Compile Include="EventContext.cs" />
     <Compile Include="EventProcessors.cs" />
     <Compile Include="IClonable.cs" />
+    <Compile Include="Model\DisposableBase.cs" />
     <Compile Include="ObservationStage.cs" />
+    <Compile Include="Pipeline\RouterExt.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Reactive\Disposable.cs" />
-    <Compile Include="Reactive\DisposableCollection.cs" />
+    <Compile Include="Model\DisposableCollection.cs" />
     <Compile Include="Reactive\EventObservable.cs" />
     <Compile Include="Reactive\EventObserver.cs" />
     <Compile Include="Reactive\EventSubject.cs" />
