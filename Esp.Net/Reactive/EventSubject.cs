@@ -40,7 +40,7 @@ namespace Esp.Net.Reactive
         public IDisposable Observe(IEventObserver<T> observer)
         {
             _observers.Add(observer);
-            return Disposable.Create(() => _observers.Remove(observer));
+            return EspDisposable.Create(() => _observers.Remove(observer));
         }
     }
 }
