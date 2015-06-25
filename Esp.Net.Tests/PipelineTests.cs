@@ -24,13 +24,13 @@ namespace Esp.Net
             var step1Subject = new StubSubject<string>();
             var step2Subject = new StubSubject<int>();
 
-            var pipeline = _router.CreatePipeline()
+            var pipeline = _router.ConfigurePipeline()
                 .On<InitialEvent>(
-                    (model, context) =>
+                    context =>
                     {
                         return PipelineStepResult.Run();
                     })
-                .AddStep(
+                .Then(
                     model =>
                     {
                         return new PipelineStepResult<string>(step1Subject);
@@ -39,7 +39,7 @@ namespace Esp.Net
                     {
 
                     })
-                .AddStep(
+                .Then(
                     model =>
                     {
                         return new PipelineStepResult<int>(step2Subject);
@@ -48,12 +48,12 @@ namespace Esp.Net
                     {
 
                     })
-                .Build();
+                .Create();
 
-            IPipelineInstance pipelineInstance = pipeline.CreateInstance();
-            var instanceState = new object(); // TODO state forms part of the pipeline
-            pipelineInstance.Start(_model, instanceState);
-            // pipelineInstance.Dispose();
+//            IPipelineInstance pipelineInstance = pipeline.CreateInstance();
+//            var instanceState = new object(); // TODO state forms part of the pipeline
+//            pipelineInstance.Start(_model, instanceState);
+//            pipelineInstance.Dispose();
         }
 
         public class InitialEvent { }

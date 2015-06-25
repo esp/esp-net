@@ -17,16 +17,16 @@ using System;
 
 namespace Esp.Net.Reactive
 {
-    public class Disposable : IDisposable
+    public class EspDisposable : IDisposable
     {
         public static IDisposable Create(Action action)
         {
-            return new Disposable(action);
+            return new EspDisposable(action);
         }
 
         private readonly Action _action;
 
-        private Disposable(Action action)
+        private EspDisposable(Action action)
         {
             _action = action;
         }

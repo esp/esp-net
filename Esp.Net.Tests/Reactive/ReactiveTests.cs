@@ -114,12 +114,12 @@ namespace Esp.Net.Reactive
 
             public IDisposable Observe(Action<int> onNext)
             {
-                return Disposable.Create(() => IsDisposed = true);
+                return EspDisposable.Create(() => IsDisposed = true);
             }
 
             public IDisposable Observe(IEventObserver<int> observer)
             {
-                return Disposable.Create(() => IsDisposed = true);
+                return EspDisposable.Create(() => IsDisposed = true);
             }
         }
     }
