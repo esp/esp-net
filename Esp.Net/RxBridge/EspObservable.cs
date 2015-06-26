@@ -1,7 +1,7 @@
 ﻿using System;
-using Esp.Net.Reactive;
+using Esp.Net.Model;
 
-namespace Esp.Net.Pipeline.ReactiveBridge
+namespace Esp.Net.RxBridge
 {
     public class EspObservable
     {

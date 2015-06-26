@@ -13,12 +13,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #endregion
+
 using System;
 
-namespace Esp.Net.Reactive
+namespace Esp.Net.Model
 {
     public class EspDisposable : IDisposable
     {
+        public static IDisposable Empty { get; private set; }
+
+        static EspDisposable()
+        {
+            Empty = new EspDisposable(() => { /* Noop*/ });
+        }
+
         public static IDisposable Create(Action action)
         {
             return new EspDisposable(action);
