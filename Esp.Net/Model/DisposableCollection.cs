@@ -41,7 +41,7 @@ namespace Esp.Net.Model
         }
 
         public void Dispose()
-        {
+        {   
             if(IsDisposed) return;
             IsDisposed = true;
             foreach (IDisposable disposable in _disposables)
