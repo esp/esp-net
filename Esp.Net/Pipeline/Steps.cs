@@ -96,7 +96,7 @@ namespace Esp.Net.Pipeline
                     var id = Guid.NewGuid();
                     disposables.Add(
                         _router
-                            .GetEventObservable<AsyncResultsRecenvedEvent<TAsyncResults>>()
+                            .GetEventObservable<AsyncResultsEvent<TAsyncResults>>()
                             .Where(context => context.Event.Id == id)
                             .Observe(context =>
                             {
@@ -107,7 +107,7 @@ namespace Esp.Net.Pipeline
                             )
                         );
                     disposables.Add(stepResults.ResultStream.Subscribe(result => {
-                        _router.PublishEvent(new AsyncResultsRecenvedEvent<TAsyncResults>(result, id));
+                        _router.PublishEvent(new AsyncResultsEvent<TAsyncResults>(result, id));
                     }));
                 }
                 else
@@ -149,9 +149,9 @@ namespace Esp.Net.Pipeline
         }
     }
 
-    public class AsyncResultsRecenvedEvent<TResult>
+    public class AsyncResultsEvent<TResult>
     {
-        public AsyncResultsRecenvedEvent(TResult result, Guid id)
+        public AsyncResultsEvent(TResult result, Guid id)
         {
             Result = result;
             Id = id;

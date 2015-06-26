@@ -139,7 +139,7 @@ namespace Esp.Net
                 ThrowIfInvalidThread();
                 var getEventStreamMethod = GetEventStreamMethodInfo.MakeGenericMethod(eventType);
                 dynamic observable = getEventStreamMethod.Invoke(this, new object[] { observationStage });
-                return observable.Observe(o);
+                return (IDisposable)observable.Observe(o);
             });
         }
 

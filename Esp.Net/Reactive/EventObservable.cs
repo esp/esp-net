@@ -31,6 +31,12 @@ namespace Esp.Net.Reactive
             return new EventObservable<T>(subscribe);
         }
 
+        public static IEventObservable<T> Create<T>(Func<IEventObserver<T>, Action> subscribe)
+        {
+            Func<IEventObserver<T>, IDisposable> subscribe1 = o => EspDisposable.Create(subscribe(o));
+            return new EventObservable<T>(subscribe1);
+        }
+
         public static IEventObservable<T> Concat<T>(params IEventObservable<T>[] sources)
         {
             return Create<T>(
