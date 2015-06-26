@@ -62,15 +62,27 @@ namespace Esp.Net.Pipeline
             _model.AnInt.ShouldBe(1);
         }
 
-//        [Test]
-//        public void Foo()
-//        {
-//            var step1Subject = new TestSubject<string>();
-//
-//            var d = _router.GetEventObservable<int>()
-//                .Then(context => service.GetDates())
-//                .Observe((IEventContext<Model, SomeInfraEvent> => { });
-//        }
+        [Test]
+        public void Foo()
+        {
+            var step1Subject = new TestSubject<string>();
+
+            _router
+                .GetEventObservable<int>()
+                .RunAsyncOperation(context => step1Subject)
+                .Observe(
+                    (IEventContext<TestModel, AsyncResultsEvent<string>> context) =>
+                    {
+                        
+                    });
+
+//            _router.ConfigurePipeline()
+//                .AddStep(
+//                    model => StepResult<string>.Continue(step1Subject),
+//                    (model, results) => { }
+//                )
+//                .StartOn<int>();
+        }
 
         public class InitialEvent { }
         public class AnAsyncEvent { }
