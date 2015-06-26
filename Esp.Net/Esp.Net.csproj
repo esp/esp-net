@@ -47,6 +47,7 @@
     <Compile Include="EventContext.cs" />
     <Compile Include="EventProcessors.cs" />
     <Compile Include="Foo.cs" />
+    <Compile Include="Guard.cs" />
     <Compile Include="IClonable.cs" />
     <Compile Include="Model\DisposableBase.cs" />
     <Compile Include="ObservationStage.cs" />

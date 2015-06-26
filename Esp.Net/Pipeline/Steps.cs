@@ -21,12 +21,12 @@ namespace Esp.Net.Pipeline
 
     public class StepResult
     {
-        public static StepResult DontRun()
+        public static StepResult Cancel()
         {
             return new StepResult(false);
         }
 
-        public static StepResult Run()
+        public static StepResult Continue()
         {
             return new StepResult(true);
         }

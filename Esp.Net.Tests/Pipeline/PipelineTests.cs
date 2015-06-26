@@ -35,30 +35,20 @@ namespace Esp.Net.Pipeline
 
             IPipeline<TestModel> pipeline = _router.ConfigurePipeline()
                 .AddStep(
-                    model =>
-                    {
-                        return StepResult<string>.Continue(step1Subject);
-                    },
-                    (model, results) =>
-                    {
-                        model.AString = results;
-                    })
+                    model => StepResult<string>.Continue(step1Subject),
+                    (model, results) => model.AString = results                    
+                )
                 .AddStep(
                     model =>
                     {
                         model.ADecimal = 1.1m;
-                        return StepResult.Run();
-                    })
+                        return StepResult.Continue();
+                    }
+                )
                 .AddStep(
-                    model =>
-                    {
-                        return StepResult<int>.Continue(step2Subject);
-                    },
-                    (model, result) =>
-                    {
-                        model.AnInt = result;
-
-                    })
+                    model => StepResult<int>.Continue(step2Subject),
+                    (model, result) => model.AnInt = result
+                )
                 .Create();
 
             IPipelinInstance<TestModel> instance = pipeline.CreateInstance();
@@ -71,6 +61,16 @@ namespace Esp.Net.Pipeline
             _model.ADecimal.ShouldBe(1.1m);
             _model.AnInt.ShouldBe(1);
         }
+
+//        [Test]
+//        public void Foo()
+//        {
+//            var step1Subject = new TestSubject<string>();
+//
+//            var d = _router.GetEventObservable<int>()
+//                .Then(context => service.GetDates())
+//                .Observe((IEventContext<Model, SomeInfraEvent> => { });
+//        }
 
         public class InitialEvent { }
         public class AnAsyncEvent { }
