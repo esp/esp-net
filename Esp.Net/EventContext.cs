@@ -13,21 +13,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #endregion
+
 using System;
 
 namespace Esp.Net
 {
-    public interface IEventContext
+    public interface IEventContext<out TModel>
     {
         bool IsCanceled { get; }
         void Cancel();
         void Commit();
+        IRouter<TModel> Router { get; } // TODO can we get this off here? It's just here to support async stuff. Can we do that with a IScheduler like api?
     }
 
-    internal class EventContext : IEventContext
+    internal class EventContext<TModel> : IEventContext<TModel>
     {
         private bool _isCanceled;
         private bool _isCommitted;
+
+        public EventContext(IRouter<TModel> router)
+        {
+            Router = router;
+        }
 
         public bool IsCanceled 
         {
@@ -50,5 +57,7 @@ namespace Esp.Net
             if (_isCommitted) throw new Exception("Already committed");
             _isCommitted = true;
         }
+
+        public IRouter<TModel> Router { get; private set; }
     }
 }

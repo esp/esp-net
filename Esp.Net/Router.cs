@@ -20,12 +20,16 @@ using Esp.Net.Reactive;
 
 namespace Esp.Net
 {
-    public interface IRouter<out TModel>
+    public interface IRouter<out TModel> : IEvenPublisher
+    {
+        IModelObservable<TModel> GetModelObservable();
+        IEventObservable<TModel, TEvent, IEventContext<TModel>> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal);
+        IEventObservable<TModel, TBaseEvent, IEventContext<TModel>> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal);
+    }
+
+    public interface IEvenPublisher
     {
         void PublishEvent<TEvent>(TEvent @event);
-        IModelObservable<TModel> GetModelObservable();
-        IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal);
-        IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal);
     }
 
     public class Router<TModel> : IRouter<TModel>
@@ -130,10 +134,10 @@ namespace Esp.Net
             });
         }
 
-        public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal)
+        public IEventObservable<TModel, TBaseEvent, IEventContext<TModel>> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal)
         {
             ThrowIfHalted();
-            return EventObservable.Create<TModel, TBaseEvent, IEventContext>(o =>
+            return EventObservable.Create<TModel, TBaseEvent, IEventContext<TModel>>(o =>
             {
                 ThrowIfHalted();
                 ThrowIfInvalidThread();
@@ -143,10 +147,10 @@ namespace Esp.Net
             });
         }
 
-        public IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal)
+        public IEventObservable<TModel, TEvent, IEventContext<TModel>> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal)
         {
             ThrowIfHalted();
-            return EventObservable.Create<TModel, TEvent, IEventContext>(o =>
+            return EventObservable.Create<TModel, TEvent, IEventContext<TModel>>(o =>
             {
                 ThrowIfHalted();
                 ThrowIfInvalidThread();
@@ -160,7 +164,7 @@ namespace Esp.Net
                 {
                     eventSubjects = (EventSubjects<TEvent>)_eventSubjects[typeof(TEvent)];
                 }
-                EventSubject<TModel, TEvent, IEventContext> subject;
+                EventSubject<TModel, TEvent, IEventContext<TModel>> subject;
                 switch (observationStage)
                 {
                     case ObservationStage.Preview:
@@ -186,7 +190,7 @@ namespace Esp.Net
                 dynamic eventSubjects;
                 if (_eventSubjects.TryGetValue(typeof (TEvent), out eventSubjects))
                 {
-                    var eventContext = new EventContext();
+                    var eventContext = new EventContext<TModel>(this);
                     eventSubjects.PreviewSubject.OnNext(_model, @event, eventContext);
                     if (!eventContext.IsCanceled)
                     {
@@ -222,14 +226,14 @@ namespace Esp.Net
         {
             public EventSubjects()
             {
-                PreviewSubject = new EventSubject<TModel, TEvent, IEventContext>();
-                NormalSubject = new EventSubject<TModel, TEvent, IEventContext>();
-                CommittedSubject = new EventSubject<TModel, TEvent, IEventContext>();
+                PreviewSubject = new EventSubject<TModel, TEvent, IEventContext<TModel>>();
+                NormalSubject = new EventSubject<TModel, TEvent, IEventContext<TModel>>();
+                CommittedSubject = new EventSubject<TModel, TEvent, IEventContext<TModel>>();
             }
 
-            public EventSubject<TModel, TEvent, IEventContext> PreviewSubject { get; private set; }
-            public EventSubject<TModel, TEvent, IEventContext> NormalSubject { get; private set; }
-            public EventSubject<TModel, TEvent, IEventContext> CommittedSubject { get; private set; }
+            public EventSubject<TModel, TEvent, IEventContext<TModel>> PreviewSubject { get; private set; }
+            public EventSubject<TModel, TEvent, IEventContext<TModel>> NormalSubject { get; private set; }
+            public EventSubject<TModel, TEvent, IEventContext<TModel>> CommittedSubject { get; private set; }
         }
 
         private class State

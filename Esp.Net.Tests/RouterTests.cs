@@ -190,9 +190,9 @@ namespace Esp.Net
             // typed for BaseEvent not Event1.
             var receivedEvents = new List<BaseEvent>();
             _router.GetEventObservable<BaseEvent>(typeof(Event1))
-                .Observe((TestModel model, BaseEvent e, IEventContext c) =>
+                .Observe((model, baseEvent, context) =>
                 {
-                    receivedEvents.Add(e);
+                    receivedEvents.Add(baseEvent);
                 });
             _router.PublishEvent(new Event1());
             receivedEvents.Count.ShouldBe(1);
@@ -207,9 +207,9 @@ namespace Esp.Net
                 _router.GetEventObservable<BaseEvent>(typeof(Event2)),
                 _router.GetEventObservable<BaseEvent>(typeof(Event3))
             );
-            stream.Observe((TestModel model, BaseEvent e, IEventContext c) =>
+            stream.Observe((model, baseEvent, context) =>
             {
-                receivedEvents.Add(e);
+                receivedEvents.Add(baseEvent);
             });
             _router.PublishEvent(new Event1());
             _router.PublishEvent(new Event2());
