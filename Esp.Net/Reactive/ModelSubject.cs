@@ -19,32 +19,26 @@ using Esp.Net.Model;
 
 namespace Esp.Net.Reactive
 {
-    internal class EventSubject<TModel, TEvent, TContext> : IEventObservable<TModel, TEvent, TContext>, IEventObserver<TModel, TEvent, TContext>
+    internal class ModelSubject<T> : IModelObservable<T>, IModelObserver<T>
     {
-        readonly List<IEventObserver<TModel, TEvent, TContext>> _observers = new List<IEventObserver<TModel, TEvent, TContext>>();
+        readonly List<IModelObserver<T>> _observers = new List<IModelObserver<T>>();
 
-        public void OnNext(TModel model, TEvent @event, TContext context)
+        public void OnNext(T item)
         {
             var observers = _observers.ToArray();
             foreach(var observer in observers) 
 			{
-                observer.OnNext(model, @event, context);
+				observer.OnNext(item);
 			}
         }
 
-        public IDisposable Observe(Action<TModel, TEvent> onNext)
+        public IDisposable Observe(Action<T> onNext)
         {
-            var observer = new EventObserver<TModel, TEvent, TContext>(onNext);
+            var observer = new ModelObserver<T>(onNext);
             return Observe(observer);
         }
 
-        public IDisposable Observe(Action<TModel, TEvent, TContext> onNext)
-        {
-            var observer = new EventObserver<TModel, TEvent, TContext>(onNext);
-            return Observe(observer);
-        }
-
-        public IDisposable Observe(IEventObserver<TModel, TEvent, TContext> observer)
+        public IDisposable Observe(IModelObserver<T> observer)
         {
             _observers.Add(observer);
             return EspDisposable.Create(() => _observers.Remove(observer));

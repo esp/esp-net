@@ -14,6 +14,7 @@
 // limitations under the License.
 #endregion
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
@@ -30,3 +31,5 @@ using System.Runtime.InteropServices;
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("c5922e5d-3f26-4e66-bf91-86a50928928b")]
+
+[assembly: InternalsVisibleTo("Esp.Net.Tests")]

@@ -18,32 +18,33 @@ using Esp.Net.Model;
 
 namespace Esp.Net.Reactive
 {
-    public interface IEventObservable<out T>
+    public interface IEventObservable<out TModel, out TEvent, out TContext>
     {
-        IDisposable Observe(Action<T> onNext);
-        IDisposable Observe(IEventObserver<T> observer);
+        IDisposable Observe(Action<TModel, TEvent> onNext);
+        IDisposable Observe(Action<TModel, TEvent, TContext> onNext);
+        IDisposable Observe(IEventObserver<TModel, TEvent, TContext> observer);
     }
 
     public static class EventObservable
     {
-        public static IEventObservable<T> Create<T>(Func<IEventObserver<T>, IDisposable> subscribe)
+        public static IEventObservable<TModel, TEvent, TContext> Create<TModel, TEvent, TContext>(Func<IEventObserver<TModel, TEvent, TContext>, IDisposable> subscribe)
         {
-            return new EventObservable<T>(subscribe);
+            return new EventObservable<TModel, TEvent, TContext>(subscribe);
         }
 
-        public static IEventObservable<T> Create<T>(Func<IEventObserver<T>, Action> subscribe)
+        public static IEventObservable<TModel, TEvent, TContext> Create<TModel, TEvent, TContext>(Func<IEventObserver<TModel, TEvent, TContext>, Action> subscribe)
         {
-            Func<IEventObserver<T>, IDisposable> subscribe1 = o => EspDisposable.Create(subscribe(o));
-            return new EventObservable<T>(subscribe1);
+            Func<IEventObserver<TModel, TEvent, TContext>, IDisposable> subscribe1 = o => EspDisposable.Create(subscribe(o));
+            return new EventObservable<TModel, TEvent, TContext>(subscribe1);
         }
 
-        public static IEventObservable<T> Concat<T>(params IEventObservable<T>[] sources)
+        public static IEventObservable<TModel, TEvent, TContext> Concat<TModel, TEvent, TContext>(params IEventObservable<TModel, TEvent, TContext>[] sources)
         {
-            return Create<T>(
+            return Create<TModel, TEvent, TContext>(
                 o =>
                 {
                     var disposables = new DisposableCollection();
-                    foreach (IEventObservable<T> source in sources)
+                    foreach (IEventObservable<TModel, TEvent, TContext> source in sources)
                     {
                         disposables.Add(source.Observe(o));
                     }
@@ -52,17 +53,17 @@ namespace Esp.Net.Reactive
             );
         }
 
-        public static IEventObservable<T> Where<T>(this IEventObservable<T> source, Func<T, bool> predicate)
+        public static IEventObservable<TModel, TEvent, TContext> Where<TModel, TEvent, TContext>(this IEventObservable<TModel, TEvent, TContext> source, Func<TModel, TEvent, TContext, bool> predicate)
         {
-            return Create<T>(
+            return Create<TModel, TEvent, TContext>(
                 o =>
                 {
                     var disposable = source.Observe(
-                        i =>
+                        (m, e, c) =>
                         {
-                            if (predicate(i))
+                            if (predicate(m, e, c))
                             {
-                                o.OnNext(i);
+                                o.OnNext(m, e, c);
                             }
                         }
                     );
@@ -71,20 +72,20 @@ namespace Esp.Net.Reactive
             );
         }
 
-        public static IEventObservable<T> Take<T>(this IEventObservable<T> source, int number)
+        public static IEventObservable<TModel, TEvent, TContext> Take<TModel, TEvent, TContext>(this IEventObservable<TModel, TEvent, TContext> source, int number)
         {
-            return Create<T>(
+            return Create<TModel, TEvent, TContext>(
                 o =>
                 {
                     int count = 0;
                     IDisposable disposable = null;
                     disposable = source.Observe(
-                        i =>
+                        (m, e, c) =>
                         {
                             count++;
                             if (count <= number)
                             {
-                                o.OnNext(i);
+                                o.OnNext(m, e, c);
                             }
                             else
                             {
@@ -98,22 +99,28 @@ namespace Esp.Net.Reactive
         }
     }
 
-    public class EventObservable<T> : IEventObservable<T>
+    internal class EventObservable<TModel, TEvent, TContext> : IEventObservable<TModel, TEvent, TContext>
     {
-        private readonly Func<IEventObserver<T>, IDisposable> _subscribe;
+        private readonly Func<IEventObserver<TModel, TEvent, TContext>, IDisposable> _subscribe;
 
-        public EventObservable(Func<IEventObserver<T>, IDisposable> subscribe)
+        public EventObservable(Func<IEventObserver<TModel, TEvent, TContext>, IDisposable> subscribe)
         {
             _subscribe = subscribe;
         }
 
-        public IDisposable Observe(Action<T> onNext)
+        public IDisposable Observe(Action<TModel, TEvent> onNext)
         {
-            var streamObserver = new EventObserver<T>(onNext);
+            var streamObserver = new EventObserver<TModel, TEvent, TContext>(onNext);
             return Observe(streamObserver);
         }
 
-        public IDisposable Observe(IEventObserver<T> observer)
+        public IDisposable Observe(Action<TModel, TEvent, TContext> onNext)
+        {
+            var streamObserver = new EventObserver<TModel, TEvent, TContext>(onNext);
+            return Observe(streamObserver);
+        }
+
+        public IDisposable Observe(IEventObserver<TModel, TEvent, TContext> observer)
         {
             return _subscribe(observer);
         }
