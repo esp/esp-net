@@ -3,7 +3,7 @@
   <metadata>
     <id>esp-net-source</id>
     <version>$version$</version>
-    <title>esp-net</title>
+    <title>esp-net-source</title>
     <authors>Keith Woods</authors>
     <owners>Keith Woods</owners>
     <licenseUrl>https://github.com/esp/esp-net/LICENSE.txt</licenseUrl>
