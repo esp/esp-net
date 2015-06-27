@@ -62,27 +62,41 @@ namespace Esp.Net.Pipeline
             _model.AnInt.ShouldBe(1);
         }
 
-        [Test]
-        public void Foo()
-        {
-            var step1Subject = new TestSubject<string>();
-
-            _router
-                .GetEventObservable<int>()
-                .RunAsyncOperation(context => step1Subject)
-                .Observe(
-                    (IEventContext<TestModel, AsyncResultsEvent<string>> context) =>
-                    {
-                        
-                    });
-
-//            _router.ConfigurePipeline()
-//                .AddStep(
-//                    model => StepResult<string>.Continue(step1Subject),
-//                    (model, results) => { }
-//                )
-//                .StartOn<int>();
-        }
+//        [Test]
+//        public void Foo()
+//        {
+//            var step1Subject = new TestSubject<string>();
+//
+//            // I think we need to build someting into IEventObservable at a low level to support async operations... 
+//            // this is the most discoverable API for async stuff, the pipeline stuff is rather confusing. 
+//            // we should build in the disposable behavoir into the stream too.
+//            _router
+//                .GetEventObservable<int>()
+//                .RunAsyncOperation(context => step1Subject)
+//                .Observe(
+//                    (IEventContext<TestModel, AsyncResultsEvent<string>> context) =>
+//                    {
+//                        
+//                    });
+//
+//            // we need to get the async posting working via the context. You should be able to hold onto the context
+//            // however to do this we need to pull the model and event from it and bring the API inline with the JS implementation.
+//            _router
+//                .GetEventObservable<int>()
+//                .DoAsync((model, @event, context) => context.RunAsync(step1Subject))
+//                .Observe(
+//                    (IEventContext<TestModel, AsyncResultsEvent<string>> context) =>
+//                    {
+//
+//                    });
+//
+////            _router.ConfigurePipeline()
+////                .AddStep(
+////                    model => StepResult<string>.Continue(step1Subject),
+////                    (model, results) => { }
+////                )
+////                .StartOn<int>();
+//        }
 
         public class InitialEvent { }
         public class AnAsyncEvent { }

@@ -97,10 +97,10 @@ namespace Esp.Net.Pipeline
                     disposables.Add(
                         _router
                             .GetEventObservable<AsyncResultsEvent<TAsyncResults>>()
-                            .Where(context => context.Event.Id == id)
-                            .Observe(context =>
+                            .Where((m, e, c) => e.Id == id)
+                            .Observe((m, e, c) =>
                             {
-                                _onAsyncResults(context.Model, context.Event.Result);
+                                _onAsyncResults(m, e.Result);
                                 o.OnNext(model);
                                 o.OnCompleted(); // ?? maybe
                             }

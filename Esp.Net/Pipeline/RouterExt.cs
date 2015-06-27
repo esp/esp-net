@@ -12,10 +12,13 @@ namespace Esp.Net.Pipeline
             return new PipelineBuilder<TModel>(router);
         }
 
-        public static IEventObservable<IEventContext<TModel, AsyncResultsEvent<TResults>>> RunAsyncOperation<TModel, TEvent, TResults>(this IEventObservable<IEventContext<TModel, TEvent>> source, Func<IEventContext<TModel, TEvent>, IObservable<TResults>> asyncStream)
+        public static IEventObservable<TModel, AsyncResultsEvent<TResults>, IEventContext> RunAsyncOperation<TModel, TEvent, TResults>(
+            this IEventObservable<TModel, TEvent, IEventContext> source,
+            Func<TModel, TEvent, IEventContext, IObservable<TResults>> asyncStream)
         {
-            return EventObservable.Create<IEventContext<TModel, AsyncResultsEvent<TResults>>>(o =>
+            return EventObservable.Create<TModel, AsyncResultsEvent<TResults>, IEventContext>(o =>
             {
+                
                 return () =>
                 {
 
