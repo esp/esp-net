@@ -54,6 +54,13 @@ namespace Esp.Net.Reactive
             );
         }
 
+        public static IEventObservable<TModel, TEvent, TContext> Where<TModel, TEvent, TContext>(
+            this IEventObservable<TModel, TEvent, TContext> source, 
+            Func<TModel, TEvent, bool> predicate)
+        {
+            return Where(source, (m, e, c) => predicate(m, e));
+        }
+
         public static IEventObservable<TModel, TEvent, TContext> Where<TModel, TEvent, TContext>(this IEventObservable<TModel, TEvent, TContext> source, Func<TModel, TEvent, TContext, bool> predicate)
         {
             return Create<TModel, TEvent, TContext>(
@@ -99,9 +106,9 @@ namespace Esp.Net.Reactive
             );
         }
 
-        internal static IEventObservable<TModel, AsyncResultsEvent<TResults>, IEventContext<TModel>> SubmitAsyncResults<TModel, TResults>(this IRouter<TModel> router, TResults results)
+        internal static IEventObservable<TModel, AsyncResultsEvent<TResults>, IEventContext> SubmitAsyncResults<TModel, TResults>(this IRouter<TModel> router, TResults results)
         {
-            return Create<TModel, AsyncResultsEvent<TResults>, IEventContext<TModel>>(
+            return Create<TModel, AsyncResultsEvent<TResults>, IEventContext>(
                 o =>
                 {
                     var asyncEventId = Guid.NewGuid();

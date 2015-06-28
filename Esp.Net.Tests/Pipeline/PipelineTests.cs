@@ -28,7 +28,7 @@ namespace Esp.Net.Pipeline
 
         // This is just a proof of concept test... much more to come
         [Test]
-        public void PipeLineRunsSteps()
+        public void ComplexAsyncExample()
         {
             var step1Subject = new TestSubject<string>();
             var step2Subject = new TestSubject<int>();
@@ -62,40 +62,19 @@ namespace Esp.Net.Pipeline
             _model.AnInt.ShouldBe(1);
         }
 
+        // This is just a proof of concept test... much more to come
         [Test]
-        public void Foo()
+        public void SimpleAsyncExample()
         {
             var step1Subject = new TestSubject<string>();
 
-//            // I think we need to build someting into IEventObservable at a low level to support async operations... 
-//            // this is the most discoverable API for async stuff, the pipeline stuff is rather confusing. 
-//            // we should build in the disposable behavoir into the stream too.
-//            _router
-//                .GetEventObservable<int>()
-//                .RunAsyncOperation((m, e, c) => step1Subject)
-//                .Observe(
-//                    (m, e, c) =>
-//                    {
-//                        
-//                    });
-
-            // we need to get the async posting working via the context. You should be able to hold onto the context
-            // however to do this we need to pull the model and event from it and bring the API inline with the JS implementation.
             _router
                 .GetEventObservable<int>()
-                .BeginAcync((model, @event, context) => step1Subject)
-                .Observe(
-                    (model, asyncResultsEvent, context) =>
+                .BeginAcync((model, @event, context) => step1Subject, _router)
+                .Observe((TestModel m, AsyncResultsEvent<string> e, IEventContext c) =>
                     {
-
+                        
                     });
-
-//            _router.ConfigurePipeline()
-//                .AddStep(
-//                    model => StepResult<string>.Continue(step1Subject),
-//                    (model, results) => { }
-//                )
-//                .StartOn<int>();
         }
 
         public class InitialEvent { }
