@@ -44,15 +44,16 @@
     <Compile Include="..\AssemblyInfoCommon.cs">
       <Link>Properties\AssemblyInfoCommon.cs</Link>
     </Compile>
+    <Compile Include="Concurrency\AsyncResultsEvent.cs" />
     <Compile Include="EventContext.cs" />
     <Compile Include="EventProcessors.cs" />
     <Compile Include="Guard.cs" />
     <Compile Include="IClonable.cs" />
     <Compile Include="Model\DisposableBase.cs" />
     <Compile Include="ObservationStage.cs" />
-    <Compile Include="Pipeline\Pipeline.cs" />
-    <Compile Include="Pipeline\RouterExt.cs" />
-    <Compile Include="Pipeline\Steps.cs" />
+    <Compile Include="Concurrency\Pipeline.cs" />
+    <Compile Include="Concurrency\BeginAsync.cs" />
+    <Compile Include="Concurrency\Pipeline.Steps.cs" />
     <Compile Include="Reactive\ModelObservable.cs" />
     <Compile Include="Reactive\ModelObserver.cs" />
     <Compile Include="Reactive\ModelSubject.cs" />

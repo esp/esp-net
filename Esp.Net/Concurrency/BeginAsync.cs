@@ -3,15 +3,10 @@ using Esp.Net.Model;
 using Esp.Net.Reactive;
 using Esp.Net.RxBridge;
 
-namespace Esp.Net.Pipeline
+namespace Esp.Net.Concurrency
 {
-    public static class RouterExt
+    public static class BeginAsyncRouterExt
     {
-        public static PipelineBuilder<TModel> ConfigurePipeline<TModel>(this IRouter<TModel> router)
-        {
-            return new PipelineBuilder<TModel>(router);
-        }
-
         public static IEventObservable<TModel, AsyncResultsEvent<TResults>, IEventContext> BeginAcync<TModel, TEvent, TResults>(
             this IEventObservable<TModel, TEvent, IEventContext> source,
             Func<TModel, TEvent, IEventContext, IObservable<TResults>> asyncStreamFactory,

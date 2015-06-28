@@ -18,7 +18,7 @@ using System;
 
 namespace Esp.Net.Model
 {
-    public class EspDisposable : IDisposable
+    internal class EspDisposable : IDisposable
     {
         public static IDisposable Empty { get; private set; }
 
