@@ -17,28 +17,23 @@ using System;
 
 namespace Esp.Net.Reactive
 {
-    public interface IEventObserver<in TModel, in TEvent, in TContext>
+    public interface IModelObserver<in T>
     {
-        void OnNext(TModel model, TEvent @event, TContext context);
+        void OnNext(T item);
     }
 
-    internal class EventObserver<TModel, TEvent, TContext> : IEventObserver<TModel, TEvent, TContext>
+    internal class ModelObserver<T> : IModelObserver<T>
     {
-        private readonly Action<TModel, TEvent, TContext> _onNext;
+        private readonly Action<T> _onNext;
 
-        public EventObserver(Action<TModel, TEvent> onNext)
-        {
-            _onNext = (m, e, c) => onNext(m, e);
-        }
-
-        public EventObserver(Action<TModel, TEvent, TContext> onNext)
+        public ModelObserver(Action<T> onNext)
         {
             _onNext = onNext;
         }
 
-        public void OnNext(TModel model, TEvent @event, TContext context)
+        public void OnNext(T item)
         {
-            _onNext(model, @event, context);
+            _onNext(item);
         }
     }
 }

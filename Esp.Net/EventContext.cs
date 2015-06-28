@@ -13,33 +13,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #endregion
+
 using System;
 
 namespace Esp.Net
 {
-    public interface IEventContext<out TModel, out TEvent>
+    public interface IEventContext
     {
-        TModel Model { get; }
-        TEvent Event { get; }
         bool IsCanceled { get; }
         void Cancel();
         void Commit();
     }
 
-    public class EventContext<TModel, TEvent> : IEventContext<TModel, TEvent>
+    internal class EventContext : IEventContext
     {
         private bool _isCanceled;
         private bool _isCommitted;
-
-        public EventContext(TModel model, TEvent @event)
-        {
-            Model = model;
-            Event = @event;
-        }
-
-        public TModel Model { get; private set; }
-
-        public TEvent Event { get; private set; }
 
         public bool IsCanceled 
         {

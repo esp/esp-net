@@ -24,6 +24,18 @@ namespace Esp.Net
     [TestFixture]
     public class RouterTests
     {
+        public class TestModel
+        {
+            public int AnInt { get; set; }
+            public string AString { get; set; }
+            public decimal ADecimal { get; set; }
+        }
+
+        public class BaseEvent { }
+        public class Event1 : BaseEvent { }
+        public class Event2 : BaseEvent { }
+        public class Event3 : BaseEvent { }
+
         private TestModel _model;
 
         private Router<TestModel> _router;
@@ -40,10 +52,10 @@ namespace Esp.Net
         {
             int deliveryCount1 = 0, deliveryCount2 = 0;
             _router.GetEventObservable<string>().Observe(
-                context => deliveryCount1++
+                (model, e, context) => deliveryCount1++
             );
             _router.GetEventObservable<string>().Observe(
-                context => deliveryCount2++
+                (model, e, context) => deliveryCount2++
             );
             _router.PublishEvent("Foo");
             _router.PublishEvent("Foo");
@@ -56,10 +68,10 @@ namespace Esp.Net
         {
             int deliveryCount1 = 0, deliveryCount2 = 0;
             var disposable = _router.GetEventObservable<string>().Observe(
-                context => deliveryCount1++
+                (model, e, context) => deliveryCount1++
             );
             _router.GetEventObservable<string>().Observe(
-                context => deliveryCount2++
+                (model, e, context) => deliveryCount2++
             );
             _router.PublishEvent("Foo");
             _router.PublishEvent("Foo");
@@ -77,7 +89,7 @@ namespace Esp.Net
         {
             int deliveryCount1 = 0;
             _router.GetEventObservable<string>(ObservationStage.Preview).Observe(
-                context => deliveryCount1++
+                (model, e, context) => deliveryCount1++
             );
             _router.PublishEvent("Foo");
             deliveryCount1.ShouldBe(1);
@@ -88,14 +100,14 @@ namespace Esp.Net
         {
             int previewDeliveryCount = 0, normalDeliveryCount = 0;
             _router.GetEventObservable<string>(ObservationStage.Preview).Observe(
-                context =>
+                (model, e, context) =>
                 {
                     previewDeliveryCount++;
                     context.Cancel();
                 }
             );
             _router.GetEventObservable<string>().Observe(
-                context =>
+                (model, e, context) =>
                 {
                     normalDeliveryCount++;
                 }
@@ -110,20 +122,20 @@ namespace Esp.Net
         {
             int normalDeliveryCount = 0, committedDeliveryCount1 = 0, committedDeliveryCount2 = 0;
             _router.GetEventObservable<string>().Observe(
-                context =>
+                (model, e, context) =>
                 {
                     normalDeliveryCount++;
                     context.Commit();
                 }
             );
             _router.GetEventObservable<string>(ObservationStage.Committed).Observe(
-                context =>
+                (model, e, context) =>
                 {
                     committedDeliveryCount1++;
                 }
             );
             _router.GetEventObservable<string>(ObservationStage.Committed).Observe(
-                context =>
+                (model, e, context) =>
                 {
                     committedDeliveryCount2++;
                 }
@@ -144,7 +156,7 @@ namespace Esp.Net
             int event1Count = 0, event2Count = 0;
             bool testPassed = false;
             _router.GetEventObservable<string>().Observe(
-                context =>
+                (model, e, context) =>
                 {
                     _router.PublishEvent(1);
                     event1Count++;
@@ -152,13 +164,13 @@ namespace Esp.Net
                 }
             );
             _router.GetEventObservable<string>(ObservationStage.Committed).Observe(
-                context =>
+                (model, e, context) =>
                 {
                     testPassed = event1Count == 1 && event2Count == 0;
                 }
             );
             _router.GetEventObservable<int>().Observe(
-                context =>
+                (model, e, context) =>
                 {
                     event2Count++;
                     context.Commit();
@@ -178,9 +190,9 @@ namespace Esp.Net
             // typed for BaseEvent not Event1.
             var receivedEvents = new List<BaseEvent>();
             _router.GetEventObservable<BaseEvent>(typeof(Event1))
-                .Observe((IEventContext<TestModel, BaseEvent> context) =>
+                .Observe((model, baseEvent, context) =>
                 {
-                    receivedEvents.Add(context.Event);
+                    receivedEvents.Add(baseEvent);
                 });
             _router.PublishEvent(new Event1());
             receivedEvents.Count.ShouldBe(1);
@@ -195,9 +207,9 @@ namespace Esp.Net
                 _router.GetEventObservable<BaseEvent>(typeof(Event2)),
                 _router.GetEventObservable<BaseEvent>(typeof(Event3))
             );
-            stream.Observe((IEventContext<TestModel, BaseEvent> context) =>
+            stream.Observe((model, baseEvent, context) =>
             {
-                receivedEvents.Add(context.Event);
+                receivedEvents.Add(baseEvent);
             });
             _router.PublishEvent(new Event1());
             _router.PublishEvent(new Event2());
@@ -209,7 +221,7 @@ namespace Esp.Net
         public void OnPublishExceptionsBubbleUp()
         {
             _router.GetEventObservable<string>().Observe(
-                context =>
+                (model, e, context) =>
                 {
                    throw new InvalidOperationException("POP");
                 }
@@ -222,7 +234,7 @@ namespace Esp.Net
         public void OnceHaltedSubsequentEventPublicationThrows()
         {
             _router.GetEventObservable<string>().Observe(
-                context =>
+                (model, e, context) =>
                 {
                     throw new AccessViolationException("POP");
                 }
@@ -237,23 +249,23 @@ namespace Esp.Net
         {
             int updateCount = 0;
             _router.GetEventObservable<int>().Observe(
-                context =>
+                (model, e, context) =>
                 {
-                    context.Model.AnInt = context.Event;
+                    model.AnInt = e;
                     _router.PublishEvent("pew pew");
                 }
             );
             _router.GetEventObservable<string>().Observe(
-                context =>
+                (model, e, context) =>
                 {
-                    context.Model.AString = context.Event;
+                    model.AString = e;
                     _router.PublishEvent(1.1m);
                 }
             );
             _router.GetEventObservable<decimal>().Observe(
-                context =>
+                (model, e, context) =>
                 {
-                    context.Model.ADecimal = context.Event;
+                    model.ADecimal = e;
                 }
             );
 
@@ -286,16 +298,12 @@ namespace Esp.Net
                 router.PublishEvent(1);
             });
             router = new Router<TestModel>(model, RouterScheduler.Default, preEventProcessor);
-            router.GetEventObservable<int>().Observe(context =>
-            {
-                receivedEvents.Add(context.Event);
+            router.GetEventObservable<int>().Observe((m, e, c) => {
+                receivedEvents.Add(e);
             });
-            router.GetModelObservable().Observe(
-               model1 =>
-               {
-                   modelUpdateCount++;
-               }
-            );
+            router.GetModelObservable().Observe(model1 => {
+                modelUpdateCount++;
+            });
             router.PublishEvent(0);
             receivedEvents.ShouldBe(new[]{ 0, 1});
             modelUpdateCount.ShouldBe(1);
@@ -317,10 +325,9 @@ namespace Esp.Net
                 }
             });
             router = new Router<TestModel>(model, RouterScheduler.Default, postEventProcessor);
-            router.GetEventObservable<int>().Observe(context =>
-            {
-                context.Model.AnInt = context.Event;
-                receivedEvents.Add(context.Event);
+            router.GetEventObservable<int>().Observe((m, e, c) => {
+                m.AnInt = e;
+                receivedEvents.Add(e);
             });
             router.GetModelObservable().Observe(
                model1 =>
@@ -362,10 +369,10 @@ namespace Esp.Net
                 }
             });
             router = new Router<TestModel>(model, RouterScheduler.Default, preEventProcessor, postEventProcessor);
-            router.GetEventObservable<int>().Observe(context =>
+            router.GetEventObservable<int>().Observe((m, e, c) =>
             {
-                model.AnInt = context.Event;
-                receivedEvents.Add(context.Event);
+                m.AnInt = e;
+                receivedEvents.Add(e);
             });
             router.GetModelObservable().Observe(
                model1 =>
@@ -384,9 +391,8 @@ namespace Esp.Net
         public void EventsPublishedDuringModelUpdateDispatchGetProcessed()
         {
             int updateCount = 0;
-            _router.GetEventObservable<int>().Observe(context =>
-            {
-                context.Model.AnInt = context.Event;
+            _router.GetEventObservable<int>().Observe((m, e, c) => {
+                m.AnInt = e;
             });
             _router.GetModelObservable().Observe(
                model =>
@@ -401,18 +407,6 @@ namespace Esp.Net
             _router.PublishEvent(0);
             updateCount.ShouldBe(2);
         }
-
-        public class TestModel
-        {
-            public int AnInt { get; set; }
-            public string AString { get; set; }
-            public decimal ADecimal { get; set; }
-        }
-
-        public class BaseEvent { }
-        public class Event1 : BaseEvent { }
-        public class Event2 : BaseEvent { }
-        public class Event3 : BaseEvent { }
 
         public class DelegeatePreEventProcessor : IPreEventProcessor<TestModel>
         {

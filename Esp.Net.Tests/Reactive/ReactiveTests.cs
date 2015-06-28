@@ -13,60 +13,83 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #endregion
-using System;
+
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using Shouldly;
 
 namespace Esp.Net.Reactive
 {
     [TestFixture]
     public class ReactiveTests
     {
+        public class TestModel
+        {
+        }
+
+        private TestModel _model;
+
+        private IEventContext _eventContext;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _model = new TestModel();
+            _eventContext = new EventContext();
+        }
+
         [Test]
         public void SubjectOnNextsItems()
         {
-            var subject = new EventSubject<int>();
-            int received = 0;
-            subject.Observe(i => received = i);
-            subject.OnNext(1);
-            Assert.AreEqual(1, received);
-            subject.OnNext(2);
-            Assert.AreEqual(2, received);
+            var subject = new EventSubject<TestModel, int, IEventContext>();
+            TestModel receivedModel = null;
+            int receivedEvent = 0;
+            IEventContext receivedContext = null;
+            subject.Observe((m, e, c) =>
+            {
+                receivedModel = m;
+                receivedEvent = e;
+                receivedContext = c;
+            });
+            subject.OnNext(_model, 1, _eventContext);
+            receivedModel.ShouldBeSameAs(_model);
+            receivedEvent.ShouldBe(1);
+            receivedContext.ShouldBeSameAs(_eventContext);
         }
 
         [Test]
         public void SubjectRemovesSubscriptionOnDispose()
         {
-            var subject = new EventSubject<int>();
+            var subject = new EventSubject<TestModel, int, IEventContext>();
             int received = 0;
-            var disposable = subject.Observe(i => received = i);
-            subject.OnNext(1);
+            var disposable = subject.Observe((m, e, c) => received = e);
+            subject.OnNext(_model, 1, _eventContext);
             Assert.AreEqual(1, received);
             disposable.Dispose();
-            subject.OnNext(2);
+            subject.OnNext(_model, 2, _eventContext);
             Assert.AreEqual(1, received);
         }
 
         [Test]
         public void WhereFiltersWithProvidedPredicate()
         {
-            var subject = new EventSubject<int>();
+            var subject = new EventSubject<TestModel, int, IEventContext>();
             List<int> received = new List<int>();
             subject
-                .Where(i => i % 2 == 0)
-                .Observe(i => received.Add(i));
-            for (int i = 0; i < 10; i++) subject.OnNext(i);
-            Assert.IsTrue(received.SequenceEqual(new[]{0, 2, 4, 6, 8}));
+                .Where((m, e, c) => e%2 == 0)
+                .Observe((m, e, c) => received.Add(e));
+            for (int i = 0; i < 10; i++) subject.OnNext(_model, i, _eventContext);
+            Assert.IsTrue(received.SequenceEqual(new[] {0, 2, 4, 6, 8}));
         }
 
         [Test]
         public void WhereChainsSourceDisposableOnDispose()
         {
-            var mockIEventObservable = new MockIEventObservable();
+            var mockIEventObservable = new StubIEventObservable<TestModel>();
             var disposable = mockIEventObservable
-                .Where(i => true)
-                .Observe(i => { });
+                .Where((m, e, c) => true)
+                .Observe((m, e, c) => { });
             disposable.Dispose();
             Assert.IsTrue(mockIEventObservable.IsDisposed);
         }
@@ -74,53 +97,38 @@ namespace Esp.Net.Reactive
         [Test]
         public void CanConcatEventStreams()
         {
-            var subject1 = new EventSubject<int>();
-            var subject2 = new EventSubject<int>();
+            var subject1 = new EventSubject<TestModel, int, IEventContext>();
+            var subject2 = new EventSubject<TestModel, int, IEventContext>();
             var stream = EventObservable.Concat(subject1, subject2);
             List<int> received = new List<int>();
-            stream.Observe(i => received.Add(i));
-            subject1.OnNext(1);
-            subject2.OnNext(2);
-            subject1.OnNext(3);
-            subject2.OnNext(4);
-            Assert.IsTrue(received.SequenceEqual(new[] { 1, 2, 3, 4 }));
+            stream.Observe((m, e, c) => received.Add(e));
+            subject1.OnNext(_model, 1, _eventContext);
+            subject2.OnNext(_model, 2, _eventContext);
+            subject1.OnNext(_model, 3, _eventContext);
+            subject2.OnNext(_model, 4, _eventContext);
+            Assert.IsTrue(received.SequenceEqual(new[] {1, 2, 3, 4}));
         }
 
         [Test]
         public void TakeOnlyTakesGivenNumberOfEvents()
         {
             List<int> received = new List<int>();
-            var subject1 = new EventSubject<int>();
-            subject1.Take(3).Observe(i => received.Add(i));
-            subject1.OnNext(1);
-            subject1.OnNext(2);
-            subject1.OnNext(3);
-            subject1.OnNext(4);
-            Assert.IsTrue(received.SequenceEqual(new[] { 1, 2, 3 }));
+            var subject1 = new EventSubject<TestModel, int, IEventContext>();
+            subject1.Take(3).Observe((m, e, c) => received.Add(e));
+            subject1.OnNext(_model, 1, _eventContext);
+            subject1.OnNext(_model, 2, _eventContext);
+            subject1.OnNext(_model, 3, _eventContext);
+            subject1.OnNext(_model, 4, _eventContext);
+            Assert.IsTrue(received.SequenceEqual(new[] {1, 2, 3}));
         }
 
         [Test]
         public void TakeChainsSourceDisposableOnDispose()
         {
-            var mockIEventObservable = new MockIEventObservable();
-            var disposable = mockIEventObservable.Take(3).Observe(i => { });
+            var mockIEventObservable = new StubIEventObservable<TestModel>();
+            var disposable = mockIEventObservable.Take(3).Observe((m, e, c) => { });
             disposable.Dispose();
             Assert.IsTrue(mockIEventObservable.IsDisposed);
-        }
-
-        private class MockIEventObservable : IEventObservable<int>
-        {
-            public bool IsDisposed { get; private set; }
-
-            public IDisposable Observe(Action<int> onNext)
-            {
-                return Disposable.Create(() => IsDisposed = true);
-            }
-
-            public IDisposable Observe(IEventObserver<int> observer)
-            {
-                return Disposable.Create(() => IsDisposed = true);
-            }
         }
     }
 }
