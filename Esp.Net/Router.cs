@@ -20,14 +20,14 @@ using Esp.Net.Reactive;
 
 namespace Esp.Net
 {
-    public interface IRouter<out TModel> : IEvenPublisher
+    public interface IRouter<out TModel> : IEventPublisher
     {
         IModelObservable<TModel> GetModelObservable();
         IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal);
         IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal);
     }
 
-    public interface IEvenPublisher
+    public interface IEventPublisher
     {
         void PublishEvent<TEvent>(TEvent @event);
     }
@@ -216,7 +216,7 @@ namespace Esp.Net
 
         private void ThrowIfInvalidThread()
         {
-            if(!_scheduler.Checkaccess())
+            if(!_scheduler.CheckAccess())
             {
                 throw new InvalidOperationException("Router called on invalid thread");
             }

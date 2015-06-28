@@ -17,7 +17,7 @@ namespace Esp.Net
 {
     public interface IRouterScheduler
     {
-        bool Checkaccess();
+        bool CheckAccess();
     }
 
     public class RouterScheduler : IRouterScheduler
@@ -33,7 +33,7 @@ namespace Esp.Net
         {
         }
         
-        public bool Checkaccess()
+        public bool CheckAccess()
         {
             return true;
         }
