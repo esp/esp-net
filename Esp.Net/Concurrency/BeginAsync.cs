@@ -3,6 +3,7 @@ using Esp.Net.Model;
 using Esp.Net.Reactive;
 using Esp.Net.RxBridge;
 
+#if ESP_EXPERIMENTAL
 namespace Esp.Net.Concurrency
 {
     public static class BeginAsyncRouterExt
@@ -26,5 +27,22 @@ namespace Esp.Net.Concurrency
                 return disposables;
             });
         }
+
+        internal static IEventObservable<TModel, AsyncResultsEvent<TResults>, IEventContext> SubmitAsyncResults<TModel, TResults>(this IRouter<TModel> router, TResults results)
+        {
+            return EventObservable.Create<TModel, AsyncResultsEvent<TResults>, IEventContext>(
+                o =>
+                {
+                    var asyncEventId = Guid.NewGuid();
+                    IDisposable disposable = router.GetEventObservable<AsyncResultsEvent<TResults>>()
+                        .Where((m, e, c) => e.Id == asyncEventId)
+                        .Observe(o);
+                    var @event = new AsyncResultsEvent<TResults>(results, asyncEventId);
+                    router.PublishEvent(@event);
+                    return disposable;
+                }
+            );
+        }
     }
 }
+#endif

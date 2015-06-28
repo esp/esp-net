@@ -3,6 +3,7 @@ using Esp.Net.Model;
 using Esp.Net.Reactive;
 using Esp.Net.RxBridge;
 
+#if ESP_EXPERIMENTAL
 namespace Esp.Net.Concurrency
 {
     public enum StepType
@@ -149,3 +150,4 @@ namespace Esp.Net.Concurrency
         }
     }
 }
+#endif

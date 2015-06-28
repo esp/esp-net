@@ -14,7 +14,6 @@
 // limitations under the License.
 #endregion
 using System;
-using Esp.Net.Concurrency;
 using Esp.Net.Model;
 
 namespace Esp.Net.Reactive
@@ -101,22 +100,6 @@ namespace Esp.Net.Reactive
                             }
                         }
                     );
-                    return disposable;
-                }
-            );
-        }
-
-        internal static IEventObservable<TModel, AsyncResultsEvent<TResults>, IEventContext> SubmitAsyncResults<TModel, TResults>(this IRouter<TModel> router, TResults results)
-        {
-            return Create<TModel, AsyncResultsEvent<TResults>, IEventContext>(
-                o =>
-                {
-                    var asyncEventId = Guid.NewGuid();
-                    IDisposable disposable = router.GetEventObservable<AsyncResultsEvent<TResults>>()
-                        .Where((m, e, c) => e.Id == asyncEventId)
-                        .Observe(o);
-                    var @event = new AsyncResultsEvent<TResults>(results, asyncEventId);
-                    router.PublishEvent(@event);
                     return disposable;
                 }
             );

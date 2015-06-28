@@ -1,6 +1,7 @@
 ﻿using NUnit.Framework;
 using Shouldly;
 
+#if ESP_EXPERIMENTAL
 namespace Esp.Net.Concurrency
 {
     [TestFixture]
@@ -28,7 +29,7 @@ namespace Esp.Net.Concurrency
 
         // This is just a proof of concept test... much more to come
         [Test]
-        public void ComplexAsyncExample()
+        public void CallEachStageInThePipeline()
         {
             var step1Subject = new TestSubject<string>();
             var step2Subject = new TestSubject<int>();
@@ -63,3 +64,4 @@ namespace Esp.Net.Concurrency
         }
     }
 }
+#endif

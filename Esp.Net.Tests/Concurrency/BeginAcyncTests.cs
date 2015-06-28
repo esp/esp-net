@@ -1,6 +1,7 @@
-﻿using Esp.Net.Model;
-using NUnit.Framework;
+﻿using NUnit.Framework;
+using Shouldly;
 
+#if ESP_EXPERIMENTAL
 namespace Esp.Net.Concurrency
 {
     [TestFixture]
@@ -13,28 +14,83 @@ namespace Esp.Net.Concurrency
             public decimal ADecimal { get; set; }
         }
 
-        private Router<TestModel> _router;
+        private IRouter<TestModel> _router;
         private TestModel _model;
+        private TestSubject<string> _asyncSubject;
 
         [SetUp]
         public void SetUp()
         {
             _model = new TestModel();
             _router = new Router<TestModel>(_model, RouterScheduler.Default);
+            _asyncSubject = new TestSubject<string>();
         }
 
         [Test]
-        public void SimpleAsyncExample()
+        public void OnInitialEventInvokesAsyncWorkFactory()
         {
-            var step1Subject = new TestSubject<string>();
-
+            bool factoryInvoked = false;
             _router
-                .GetEventObservable<int>()
-                .BeginAcync((model, @event, context) => step1Subject, _router)
-                .Observe((TestModel m, AsyncResultsEvent<string> e, IEventContext c) =>
-                {
+                 .GetEventObservable<int>()
+                 .BeginAcync(
+                     (model, @event, context) =>
+                     {
+                         factoryInvoked = true;
+                         return _asyncSubject;
+                     }, _router)
+                 .Observe((m, e, c) =>
+                 {
 
-                });
+                 });
+            _router.PublishEvent(1);
+            factoryInvoked.ShouldBe(true);
+        }
+
+        [Test]
+        public void DoesNotCallFactoryWhenObservableDisposed()
+        {
+            bool factoryInvoked = false;
+            var disposable = _router
+                 .GetEventObservable<int>()
+                 .BeginAcync(
+                     (model, @event, context) =>
+                     {
+                         factoryInvoked = true;
+                         return _asyncSubject;
+                     }, _router)
+                 .Observe((m, e, c) =>
+                 {
+
+                 });
+            disposable.Dispose();
+            _router.PublishEvent(1);
+            factoryInvoked.ShouldBe(false);
+        }
+
+        [Test]
+        public void OnAcyncResultsReceivedCallObserver()
+        {
+            TestModel receivedModel = null;
+            string receivedResults = null;
+            IEventContext receivedEventContext = null;
+            int receivedCount = 0;
+            _router
+                 .GetEventObservable<int>()
+                 .BeginAcync((model, @event, context) => _asyncSubject, _router)
+                 .Observe((m, e, c) =>
+                 {
+                     receivedCount++;
+                     receivedModel = m;
+                     receivedResults = e.Result;
+                     receivedEventContext = c;
+                 });
+            _router.PublishEvent(1);
+            _asyncSubject.OnNext("asyncResults");
+            receivedCount.ShouldBe(1);
+            receivedModel.ShouldBeSameAs(_model);
+            receivedResults.ShouldBe("asyncResults");
+            receivedEventContext.ShouldNotBe(null);
         }
     }
 }
+#endif

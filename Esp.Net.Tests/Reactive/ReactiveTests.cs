@@ -13,10 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #endregion
-using System;
+
 using System.Collections.Generic;
 using System.Linq;
-using Esp.Net.Model;
 using NUnit.Framework;
 using Shouldly;
 
@@ -25,11 +24,14 @@ namespace Esp.Net.Reactive
     [TestFixture]
     public class ReactiveTests
     {
-        public class TestModel { }
+        public class TestModel
+        {
+        }
 
         private TestModel _model;
 
         private IEventContext _eventContext;
+
         [SetUp]
         public void SetUp()
         {
@@ -75,16 +77,16 @@ namespace Esp.Net.Reactive
             var subject = new EventSubject<TestModel, int, IEventContext>();
             List<int> received = new List<int>();
             subject
-                .Where((m, e, c) => e % 2 == 0)
+                .Where((m, e, c) => e%2 == 0)
                 .Observe((m, e, c) => received.Add(e));
             for (int i = 0; i < 10; i++) subject.OnNext(_model, i, _eventContext);
-            Assert.IsTrue(received.SequenceEqual(new[]{0, 2, 4, 6, 8}));
+            Assert.IsTrue(received.SequenceEqual(new[] {0, 2, 4, 6, 8}));
         }
 
         [Test]
         public void WhereChainsSourceDisposableOnDispose()
         {
-            var mockIEventObservable = new MockIEventObservable();
+            var mockIEventObservable = new StubIEventObservable<TestModel>();
             var disposable = mockIEventObservable
                 .Where((m, e, c) => true)
                 .Observe((m, e, c) => { });
@@ -104,7 +106,7 @@ namespace Esp.Net.Reactive
             subject2.OnNext(_model, 2, _eventContext);
             subject1.OnNext(_model, 3, _eventContext);
             subject2.OnNext(_model, 4, _eventContext);
-            Assert.IsTrue(received.SequenceEqual(new[] { 1, 2, 3, 4 }));
+            Assert.IsTrue(received.SequenceEqual(new[] {1, 2, 3, 4}));
         }
 
         [Test]
@@ -117,36 +119,16 @@ namespace Esp.Net.Reactive
             subject1.OnNext(_model, 2, _eventContext);
             subject1.OnNext(_model, 3, _eventContext);
             subject1.OnNext(_model, 4, _eventContext);
-            Assert.IsTrue(received.SequenceEqual(new[] { 1, 2, 3 }));
+            Assert.IsTrue(received.SequenceEqual(new[] {1, 2, 3}));
         }
 
         [Test]
         public void TakeChainsSourceDisposableOnDispose()
         {
-            var mockIEventObservable = new MockIEventObservable();
+            var mockIEventObservable = new StubIEventObservable<TestModel>();
             var disposable = mockIEventObservable.Take(3).Observe((m, e, c) => { });
             disposable.Dispose();
             Assert.IsTrue(mockIEventObservable.IsDisposed);
-        }
-
-        private class MockIEventObservable : IEventObservable<TestModel, int, IEventContext>
-        {
-            public bool IsDisposed { get; private set; }
-
-            public IDisposable Observe(Action<TestModel, int> onNext)
-            {
-                return EspDisposable.Create(() => IsDisposed = true);
-            }
-
-            public IDisposable Observe(Action<TestModel, int, IEventContext> onNext)
-            {
-                return EspDisposable.Create(() => IsDisposed = true);
-            }
-
-            public IDisposable Observe(IEventObserver<TestModel, int, IEventContext> observer)
-            {
-                return EspDisposable.Create(() => IsDisposed = true);
-            }
         }
     }
 }
