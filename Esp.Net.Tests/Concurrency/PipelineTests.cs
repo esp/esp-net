@@ -52,6 +52,7 @@ namespace Esp.Net.Concurrency
                 )
                 .Create();
 
+
             IPipelinInstance<TestModel> instance = pipeline.CreateInstance();
             instance.Run(_model);
 

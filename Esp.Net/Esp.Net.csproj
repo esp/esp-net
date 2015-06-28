@@ -56,6 +56,7 @@
     <Compile Include="HeldEvents\IIdentifiableEvent.cs" />
     <Compile Include="HeldEvents\RouterExt.cs" />
     <Compile Include="IClonable.cs" />
+    <Compile Include="Model\DictionaryDisposable.cs" />
     <Compile Include="Model\DisposableBase.cs" />
     <Compile Include="Model\EspSerialDisposable.cs" />
     <Compile Include="ObservationStage.cs" />
