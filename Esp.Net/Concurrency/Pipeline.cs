@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Esp.Net.Model;
 using Esp.Net.RxBridge;
 
+#if ESP_EXPERIMENTAL
 namespace Esp.Net.Concurrency
 {
     public static class PipelineRouterExt
@@ -115,3 +116,4 @@ namespace Esp.Net.Concurrency
         }
     }
 }
+#endif

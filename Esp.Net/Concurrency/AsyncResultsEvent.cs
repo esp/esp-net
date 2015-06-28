@@ -1,5 +1,6 @@
 using System;
 
+#if ESP_EXPERIMENTAL
 namespace Esp.Net.Concurrency
 {
     public class AsyncResultsEvent<TResult>
@@ -15,3 +16,4 @@ namespace Esp.Net.Concurrency
         public Guid Id { get; private set; }
     }
 }
+#endif
