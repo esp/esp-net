@@ -36,6 +36,11 @@ namespace Esp.Net.Model
 
         private EspDisposable(Action action)
         {
+            if (action == null)
+            {
+                throw new ArgumentNullException("action", "Action must not be null.");
+            }
+
             _action = action;
         }
 
