@@ -44,7 +44,7 @@
     <Compile Include="..\AssemblyInfoCommon.cs">
       <Link>Properties\AssemblyInfoCommon.cs</Link>
     </Compile>
-    <Compile Include="Concurrency\AsyncResultsEvent.cs" />
+    <Compile Include="Concurrency\IdentifiableEvent.cs" />
     <Compile Include="EventContext.cs" />
     <Compile Include="EventProcessors.cs" />
     <Compile Include="Guard.cs" />
@@ -60,7 +60,7 @@
     <Compile Include="Model\EspSerialDisposable.cs" />
     <Compile Include="ObservationStage.cs" />
     <Compile Include="Concurrency\Pipeline.cs" />
-    <Compile Include="Concurrency\BeginAsync.cs" />
+    <Compile Include="Concurrency\SubscribeTo.cs" />
     <Compile Include="Concurrency\Pipeline.Steps.cs" />
     <Compile Include="Reactive\ModelObservable.cs" />
     <Compile Include="Reactive\ModelObserver.cs" />

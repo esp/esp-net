@@ -97,7 +97,7 @@ namespace Esp.Net.Concurrency
                     var id = Guid.NewGuid();
                     disposables.Add(
                         _router
-                            .GetEventObservable<AsyncResultsEvent<TAsyncResults>>()
+                            .GetEventObservable<AyncResultsEvent<TAsyncResults>>()
                             .Where((m, e, c) => e.Id == id)
                             .Observe((m, e, c) =>
                             {
@@ -108,7 +108,7 @@ namespace Esp.Net.Concurrency
                             )
                         );
                     disposables.Add(stepResults.ResultStream.Subscribe(result => {
-                        _router.PublishEvent(new AsyncResultsEvent<TAsyncResults>(result, id));
+                        _router.PublishEvent(new AyncResultsEvent<TAsyncResults>(result, id));
                     }));
                 }
                 else
