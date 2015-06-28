@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using Esp.Net.Model;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using Shouldly;
 
-namespace Esp.Net.Pipeline
+namespace Esp.Net.Concurrency
 {
     [TestFixture]
     public class PipelineTests
@@ -15,6 +12,9 @@ namespace Esp.Net.Pipeline
             public string AString { get; set; }
             public decimal ADecimal { get; set; }
         }
+
+        public class InitialEvent { }
+        public class AnAsyncEvent { }
 
         private Router<TestModel> _router;
         private TestModel _model;
@@ -60,59 +60,6 @@ namespace Esp.Net.Pipeline
             _model.AString.ShouldBe("Foo");
             _model.ADecimal.ShouldBe(1.1m);
             _model.AnInt.ShouldBe(1);
-        }
-
-        // This is just a proof of concept test... much more to come
-        [Test]
-        public void SimpleAsyncExample()
-        {
-            var step1Subject = new TestSubject<string>();
-
-            _router
-                .GetEventObservable<int>()
-                .BeginAcync((model, @event, context) => step1Subject, _router)
-                .Observe((TestModel m, AsyncResultsEvent<string> e, IEventContext c) =>
-                    {
-                        
-                    });
-        }
-
-        public class InitialEvent { }
-        public class AnAsyncEvent { }
-
-        public class TestSubject<T> : IObservable<T>, IObserver<T>
-        {
-            private readonly List<IObserver<T>> _observers = new List<IObserver<T>>();
-
-            public void OnNext(T item)
-            {
-                foreach (IObserver<T> observer in _observers.ToArray())
-                {
-                    observer.OnNext(item);
-                }
-            }
-
-            public void OnError(Exception error)
-            {
-                foreach (IObserver<T> observer in _observers.ToArray())
-                {
-                    observer.OnError(error);
-                }
-            }
-
-            public void OnCompleted()
-            {
-                foreach (IObserver<T> observer in _observers.ToArray())
-                {
-                    observer.OnCompleted();
-                }
-            }
-
-            public IDisposable Subscribe(IObserver<T> observer)
-            {
-                _observers.Add(observer);
-                return EspDisposable.Create(() => _observers.Remove(observer));
-            }
         }
     }
 }

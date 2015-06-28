@@ -2,7 +2,7 @@
 
 namespace Esp.Net
 {
-    public static class Guard
+    internal static class Guard
     {
         public static void Requires<TException>(bool check, string format, params object[] args)
             where TException : Exception

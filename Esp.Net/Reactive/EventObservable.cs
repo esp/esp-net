@@ -14,8 +14,8 @@
 // limitations under the License.
 #endregion
 using System;
+using Esp.Net.Concurrency;
 using Esp.Net.Model;
-using Esp.Net.Pipeline;
 
 namespace Esp.Net.Reactive
 {

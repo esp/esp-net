@@ -3,7 +3,7 @@ using Esp.Net.Model;
 using Esp.Net.Reactive;
 using Esp.Net.RxBridge;
 
-namespace Esp.Net.Pipeline
+namespace Esp.Net.Concurrency
 {
     public enum StepType
     {
@@ -147,18 +147,5 @@ namespace Esp.Net.Pipeline
         {
             _action(model);
         }
-    }
-
-    public class AsyncResultsEvent<TResult>
-    {
-        public AsyncResultsEvent(TResult result, Guid id)
-        {
-            Result = result;
-            Id = id;
-        }
-
-        public TResult Result { get; private set; }
-
-        public Guid Id { get; private set; }
     }
 }

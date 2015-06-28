@@ -3,8 +3,16 @@ using System.Collections.Generic;
 using Esp.Net.Model;
 using Esp.Net.RxBridge;
 
-namespace Esp.Net.Pipeline
+namespace Esp.Net.Concurrency
 {
+    public static class PipelineRouterExt
+    {
+        public static PipelineBuilder<TModel> ConfigurePipeline<TModel>(this IRouter<TModel> router)
+        {
+            return new PipelineBuilder<TModel>(router);
+        }
+    }
+
     public interface IPipeline<in TModel>
     {
         IPipelinInstance<TModel> CreateInstance();
