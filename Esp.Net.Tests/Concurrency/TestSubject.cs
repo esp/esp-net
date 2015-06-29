@@ -6,11 +6,16 @@ namespace Esp.Net.Concurrency
 {
     public class TestSubject<T> : IObservable<T>, IObserver<T>
     {
-        private readonly List<IObserver<T>> _observers = new List<IObserver<T>>();
+        public TestSubject()
+        {
+            Observers = new List<IObserver<T>>();
+        }
+
+        public List<IObserver<T>> Observers { get; private set; }
 
         public void OnNext(T item)
         {
-            foreach (IObserver<T> observer in _observers.ToArray())
+            foreach (IObserver<T> observer in Observers.ToArray())
             {
                 observer.OnNext(item);
             }
@@ -18,7 +23,7 @@ namespace Esp.Net.Concurrency
 
         public void OnError(Exception error)
         {
-            foreach (IObserver<T> observer in _observers.ToArray())
+            foreach (IObserver<T> observer in Observers.ToArray())
             {
                 observer.OnError(error);
             }
@@ -26,7 +31,7 @@ namespace Esp.Net.Concurrency
 
         public void OnCompleted()
         {
-            foreach (IObserver<T> observer in _observers.ToArray())
+            foreach (IObserver<T> observer in Observers.ToArray())
             {
                 observer.OnCompleted();
             }
@@ -34,8 +39,8 @@ namespace Esp.Net.Concurrency
 
         public IDisposable Subscribe(IObserver<T> observer)
         {
-            _observers.Add(observer);
-            return EspDisposable.Create(() => _observers.Remove(observer));
+            Observers.Add(observer);
+            return EspDisposable.Create(() => Observers.Remove(observer));
         }
     }
 }

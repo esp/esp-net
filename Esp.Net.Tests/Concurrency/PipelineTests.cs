@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using System;
+using NUnit.Framework;
 using Shouldly;
 
 #if ESP_EXPERIMENTAL
@@ -22,6 +23,7 @@ namespace Esp.Net.Concurrency
         private TestSubject<string> _stringSubject;
         private TestSubject<int> _intSubject;
         private TestSubject<decimal> _decimalSubject;
+        private Exception _exception;
 
         [SetUp]
         public void SetUp()
@@ -33,31 +35,66 @@ namespace Esp.Net.Concurrency
             _decimalSubject = new TestSubject<decimal>();
         }
 
-        // This is just a proof of concept test... much more to come
         [Test]
-        public void CallEachStageInThePipeline()
+        public void WhenStepResultAreContinueObservableIsSubscribed()
         {
             IPipeline<TestModel> pipeline = _router.ConfigurePipeline()
-                .AddStep(ShouldRunStringStep, OnStringStepResultsReceived)
-                .AddStep(ShouldRunDecimalStep, OnDecialStepResultsReceived)
-                .AddStep(ShouldRunIntStep, OnIntStepResultsReceived)
+                .AddStep(ADelegateThatStatesToRunStringStep, OnStringStepResultsReceived)
                 .Create();
-
-            IPipelinInstance<TestModel> instance = pipeline.CreateInstance();
-            instance.Run(_model, ex => { });
-
-            _stringSubject.OnNext("Foo");
-            _decimalSubject.OnNext(1.1m);
-            _intSubject.OnNext(1);
-
-            _model.AString.ShouldBe("Foo");
-            _model.ADecimal.ShouldBe(1.1m);
-            _model.AnInt.ShouldBe(1);
+            _stringSubject.Observers.Count.ShouldBe(0);
+            pipeline.CreateInstance().Run(_model, OnError);
+            _stringSubject.Observers.Count.ShouldBe(1);
         }
 
-        private StepResult<string> ShouldRunStringStep(TestModel model)
+        [Test]
+        public void WhenAsyncResultsReturndResultsDelegateInvoked()
         {
-            return StepResult<string>.Continue(_stringSubject);
+            _router
+                .ConfigurePipeline()
+                .AddStep(ADelegateThatStatesToRunStringStep, OnStringStepResultsReceived)
+                .Create()
+                .CreateInstance()
+                .Run(_model, OnError);            
+            _stringSubject.OnNext("Foo");
+            _model.AString.ShouldBe("Foo");
+        }
+
+        [Test]
+        public void StepStaysSubscribedToObservableUntilItCompletes()
+        {
+            // we need to introduce a stub/mock router so we can properly test things are getting disposed.
+            // ATM thers is no good way to assert that the internal observations against the router are getting disposed.
+
+            IPipeline<TestModel> pipeline = _router.ConfigurePipeline()
+                .AddStep(ADelegateThatStatesToRunStringStep, OnStringStepResultsReceived)
+                .Create();
+            pipeline.CreateInstance().Run(_model, OnError);
+            _stringSubject.Observers.Count.ShouldBe(1);
+            _stringSubject.OnNext("Foo");
+            _stringSubject.Observers.Count.ShouldBe(1);
+            _stringSubject.OnCompleted();
+            Assert.Inconclusive();
+            _stringSubject.Observers.Count.ShouldBe(0);
+        }
+
+        [Test]
+        public void WhenStepCompletesItCallsNextStep()
+        {
+            _router
+                .ConfigurePipeline()
+                .AddStep(ADelegateThatStatesToRunStringStep, OnStringStepResultsReceived)
+                .AddStep(ADelegateThatStatesToRunRunDecimalStep, OnDecialStepResultsReceived)
+                .Create()
+                .CreateInstance()
+                .Run(_model, OnError);
+            _stringSubject.OnNext("Foo");
+            _stringSubject.Observers.Count.ShouldBe(1);
+            _decimalSubject.Observers.Count.ShouldBe(1);
+        }
+
+        private StepResult<string> ADelegateThatStatesToRunStringStep(TestModel model)
+        {
+            return StepResult<string>.SubscribeTo(_stringSubject);
         }
 
         private void OnStringStepResultsReceived(TestModel model, string results)
@@ -65,9 +102,9 @@ namespace Esp.Net.Concurrency
             model.AString = results;
         }
 
-        private StepResult<decimal> ShouldRunDecimalStep(TestModel model)
+        private StepResult<decimal> ADelegateThatStatesToRunRunDecimalStep(TestModel model)
         {
-            return StepResult<decimal>.Continue(_decimalSubject);
+            return StepResult<decimal>.SubscribeTo(_decimalSubject);
         }
 
         private void OnDecialStepResultsReceived(TestModel model, decimal results)
@@ -75,14 +112,19 @@ namespace Esp.Net.Concurrency
             model.ADecimal= results;
         }
 
-        private StepResult<int> ShouldRunIntStep(TestModel model)
+        private StepResult<int> ADelegateThatStatesToRunIntStep(TestModel model)
         {
-            return StepResult<int>.Continue(_intSubject);
+            return StepResult<int>.SubscribeTo(_intSubject);
         }
 
         private void OnIntStepResultsReceived(TestModel model, int results)
         {
             model.AnInt = results;
+        }
+
+        private void OnError(Exception ex)
+        {
+            _exception = ex;
         }
     }
 }

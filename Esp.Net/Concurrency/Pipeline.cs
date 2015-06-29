@@ -22,7 +22,7 @@ namespace Esp.Net.Concurrency
 
     public interface IPipelinInstance<in TModel> : IDisposable
     {
-        void Run(TModel currentModel, Action<Exception> onError);
+        void Run(TModel currentModel, Action<Exception> onError = null);
     }
 
     public class PipelineBuilder<TModel>
@@ -40,7 +40,7 @@ namespace Esp.Net.Concurrency
             Action<TModel, TResult> onAsyncResults
             )
         {
-            var step = new AsyncStep<TModel, TResult>(_router, onBegin, onAsyncResults);
+            var step = new ObservableStep<TModel, TResult>(_router, onBegin, onAsyncResults);
             _steps.Add(step);
             return this;
         }
@@ -74,32 +74,47 @@ namespace Esp.Net.Concurrency
             return new PipelineInstance(_steps);
         }
 
+        // it's entirely possible that a pipeline instance is never disposed, it may just run it's course. 
+        // however it if it's disposed before this point father step won't be run.
         private class PipelineInstance : DisposableBase, IPipelinInstance<TModel>
         {
             private readonly List<Step<TModel>> _steps;
+            private Action< Exception> _onError;
 
             public PipelineInstance(List<Step<TModel>> steps)
             {
                 _steps = steps;
             }
 
-            public void Run(TModel currentModel, Action<Exception> onError)
+            public void Run(TModel currentModel, Action<Exception> onError = null)
             {
+                _onError = onError;
                 RunStep(0, currentModel);
             }
 
             private void RunStep(int stepIndex, TModel currentModel)
             {
-                if (_steps.Count > stepIndex)
+                var hasStepsLeft = _steps.Count > stepIndex;
+                if (hasStepsLeft)
                 {
                     var step1 = _steps[stepIndex];
                     if (step1.Type == StepType.Async)
                     {
                         IDisposable stepDisposable = EspDisposable.Empty;
+                        // note that the step1 may yield multiple times and we just stay subscribed until it 
+                        // errors or completes. This means we may run a step once, then run subsequent steps 
+                        // multiple times. 
                         stepDisposable = step1.ExecuteAcync(currentModel).Subscribe(latestModel =>
                         {
-                            stepDisposable.Dispose();
                             RunStep(++stepIndex, latestModel);
+                        },
+                        ex =>
+                        {
+                            if (_onError == null)
+                            {
+                                throw ex;
+                            }
+                            _onError(ex);
                         });
                         AddDisposable(stepDisposable);
                     }
@@ -108,10 +123,6 @@ namespace Esp.Net.Concurrency
                         step1.Execute(currentModel);
                         RunStep(++stepIndex, currentModel);
                     }
-                }
-                else
-                {
-                    // dispose?
                 }
             }
         }

@@ -47,7 +47,7 @@ namespace Esp.Net.Concurrency
             return new StepResult<TResult>(false);
         }
 
-        public static StepResult<TResult> Continue(IObservable<TResult> resultStream)
+        public static StepResult<TResult> SubscribeTo(IObservable<TResult> resultStream)
         {
             return new StepResult<TResult>(resultStream);
         }
@@ -63,18 +63,18 @@ namespace Esp.Net.Concurrency
             ResultStream = resultStream;
         }
 
-        public bool ExecuteStep { get; private set; }
+        internal bool ExecuteStep { get; private set; }
 
         public IObservable<TResult> ResultStream { get; private set; }
     }
 
-    public class AsyncStep<TModel, TAsyncResults> : Step<TModel>
+    public class ObservableStep<TModel, TResults> : Step<TModel>
     {
         private readonly IRouter<TModel> _router;
-        private readonly Func<TModel, StepResult<TAsyncResults>> _onBegin;
-        private readonly Action<TModel, TAsyncResults> _onAsyncResults;
+        private readonly Func<TModel, StepResult<TResults>> _onBegin;
+        private readonly Action<TModel, TResults> _onAsyncResults;
 
-        public AsyncStep(IRouter<TModel> router, Func<TModel, StepResult<TAsyncResults>> onBegin, Action<TModel, TAsyncResults> onAsyncResults)
+        public ObservableStep(IRouter<TModel> router, Func<TModel, StepResult<TResults>> onBegin, Action<TModel, TResults> onAsyncResults)
         {
             _router = router;
             _onBegin = onBegin;
@@ -95,21 +95,31 @@ namespace Esp.Net.Concurrency
                 if (stepResults.ExecuteStep)
                 {
                     var id = Guid.NewGuid();
-                    disposables.Add(
-                        _router
-                            .GetEventObservable<AyncResultsEvent<TAsyncResults>>()
-                            .Where((m, e, c) => e.Id == id)
-                            .Observe((m, e, c) =>
-                            {
-                                _onAsyncResults(m, e.Result);
-                                o.OnNext(model);
-                                o.OnCompleted(); // ?? maybe
-                            }
-                            )
-                        );
-                    disposables.Add(stepResults.ResultStream.Subscribe(result => {
-                        _router.PublishEvent(new AyncResultsEvent<TAsyncResults>(result, id));
-                    }));
+                    var eventStreamDisposable =  _router
+                        .GetEventObservable<AyncResultsEvent<TResults>>()
+                        .Where((m, e, c) => e.Id == id)
+                        .Observe((m, e, c) =>
+                        {
+                            _onAsyncResults(m, e.Result);
+                            o.OnNext(model);
+                        });
+                    disposables.Add(eventStreamDisposable);
+
+                    var observableStreamDispsoable = stepResults.ResultStream.Subscribe(
+                        result => 
+                        {
+                            _router.PublishEvent(new AyncResultsEvent<TResults>(result, id));
+                        },
+                        exception =>
+                        {
+                            eventStreamDisposable.Dispose();
+                            o.OnError(exception);
+                        }, 
+                        () =>
+                        {
+                            eventStreamDisposable.Dispose();
+                        });
+                    disposables.Add(observableStreamDispsoable);
                 }
                 else
                 {
