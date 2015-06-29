@@ -22,7 +22,7 @@ namespace Esp.Net.Concurrency
 
     public interface IPipelinInstance<in TModel> : IDisposable
     {
-        void Run(TModel currentModel);
+        void Run(TModel currentModel, Action<Exception> onError);
     }
 
     public class PipelineBuilder<TModel>
@@ -83,9 +83,9 @@ namespace Esp.Net.Concurrency
                 _steps = steps;
             }
 
-            public void Run(TModel initialModel)
+            public void Run(TModel currentModel, Action<Exception> onError)
             {
-                RunStep(0, initialModel);
+                RunStep(0, currentModel);
             }
 
             private void RunStep(int stepIndex, TModel currentModel)

@@ -53,7 +53,6 @@
     <Compile Include="..\AssemblyInfoCommon.cs">
       <Link>Properties\AssemblyInfoCommon.cs</Link>
     </Compile>
-    <Compile Include="Concurrency\SubscribeToTests.cs" />
     <Compile Include="Concurrency\PipelineTests.cs" />
     <Compile Include="Concurrency\TestSubject.cs" />
     <Compile Include="HeldEvents\HeldEventTests.cs" />

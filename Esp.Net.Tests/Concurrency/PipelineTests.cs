@@ -19,49 +19,70 @@ namespace Esp.Net.Concurrency
 
         private Router<TestModel> _router;
         private TestModel _model;
+        private TestSubject<string> _stringSubject;
+        private TestSubject<int> _intSubject;
+        private TestSubject<decimal> _decimalSubject;
 
         [SetUp]
         public void SetUp()
         {
             _model = new TestModel();
             _router = new Router<TestModel>(_model, RouterScheduler.Default);
+            _stringSubject = new TestSubject<string>();
+            _intSubject = new TestSubject<int>();
+            _decimalSubject = new TestSubject<decimal>();
         }
 
         // This is just a proof of concept test... much more to come
         [Test]
         public void CallEachStageInThePipeline()
         {
-            var step1Subject = new TestSubject<string>();
-            var step2Subject = new TestSubject<int>();
-
             IPipeline<TestModel> pipeline = _router.ConfigurePipeline()
-                .AddStep(
-                    model => StepResult<string>.Continue(step1Subject),
-                    (model, results) => model.AString = results                    
-                )
-                .AddStep(
-                    model =>
-                    {
-                        model.ADecimal = 1.1m;
-                        return StepResult.Continue();
-                    }
-                )
-                .AddStep(
-                    model => StepResult<int>.Continue(step2Subject),
-                    (model, result) => model.AnInt = result
-                )
+                .AddStep(ShouldRunStringStep, OnStringStepResultsReceived)
+                .AddStep(ShouldRunDecimalStep, OnDecialStepResultsReceived)
+                .AddStep(ShouldRunIntStep, OnIntStepResultsReceived)
                 .Create();
 
-
             IPipelinInstance<TestModel> instance = pipeline.CreateInstance();
-            instance.Run(_model);
+            instance.Run(_model, ex => { });
 
-            step1Subject.OnNext("Foo");
-            step2Subject.OnNext(1);
+            _stringSubject.OnNext("Foo");
+            _decimalSubject.OnNext(1.1m);
+            _intSubject.OnNext(1);
 
             _model.AString.ShouldBe("Foo");
             _model.ADecimal.ShouldBe(1.1m);
             _model.AnInt.ShouldBe(1);
+        }
+
+        private StepResult<string> ShouldRunStringStep(TestModel model)
+        {
+            return StepResult<string>.Continue(_stringSubject);
+        }
+
+        private void OnStringStepResultsReceived(TestModel model, string results)
+        {
+            model.AString = results;
+        }
+
+        private StepResult<decimal> ShouldRunDecimalStep(TestModel model)
+        {
+            return StepResult<decimal>.Continue(_decimalSubject);
+        }
+
+        private void OnDecialStepResultsReceived(TestModel model, decimal results)
+        {
+            model.ADecimal= results;
+        }
+
+        private StepResult<int> ShouldRunIntStep(TestModel model)
+        {
+            return StepResult<int>.Continue(_intSubject);
+        }
+
+        private void OnIntStepResultsReceived(TestModel model, int results)
+        {
+            model.AnInt = results;
         }
     }
 }
