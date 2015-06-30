@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Esp.Net.Model;
 using System.Reactive.Linq;
 
@@ -71,42 +72,52 @@ namespace Esp.Net.Concurrency
 
         public IPipelinInstance<TModel> CreateInstance()
         {
-            return new PipelineInstance(_steps);
+            var firstStep = _steps[0];
+            for (int i = 1; i < _steps.Count; i++)
+            {
+                firstStep.Next = _steps[i];
+            }
+            return new PipelineInstance(firstStep);
         }
 
         // it's entirely possible that a pipeline instance is never disposed, it may just run it's course. 
         // however it if it's disposed before this point father step won't be run.
         private class PipelineInstance : DisposableBase, IPipelinInstance<TModel>
         {
-            private readonly List<Step<TModel>> _steps;
+            private readonly Step<TModel> _firstStep;
             private Action< Exception> _onError;
+            private readonly Queue<Action<TModel>> _queue = new Queue<Action<TModel>>();
+            private bool _purging;
 
-            public PipelineInstance(List<Step<TModel>> steps)
+            public PipelineInstance(Step<TModel> firstStep)
             {
-                _steps = steps;
+                _firstStep = firstStep;
             }
 
             public void Run(TModel currentModel, Action<Exception> onError = null)
             {
                 _onError = onError;
-                RunStep(0, currentModel);
+                _queue.Enqueue(CreateStep(_firstStep));
+                PurgeQueue(currentModel);
             }
 
-            private void RunStep(int stepIndex, TModel currentModel)
+            private Action<TModel> CreateStep(Step<TModel> step)
             {
-                var hasStepsLeft = _steps.Count > stepIndex;
-                if (hasStepsLeft)
+                return (currentModel) =>
                 {
-                    var step1 = _steps[stepIndex];
-                    if (step1.Type == StepType.Async)
+                    if (step.Type == StepType.Async)
                     {
                         IDisposable stepDisposable = EspDisposable.Empty;
-                        // note that the step1 may yield multiple times and we just stay subscribed until it 
+                        // note that the step may yield multiple times and we just stay subscribed until it 
                         // errors or completes. This means we may run a step once, then run subsequent steps 
                         // multiple times. 
-                        stepDisposable = step1.ExecuteAcync(currentModel).Subscribe(latestModel =>
+                        stepDisposable = step.ExecuteAcync(currentModel).Subscribe(latestModel =>
                         {
-                            RunStep(++stepIndex, latestModel);
+                            if (step.Next != null)
+                            {
+                                _queue.Enqueue(CreateStep(step.Next));
+                                PurgeQueue(latestModel);
+                            }
                         },
                         ex =>
                         {
@@ -120,9 +131,33 @@ namespace Esp.Net.Concurrency
                     }
                     else
                     {
-                        step1.Execute(currentModel);
-                        RunStep(++stepIndex, currentModel);
+                        step.Execute(currentModel);
+                        if (step.Next != null)
+                        {
+                            _queue.Enqueue(CreateStep(step.Next));
+                            PurgeQueue(currentModel);
+                        }
                     }
+                };
+            }
+
+            private void PurgeQueue(TModel currentModel)
+            {
+                Debug.Assert(!_purging);
+                _purging = true;
+                try
+                {
+                    var hasItems = _queue.Count > 0;
+                    while (hasItems)
+                    {
+                        var action = _queue.Dequeue();
+                        action(currentModel);
+                        hasItems = _queue.Count > 0;
+                    }
+                }
+                finally
+                {
+                    _purging = false;
                 }
             }
         }

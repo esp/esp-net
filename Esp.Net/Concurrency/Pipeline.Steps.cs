@@ -18,6 +18,8 @@ namespace Esp.Net.Concurrency
 
         public abstract IObservable<TModel> ExecuteAcync(TModel model);
         public abstract void Execute(TModel model);
+
+        public Step<TModel> Next { get; set; }
     }
 
     public class StepResult

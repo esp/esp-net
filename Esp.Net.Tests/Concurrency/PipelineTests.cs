@@ -95,8 +95,6 @@ namespace Esp.Net.Concurrency
         [Test]
         public void WhenStepProcessessResultsItThenCallsNextStep()
         {
-            Assert.Inconclusive();
-
             _router
                 .ConfigurePipeline()
                 .AddStep(ADelegateThatStatesToRunStringStep, OnStringStepResultsReceived)
