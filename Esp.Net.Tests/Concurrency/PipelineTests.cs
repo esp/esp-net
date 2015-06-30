@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using Esp.Net.Reactive;
+using Moq;
 using NUnit.Framework;
 using Shouldly;
 
@@ -65,12 +68,16 @@ namespace Esp.Net.Concurrency
             // we need to introduce a stub/mock router so we can properly test things are getting disposed.
             // ATM thers is no good way to assert that the internal observations against the router are getting disposed.
 
-            IPipeline<TestModel> pipeline = _router.ConfigurePipeline()
+            var router = new MockRouter<TestModel>(_model);
+            router.SetUpEventStream<AyncResultsEvent<string>>();
+
+            IPipeline<TestModel> pipeline = router.Object.ConfigurePipeline()
                 .AddStep(ADelegateThatStatesToRunStringStep, OnStringStepResultsReceived)
                 .Create();
             pipeline.CreateInstance().Run(_model, OnError);
             _stringSubject.Observers.Count.ShouldBe(1);
             _stringSubject.OnNext("Foo");
+
             _stringSubject.Observers.Count.ShouldBe(1);
             _stringSubject.OnCompleted();
             Assert.Inconclusive();
@@ -125,6 +132,35 @@ namespace Esp.Net.Concurrency
         private void OnError(Exception ex)
         {
             _exception = ex;
+        }
+    }
+
+    public class MockRouter<TModel> : Mock<IRouter<TModel>>
+    {
+        private readonly TModel _model;
+        private readonly Dictionary<Type, object> _eventSubjects = new Dictionary<Type, object>();
+
+        public MockRouter(TModel model)
+        {
+            _model = model;
+        }
+
+        public void SetUpEventStream<TEvent>()
+        {
+            var subject = new EventSubject<TModel, TEvent, IEventContext>();
+            Setup(r => r.GetEventObservable<TEvent>(ObservationStage.Normal))
+                .Returns(subject);
+            _eventSubjects.Add(typeof(TEvent), subject);
+            Setup(r => r.PublishEvent(It.IsAny<TEvent>())).Callback((TEvent e) =>
+            {
+                PublishEvent(e);
+            });
+        }
+
+        public void PublishEvent<TEvent>(TEvent e)
+        {
+            dynamic subject = _eventSubjects[typeof (TEvent)];
+            subject.OnNext(_model, e, new EventContext());
         }
     }
 }
