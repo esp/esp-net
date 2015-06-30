@@ -111,7 +111,7 @@ namespace Esp.Net.Concurrency
                         // note that the step may yield multiple times and we just stay subscribed until it 
                         // errors or completes. This means we may run a step once, then run subsequent steps 
                         // multiple times. 
-                        stepDisposable = step.ExecuteAcync(currentModel).Subscribe(latestModel =>
+                        stepDisposable = step.ExecuteStream(currentModel).Subscribe(latestModel =>
                         {
                             if (step.Next != null)
                             {
@@ -126,6 +126,10 @@ namespace Esp.Net.Concurrency
                                 throw ex;
                             }
                             _onError(ex);
+                        },
+                        () =>
+                        {
+                            // need to dispose of child steps        
                         });
                         AddDisposable(stepDisposable);
                     }

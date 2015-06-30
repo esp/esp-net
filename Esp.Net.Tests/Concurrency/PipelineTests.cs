@@ -95,6 +95,8 @@ namespace Esp.Net.Concurrency
         [Test]
         public void WhenStepProcessessResultsItThenCallsNextStep()
         {
+            var stringEventObservable = _router.GetEventSubject<AyncResultsEvent<string>>();
+            var decimalEventObservable = _router.GetEventSubject<AyncResultsEvent<decimal>>();
             _router
                 .ConfigurePipeline()
                 .AddStep(ADelegateThatStatesToRunStringStep, OnStringStepResultsReceived)
@@ -104,12 +106,27 @@ namespace Esp.Net.Concurrency
                 .Run(_model, OnError);
             _stringSubject.OnNext("Foo");
             _stringSubject.Observers.Count.ShouldBe(1);
+            stringEventObservable.Observers.Count.ShouldBe(1);
             _decimalSubject.Observers.Count.ShouldBe(1);
+            decimalEventObservable.Observers.Count.ShouldBe(1);
 
             _stringSubject.OnNext("Bar");
             _stringSubject.Observers.Count.ShouldBe(1);
+            stringEventObservable.Observers.Count.ShouldBe(1);
             _decimalSubject.Observers.Count.ShouldBe(2);
+            decimalEventObservable.Observers.Count.ShouldBe(2);
+
+            _decimalSubject.OnNext(1);
+            _model.ReceivedDecimals.SequenceEqual(new [] {1m, 1m}).ShouldBe(true);
+
+            _stringSubject.OnCompleted();
+            stringEventObservable.Observers.Count.ShouldBe(0);
+
+            Assert.Inconclusive();
+            decimalEventObservable.Observers.Count.ShouldBe(0);
+          //  _stringSubject.Observers.Count.ShouldBe(0);
         }
+
 
         private StepResult<string> ADelegateThatStatesToRunStringStep(TestModel model)
         {

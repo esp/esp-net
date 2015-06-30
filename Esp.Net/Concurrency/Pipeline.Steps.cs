@@ -16,7 +16,8 @@ namespace Esp.Net.Concurrency
     {
         public abstract StepType Type { get; }
 
-        public abstract IObservable<TModel> ExecuteAcync(TModel model);
+        public abstract IObservable<TModel> ExecuteStream(TModel model);
+        
         public abstract void Execute(TModel model);
 
         public Step<TModel> Next { get; set; }
@@ -88,7 +89,7 @@ namespace Esp.Net.Concurrency
             get { return StepType.Async; }
         }
 
-        public override IObservable<TModel> ExecuteAcync(TModel model)
+        public override IObservable<TModel> ExecuteStream(TModel model)
         {
             return Observable.Create<TModel>(o =>
             {
@@ -120,6 +121,7 @@ namespace Esp.Net.Concurrency
                         () =>
                         {
                             eventStreamDisposable.Dispose();
+                            o.OnCompleted();
                         });
                     disposables.Add(observableStreamDispsoable);
                 }
@@ -151,7 +153,7 @@ namespace Esp.Net.Concurrency
             get { return StepType.Sync; }
         }
 
-        public override IObservable<TModel> ExecuteAcync(TModel model)
+        public override IObservable<TModel> ExecuteStream(TModel model)
         {
             throw new InvalidOperationException();
         }
