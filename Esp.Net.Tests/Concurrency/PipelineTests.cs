@@ -1,5 +1,8 @@
 ﻿using System;
 using System.CodeDom;
+using System.Collections.Generic;
+using System.Linq;
+using Esp.Net.Stubs;
 using NUnit.Framework;
 using Shouldly;
 
@@ -11,29 +14,35 @@ namespace Esp.Net.Concurrency
     {
         public class TestModel
         {
-            public int AnInt { get; set; }
-            public string AString { get; set; }
-            public decimal ADecimal { get; set; }
+            public TestModel()
+            {
+                ReceivedInts = new List<int>();
+                ReceivedStrings = new List<string>();
+                ReceivedDecimals = new List<decimal>();
+            }
+            public List<int> ReceivedInts { get; set; }
+            public List<string> ReceivedStrings { get; set; }
+            public List<decimal> ReceivedDecimals { get; set; }
         }
 
         public class InitialEvent { }
         public class AnAsyncEvent { }
 
-        private Router<TestModel> _router;
+        private StubRouter<TestModel> _router;
         private TestModel _model;
-        private TestSubject<string> _stringSubject;
-        private TestSubject<int> _intSubject;
-        private TestSubject<decimal> _decimalSubject;
+        private StubSubject<string> _stringSubject;
+        private StubSubject<int> _intSubject;
+        private StubSubject<decimal> _decimalSubject;
         private Exception _exception;
 
         [SetUp]
         public void SetUp()
         {
             _model = new TestModel();
-            _router = new Router<TestModel>(_model, RouterScheduler.Default);
-            _stringSubject = new TestSubject<string>();
-            _intSubject = new TestSubject<int>();
-            _decimalSubject = new TestSubject<decimal>();
+            _router = new StubRouter<TestModel>(_model);
+            _stringSubject = new StubSubject<string>();
+            _intSubject = new StubSubject<int>();
+            _decimalSubject = new StubSubject<decimal>();
         }
 
         [Test]
@@ -57,7 +66,9 @@ namespace Esp.Net.Concurrency
                 .CreateInstance()
                 .Run(_model, OnError);            
             _stringSubject.OnNext("Foo");
-            _model.AString.ShouldBe("Foo");
+            _stringSubject.OnNext("Bar");
+            _stringSubject.OnNext("Baz");
+            _model.ReceivedStrings.SequenceEqual(new[] {"Foo", "Bar", "Baz"}).ShouldBe(true);
         }
 
         [Test]
@@ -66,11 +77,9 @@ namespace Esp.Net.Concurrency
             // we need to introduce a stub/mock router so we can properly test things are getting disposed.
             // ATM thers is no good way to assert that the internal observations against the router are getting disposed.
 
-            var router = new MockRouter<TestModel>(_model);
-            router.SetUpEventStream<AyncResultsEvent<string>>();
-            var eventSubject = router.GetEventSubject<AyncResultsEvent<string>>();
+            var eventSubject = _router.GetEventSubject<AyncResultsEvent<string>>();
 
-            IPipeline<TestModel> pipeline = router.Object.ConfigurePipeline()
+            IPipeline<TestModel> pipeline = _router.ConfigurePipeline()
                 .AddStep(ADelegateThatStatesToRunStringStep, OnStringStepResultsReceived)
                 .Create();
             pipeline.CreateInstance().Run(_model, OnError);
@@ -78,16 +87,16 @@ namespace Esp.Net.Concurrency
             eventSubject.Observers.Count.ShouldBe(1);
             _stringSubject.Observers.Count.ShouldBe(1);
             
-            _stringSubject.OnNext("Foo");
-
             _stringSubject.OnCompleted();
 
-            eventSubject.DisposedCount.ShouldBe(1);
+            eventSubject.Observers.Count.ShouldBe(0);
         }
 
         [Test]
-        public void WhenStepCompletesItCallsNextStep()
+        public void WhenStepProcessessResultsItThenCallsNextStep()
         {
+            Assert.Inconclusive();
+
             _router
                 .ConfigurePipeline()
                 .AddStep(ADelegateThatStatesToRunStringStep, OnStringStepResultsReceived)
@@ -98,6 +107,10 @@ namespace Esp.Net.Concurrency
             _stringSubject.OnNext("Foo");
             _stringSubject.Observers.Count.ShouldBe(1);
             _decimalSubject.Observers.Count.ShouldBe(1);
+
+            _stringSubject.OnNext("Bar");
+            _stringSubject.Observers.Count.ShouldBe(1);
+            _decimalSubject.Observers.Count.ShouldBe(2);
         }
 
         private StepResult<string> ADelegateThatStatesToRunStringStep(TestModel model)
@@ -107,7 +120,7 @@ namespace Esp.Net.Concurrency
 
         private void OnStringStepResultsReceived(TestModel model, string results)
         {
-            model.AString = results;
+            model.ReceivedStrings.Add(results);
         }
 
         private StepResult<decimal> ADelegateThatStatesToRunRunDecimalStep(TestModel model)
@@ -117,7 +130,7 @@ namespace Esp.Net.Concurrency
 
         private void OnDecialStepResultsReceived(TestModel model, decimal results)
         {
-            model.ADecimal= results;
+            model.ReceivedDecimals.Add(results);
         }
 
         private StepResult<int> ADelegateThatStatesToRunIntStep(TestModel model)
@@ -127,7 +140,7 @@ namespace Esp.Net.Concurrency
 
         private void OnIntStepResultsReceived(TestModel model, int results)
         {
-            model.AnInt = results;
+            model.ReceivedInts.Add(results);
         }
 
         private void OnError(Exception ex)

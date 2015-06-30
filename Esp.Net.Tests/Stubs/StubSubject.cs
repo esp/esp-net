@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using Esp.Net.Model;
 
-namespace Esp.Net.Concurrency
+namespace Esp.Net.Stubs
 {
-    public class TestSubject<T> : IObservable<T>, IObserver<T>
+    public class StubSubject<T> : IObservable<T>, IObserver<T>
     {
-        public TestSubject()
+        public StubSubject()
         {
             Observers = new List<IObserver<T>>();
         }
