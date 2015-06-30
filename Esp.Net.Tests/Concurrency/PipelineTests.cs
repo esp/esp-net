@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using Esp.Net.Reactive;
 using Moq;
@@ -70,18 +71,21 @@ namespace Esp.Net.Concurrency
 
             var router = new MockRouter<TestModel>(_model);
             router.SetUpEventStream<AyncResultsEvent<string>>();
+            var eventSubject = router.GetEventSubject<AyncResultsEvent<string>>();
 
             IPipeline<TestModel> pipeline = router.Object.ConfigurePipeline()
                 .AddStep(ADelegateThatStatesToRunStringStep, OnStringStepResultsReceived)
                 .Create();
             pipeline.CreateInstance().Run(_model, OnError);
+            
+            eventSubject.Observers.Count.ShouldBe(1);
             _stringSubject.Observers.Count.ShouldBe(1);
+            
             _stringSubject.OnNext("Foo");
 
-            _stringSubject.Observers.Count.ShouldBe(1);
             _stringSubject.OnCompleted();
-            Assert.Inconclusive();
-            _stringSubject.Observers.Count.ShouldBe(0);
+
+            eventSubject.Observers.Count.ShouldBe(0);
         }
 
         [Test]
@@ -138,29 +142,51 @@ namespace Esp.Net.Concurrency
     public class MockRouter<TModel> : Mock<IRouter<TModel>>
     {
         private readonly TModel _model;
-        private readonly Dictionary<Type, object> _eventSubjects = new Dictionary<Type, object>();
+        private readonly Dictionary<Type, object> _eventSubjects;
 
         public MockRouter(TModel model)
         {
+            _eventSubjects = new Dictionary<Type, object>();
             _model = model;
         }
 
-        public void SetUpEventStream<TEvent>()
+        internal EventSubject<TModel, TEvent, IEventContext> GetEventSubject<TEvent>()
         {
-            var subject = new EventSubject<TModel, TEvent, IEventContext>();
+            return GetOrSetEventSubject<TEvent>();
+        }
+
+        public MockRouter<TModel> SetUpEventStream<TEvent>()
+        {
+            var subject = GetOrSetEventSubject<TEvent>();
             Setup(r => r.GetEventObservable<TEvent>(ObservationStage.Normal))
                 .Returns(subject);
-            _eventSubjects.Add(typeof(TEvent), subject);
             Setup(r => r.PublishEvent(It.IsAny<TEvent>())).Callback((TEvent e) =>
             {
                 PublishEvent(e);
             });
+            return this;
         }
 
         public void PublishEvent<TEvent>(TEvent e)
         {
             dynamic subject = _eventSubjects[typeof (TEvent)];
             subject.OnNext(_model, e, new EventContext());
+        }
+
+        private EventSubject<TModel, TEvent, IEventContext> GetOrSetEventSubject<TEvent>()
+        {
+            EventSubject<TModel, TEvent, IEventContext> result;
+            object subject;
+            if (!_eventSubjects.TryGetValue(typeof (TEvent), out subject))
+            {
+                result = new EventSubject<TModel, TEvent, IEventContext>();
+                _eventSubjects.Add(typeof(TEvent), result);
+            }
+            else
+            {
+                result = (EventSubject<TModel, TEvent, IEventContext>) subject;
+            }
+            return result;
         }
     }
 }

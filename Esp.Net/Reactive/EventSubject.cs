@@ -24,6 +24,11 @@ namespace Esp.Net.Reactive
     {
         readonly List<IEventObserver<TModel, TEvent, TContext>> _observers = new List<IEventObserver<TModel, TEvent, TContext>>();
 
+        internal IList<IEventObserver<TModel, TEvent, TContext>> Observers
+        {
+            get { return _observers; }
+        }
+
         public void OnNext(TModel model, TEvent @event, TContext context)
         {
             var observers = _observers.ToArray();
