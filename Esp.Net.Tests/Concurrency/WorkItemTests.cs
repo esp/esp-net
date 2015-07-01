@@ -1,7 +1,8 @@
 ﻿using System;
-using System.CodeDom;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using Esp.Net.Model;
 using Esp.Net.Stubs;
 using NUnit.Framework;
 using Shouldly;
@@ -10,7 +11,7 @@ using Shouldly;
 namespace Esp.Net.Concurrency
 {
     [TestFixture]
-    public class PipelineTests
+    public class WorkItemTests
     {
         public class TestModel
         {
@@ -48,11 +49,11 @@ namespace Esp.Net.Concurrency
         [Test]
         public void WhenStepResultAreContinueObservableIsSubscribed()
         {
-            IPipeline<TestModel> pipeline = _router.ConfigurePipeline()
-                .AddStep(ADelegateThatStatesToRunStringStep, OnStringStepResultsReceived)
-                .Create();
+            IWorkItem<TestModel> workItem = _router.CreateWorkItemBuilder()
+                .AddStep(GetStringObservble, OnStringResultsReceived)
+                .CreateWorkItem();
             _stringSubject.Observers.Count.ShouldBe(0);
-            pipeline.CreateInstance().Run(_model, OnError);
+            workItem.CreateInstance().Run(_model, OnError);
             _stringSubject.Observers.Count.ShouldBe(1);
         }
 
@@ -60,9 +61,9 @@ namespace Esp.Net.Concurrency
         public void WhenAsyncResultsReturndResultsDelegateInvoked()
         {
             _router
-                .ConfigurePipeline()
-                .AddStep(ADelegateThatStatesToRunStringStep, OnStringStepResultsReceived)
-                .Create()
+                .CreateWorkItemBuilder()
+                .AddStep(GetStringObservble, OnStringResultsReceived)
+                .CreateWorkItem()
                 .CreateInstance()
                 .Run(_model, OnError);            
             _stringSubject.OnNext("Foo");
@@ -79,10 +80,10 @@ namespace Esp.Net.Concurrency
 
             var eventSubject = _router.GetEventSubject<AyncResultsEvent<string>>();
 
-            IPipeline<TestModel> pipeline = _router.ConfigurePipeline()
-                .AddStep(ADelegateThatStatesToRunStringStep, OnStringStepResultsReceived)
-                .Create();
-            pipeline.CreateInstance().Run(_model, OnError);
+            IWorkItem<TestModel> workItem = _router.CreateWorkItemBuilder()
+                .AddStep(GetStringObservble, OnStringResultsReceived)
+                .CreateWorkItem();
+            workItem.CreateInstance().Run(_model, OnError);
             
             eventSubject.Observers.Count.ShouldBe(1);
             _stringSubject.Observers.Count.ShouldBe(1);
@@ -98,10 +99,10 @@ namespace Esp.Net.Concurrency
             var stringEventObservable = _router.GetEventSubject<AyncResultsEvent<string>>();
             var decimalEventObservable = _router.GetEventSubject<AyncResultsEvent<decimal>>();
             _router
-                .ConfigurePipeline()
-                .AddStep(ADelegateThatStatesToRunStringStep, OnStringStepResultsReceived)
-                .AddStep(ADelegateThatStatesToRunRunDecimalStep, OnDecialStepResultsReceived)
-                .Create()
+                .CreateWorkItemBuilder()
+                .AddStep(GetStringObservble, OnStringResultsReceived)
+                .AddStep(GetDecimalObservable, OnDecialResultsReceived)
+                .CreateWorkItem()
                 .CreateInstance()
                 .Run(_model, OnError);
             _stringSubject.OnNext("Foo");
@@ -122,38 +123,36 @@ namespace Esp.Net.Concurrency
             _stringSubject.OnCompleted();
             stringEventObservable.Observers.Count.ShouldBe(0);
 
-            Assert.Inconclusive();
-            decimalEventObservable.Observers.Count.ShouldBe(0);
-          //  _stringSubject.Observers.Count.ShouldBe(0);
+            // note that even though the prior step completed the next stays subscribed, this is in line with IObservabe<T>.SelectMany (from Rx).
+            decimalEventObservable.Observers.Count.ShouldBe(2);
         }
 
-
-        private StepResult<string> ADelegateThatStatesToRunStringStep(TestModel model)
+        private IObservable<string> GetStringObservble(TestModel model)
         {
-            return StepResult<string>.SubscribeTo(_stringSubject);
+            return _stringSubject;
         }
 
-        private void OnStringStepResultsReceived(TestModel model, string results)
+        private void OnStringResultsReceived(TestModel model, string results)
         {
             model.ReceivedStrings.Add(results);
         }
 
-        private StepResult<decimal> ADelegateThatStatesToRunRunDecimalStep(TestModel model)
+        private IObservable<decimal> GetDecimalObservable(TestModel model)
         {
-            return StepResult<decimal>.SubscribeTo(_decimalSubject);
+            return _decimalSubject;
         }
 
-        private void OnDecialStepResultsReceived(TestModel model, decimal results)
+        private void OnDecialResultsReceived(TestModel model, decimal results)
         {
             model.ReceivedDecimals.Add(results);
         }
 
-        private StepResult<int> ADelegateThatStatesToRunIntStep(TestModel model)
+        private IObservable<int> GetIntObservable(TestModel model)
         {
-            return StepResult<int>.SubscribeTo(_intSubject);
+            return _intSubject;
         }
 
-        private void OnIntStepResultsReceived(TestModel model, int results)
+        private void OnIntResultsReceived(TestModel model, int results)
         {
             model.ReceivedInts.Add(results);
         }

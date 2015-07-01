@@ -60,8 +60,8 @@
     <Compile Include="Model\DisposableBase.cs" />
     <Compile Include="Model\EspSerialDisposable.cs" />
     <Compile Include="ObservationStage.cs" />
-    <Compile Include="Concurrency\Pipeline.cs" />
-    <Compile Include="Concurrency\Pipeline.Steps.cs" />
+    <Compile Include="Concurrency\WorkItem.cs" />
+    <Compile Include="Concurrency\WorkItem.Steps.cs" />
     <Compile Include="Reactive\ModelObservable.cs" />
     <Compile Include="Reactive\ModelObserver.cs" />
     <Compile Include="Reactive\ModelSubject.cs" />
