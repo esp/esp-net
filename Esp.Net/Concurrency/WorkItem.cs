@@ -10,6 +10,12 @@ namespace Esp.Net.Concurrency
 {
     public static class WorkItemRouterExt
     {
+        public static IWorkItemBuilder<TModel> WorkItem<TModel>(this IRouter<TModel> router)
+        {
+            // step 0 L listen to TEvent
+            return new WorkItemBuilder<TModel>(router);
+        }
+
         public static WorkItemBuilder<TModel> CreateWorkItemBuilder<TModel>(this IRouter<TModel> router)
         {
             return new WorkItemBuilder<TModel>(router);
@@ -26,7 +32,25 @@ namespace Esp.Net.Concurrency
         void Run(TModel currentModel, Action<Exception> onError = null);
     }
 
-    public class WorkItemBuilder<TModel>
+    public interface IWorkItemBuilder<out TModel>
+    {
+        IWorkItemStepBuilder<TModel> OnEvent<TEvent>(
+            Action<TModel, TEvent, IEventContext> onEvent,
+            ObservationStage stage = ObservationStage.Normal
+        );
+    }
+
+    public interface IWorkItemStepBuilder<out TModel>
+    {
+        IWorkItemStepBuilder<TModel> Do(Action<TModel> onEvent);
+        IWorkItemStepBuilder<TModel> SubscribeTo<TResult>(
+            Func<TModel, IObservable<TResult>> observableFactory,
+            Action<TModel, TResult> onResultsReceived
+        );
+        IDisposable Run();
+    }
+
+    public class WorkItemBuilder<TModel> : IWorkItemBuilder<TModel>, IWorkItemStepBuilder<TModel>
     {
         private readonly IRouter<TModel> _router;
         private readonly List<Step<TModel>> _steps = new List<Step<TModel>>(); 
@@ -36,7 +60,29 @@ namespace Esp.Net.Concurrency
             _router = router;
         }
 
-        public WorkItemBuilder<TModel> AddStep<TResult>(
+        public IWorkItemStepBuilder<TModel> OnEvent<TEvent>(
+            Action<TModel, TEvent, IEventContext> onEvent,
+            ObservationStage stage = ObservationStage.Normal
+        )
+        {
+//            var step = new ObservableStep<TModel, TResult>(_router, observableFactory, onResultsReceived);
+//            _steps.Add(step);
+            return this;
+        }
+
+        public IWorkItemStepBuilder<TModel> Do(Action<TModel> onEvent)
+        {
+            //            var step = new ObservableStep<TModel, TResult>(_router, observableFactory, onResultsReceived);
+            //            _steps.Add(step);
+            return this;
+        }
+
+        public IDisposable Run()
+        {
+            return null;
+        }
+
+        public IWorkItemStepBuilder<TModel> SubscribeTo<TResult>(
             Func<TModel, IObservable<TResult>> observableFactory,
             Action<TModel, TResult> onResultsReceived
         )

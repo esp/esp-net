@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.NetworkInformation;
 using Esp.Net.Concurrency;
 using Esp.Net.Model;
 using Esp.Net.RxBridge;
@@ -79,7 +80,7 @@ namespace Esp.Net.Examples
             _referenceDataService = referenceDataService;
             _getReferenceDatesWorkItem = _router
                .CreateWorkItemBuilder()
-               .AddStep(m => _referenceDataService.GetFixingDates(m.CurrencyPair), OnFixingDatesReceived)
+               .SubscribeTo(m => _referenceDataService.GetFixingDates(m.CurrencyPair), OnFixingDatesReceived)
                .CreateWorkItem();
             AddDisposable(_inflightWorkItem);
         }
@@ -97,26 +98,24 @@ namespace Esp.Net.Examples
             );
         }
 
-//        public void Start2()
-//        {
-//            AddDisposable(_router
-//                .OnEvent<UserChangedCCyPairEvent>(ObservationStage.Committed)
-//                .Do((m, e, c) => { })
-//                .SubscribeTo(m => _referenceDataService.GetFixingDates(m.CurrencyPair), OnFixingDatesReceived)
-//                .Do((m, e, c) => { })
-//                .SubscribeTo(m => _otherThing.GetSomething(m.Foo), OnFooReceived)
-//                .SubscribeTo(m => _otherThing.GetSomething(m.Foo), OnFooReceived)
-//                .OnComplete(model =>
-//                {
-//                  
-//                })
-//            );
-//        }
+        public void Start2()
+        {
+            AddDisposable(_router
+                .WorkItem()
+                .OnEvent<UserChangedCCyPairEvent>((m, e, c) => { }, ObservationStage.Committed)
+                .Do((m) => { })
+                .SubscribeTo(m => _referenceDataService.GetFixingDates(m.CurrencyPair), OnFixingDatesReceived)
+                .Do((m) => { })
+                .Run()
+            );
+        }
 
         private void OnFixingDatesReceived(StructuredProduct model, DateTime[] fixingDates)
         {
             // apply dates to model
         }
+
+
     }
 }
 #endif

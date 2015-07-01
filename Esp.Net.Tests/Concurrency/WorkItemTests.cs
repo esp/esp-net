@@ -50,7 +50,7 @@ namespace Esp.Net.Concurrency
         public void WhenStepResultAreContinueObservableIsSubscribed()
         {
             IWorkItem<TestModel> workItem = _router.CreateWorkItemBuilder()
-                .AddStep(GetStringObservble, OnStringResultsReceived)
+                .SubscribeTo(GetStringObservble, OnStringResultsReceived)
                 .CreateWorkItem();
             _stringSubject.Observers.Count.ShouldBe(0);
             workItem.CreateInstance().Run(_model, OnError);
@@ -62,7 +62,7 @@ namespace Esp.Net.Concurrency
         {
             _router
                 .CreateWorkItemBuilder()
-                .AddStep(GetStringObservble, OnStringResultsReceived)
+                .SubscribeTo(GetStringObservble, OnStringResultsReceived)
                 .CreateWorkItem()
                 .CreateInstance()
                 .Run(_model, OnError);            
@@ -81,7 +81,7 @@ namespace Esp.Net.Concurrency
             var eventSubject = _router.GetEventSubject<AyncResultsEvent<string>>();
 
             IWorkItem<TestModel> workItem = _router.CreateWorkItemBuilder()
-                .AddStep(GetStringObservble, OnStringResultsReceived)
+                .SubscribeTo(GetStringObservble, OnStringResultsReceived)
                 .CreateWorkItem();
             workItem.CreateInstance().Run(_model, OnError);
             
@@ -100,8 +100,8 @@ namespace Esp.Net.Concurrency
             var decimalEventObservable = _router.GetEventSubject<AyncResultsEvent<decimal>>();
             _router
                 .CreateWorkItemBuilder()
-                .AddStep(GetStringObservble, OnStringResultsReceived)
-                .AddStep(GetDecimalObservable, OnDecialResultsReceived)
+                .SubscribeTo(GetStringObservble, OnStringResultsReceived)
+                .SubscribeTo(GetDecimalObservable, OnDecialResultsReceived)
                 .CreateWorkItem()
                 .CreateInstance()
                 .Run(_model, OnError);
