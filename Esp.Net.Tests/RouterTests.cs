@@ -35,6 +35,7 @@ namespace Esp.Net
         public class Event1 : BaseEvent { }
         public class Event2 : BaseEvent { }
         public class Event3 : BaseEvent { }
+        public class EventWithoutBaseType { }
 
         private TestModel _model;
 
@@ -188,14 +189,29 @@ namespace Esp.Net
             // IEventContext<TestModel, BaseEvent> ec1 = new EventContext<TestModel, Event1>(null, null);
             // For example check out the .Observe() method, it receives an event context 
             // typed for BaseEvent not Event1.
-            var receivedEvents = new List<BaseEvent>();
+            var receivedEvents1 = new List<BaseEvent>();
+            var receivedEvents2 = new List<BaseEvent>();
             _router.GetEventObservable<BaseEvent>(typeof(Event1))
                 .Observe((model, baseEvent, context) =>
                 {
-                    receivedEvents.Add(baseEvent);
+                    receivedEvents1.Add(baseEvent);
+                });
+            _router.GetEventObservable<Event1, BaseEvent>()
+                .Observe((model, baseEvent, context) =>
+                {
+                    receivedEvents2.Add(baseEvent);
                 });
             _router.PublishEvent(new Event1());
-            receivedEvents.Count.ShouldBe(1);
+            receivedEvents1.Count.ShouldBe(1);
+            receivedEvents2.Count.ShouldBe(1);
+        }
+
+        [Test]
+        public void WhenObservingByBaseTypeItThrowsIfSubTypeDoesntDeriveFromBase()
+        {
+            Assert.Throws<InvalidOperationException>(() => { 
+                _router.GetEventObservable<BaseEvent>(typeof (EventWithoutBaseType)).Observe((m, e, c) => { });
+            });
         }
 
         [Test]

@@ -57,6 +57,7 @@
     <Compile Include="Reactive\ModelObservable.cs" />
     <Compile Include="Reactive\ModelObserver.cs" />
     <Compile Include="Reactive\ModelSubject.cs" />
+    <Compile Include="ReflectionHelper.cs" />
     <Compile Include="RxBridge\EspObservable.cs" />
     <Compile Include="RxBridge\EspObserver.cs" />
     <Compile Include="RxBridge\ObservableExt.cs" />
