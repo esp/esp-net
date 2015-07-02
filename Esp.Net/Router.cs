@@ -143,6 +143,7 @@ namespace Esp.Net
         /// <param name="observationStage"></param>
         /// <returns></returns>
         public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TSubEventType, TBaseEvent>(ObservationStage observationStage = ObservationStage.Normal)
+            where TSubEventType : TBaseEvent 
         {
             return GetEventObservable<TBaseEvent>(typeof (TSubEventType));
         }
