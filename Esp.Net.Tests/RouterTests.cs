@@ -35,6 +35,7 @@ namespace Esp.Net
         public class Event1 : BaseEvent { }
         public class Event2 : BaseEvent { }
         public class Event3 : BaseEvent { }
+        public class EventWithoutBaseType { }
 
         private TestModel _model;
 
@@ -196,6 +197,14 @@ namespace Esp.Net
                 });
             _router.PublishEvent(new Event1());
             receivedEvents.Count.ShouldBe(1);
+        }
+
+        [Test]
+        public void WhenObservingByBaseTypeItThrowsIfSubTypeDoesntDeriveFromBase()
+        {
+            Assert.Throws<InvalidOperationException>(() => { 
+                _router.GetEventObservable<BaseEvent>(typeof (EventWithoutBaseType)).Observe((m, e, c) => { });
+            });
         }
 
         [Test]

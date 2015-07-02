@@ -42,7 +42,7 @@ namespace Esp.Net
         private readonly Dictionary<Type, dynamic> _eventSubjects = new Dictionary<Type, dynamic>();
         private readonly State _state = new State();
         private readonly ModelSubject<TModel> _modelUpdateSubject = new ModelSubject<TModel>();
-        private static readonly MethodInfo GetEventStreamMethodInfo = typeof(Router<TModel>).GetMethod("GetEventObservable", new[] { typeof(ObservationStage) });
+        private static readonly MethodInfo GetEventObservableMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router<TModel>), "GetEventObservable", 1, 1);
 
         public Router(TModel model, IRouterScheduler scheduler)
             : this(model, scheduler, null, null)
@@ -134,19 +134,48 @@ namespace Esp.Net
             });
         }
 
+        /// <summary>
+        /// Returns an event IEventObservable typed against TBaseEvent for the sub event of eventType. This is useful when you combine mutiple events into a single stream 
+        /// and care little for the high level type of the event.
+        /// </summary>
+        /// <typeparam name="TSubEventType"></typeparam>
+        /// <typeparam name="TBaseEvent"></typeparam>
+        /// <param name="observationStage"></param>
+        /// <returns></returns>
+        public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TSubEventType, TBaseEvent>(ObservationStage observationStage = ObservationStage.Normal)
+        {
+            return GetEventObservable<TBaseEvent>(typeof (TSubEventType));
+        }
+
+        /// <summary>
+        /// Returns an event IEventObservable typed against TBaseEvent for the sub event of eventType. This is useful when you combine mutiple events into a single stream 
+        /// and care little for the high level type of the event.
+        /// </summary>
+        /// <typeparam name="TBaseEvent"></typeparam>
+        /// <param name="eventType"></param>
+        /// <param name="observationStage"></param>
+        /// <returns></returns>
         public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal)
         {
             ThrowIfHalted();
+            Guard.Requires<InvalidOperationException>(typeof(TBaseEvent).IsAssignableFrom(eventType), "Event type {0} must derive from {1}", eventType, typeof(TBaseEvent));
             return EventObservable.Create<TModel, TBaseEvent, IEventContext>(o =>
             {
+
                 ThrowIfHalted();
                 ThrowIfInvalidThread();
-                var getEventStreamMethod = GetEventStreamMethodInfo.MakeGenericMethod(eventType);
+                var getEventStreamMethod = GetEventObservableMethodInfo.MakeGenericMethod(eventType);
                 dynamic observable = getEventStreamMethod.Invoke(this, new object[] { observationStage });
                 return (IDisposable)observable.Observe(o);
             });
         }
 
+        /// <summary>
+        /// Returns an IEventObservable that will yield events of type TEvent when observed.
+        /// </summary>
+        /// <typeparam name="TEvent">Type type of event to observe</typeparam>
+        /// <param name="observationStage">The stage in the event processing workflow you wish to observe at</param>
+        /// <returns></returns>
         public IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal)
         {
             ThrowIfHalted();
