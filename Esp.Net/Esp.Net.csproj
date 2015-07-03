@@ -19,7 +19,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;ESP_EXPERIMENTAL</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;ESP_EXPERIMENTAL, ESP_LOCAL</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -66,7 +66,7 @@
     <Compile Include="Reactive\ModelObserver.cs" />
     <Compile Include="Reactive\ModelSubject.cs" />
     <Compile Include="ReflectionHelper.cs" />
-    <Compile Include="RxBridge\EspObservable.cs" />
+    <Compile Include="RxBridge\Observable.cs" />
     <Compile Include="RxBridge\EspObserver.cs" />
     <Compile Include="RxBridge\ObservableExt.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

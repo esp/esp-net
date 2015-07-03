@@ -1,9 +1,10 @@
-﻿using System;
-using Esp.Net.Model;
+﻿using Esp.Net.Model;
 
-namespace Esp.Net.RxBridge
+#if ESP_LOCAL
+// ReSharper disable once CheckNamespace
+namespace System.Reactive.Linq
 {
-    public class EspObservable
+    public class Observable
     {
         public static IObservable<T> Create<T>(Func<IObserver<T>, IDisposable> subscribe)
         {
@@ -32,3 +33,4 @@ namespace Esp.Net.RxBridge
         }
     }
 }
+#endif

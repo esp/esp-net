@@ -1,6 +1,6 @@
-﻿using System;
-
-namespace Esp.Net.RxBridge
+﻿#if ESP_LOCAL
+// ReSharper disable once CheckNamespace
+namespace System.Reactive.Linq
 {
     public static class ObservableExt
     {
@@ -20,3 +20,4 @@ namespace Esp.Net.RxBridge
         }
     }
 }
+#endif
