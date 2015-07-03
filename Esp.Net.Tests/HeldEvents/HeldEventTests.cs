@@ -11,8 +11,9 @@ namespace Esp.Net.HeldEvents
     {
         private TestModel _model;
         private Router<TestModel> _router;
-        private List<FooEvent> _receivedEvents;
+        private List<FooEvent> _receivedFooEvents;
         private IDisposable _eventStreamDisposable;
+        private List<BarEvent> _receivedBarEvents;
 
         public class TestModel : IHeldEventStore
         {
@@ -49,16 +50,29 @@ namespace Esp.Net.HeldEvents
             public Guid Id { get; private set; }
         }
 
-        public class FooEventHoldingStrategy : IEventHoldingStrategy<TestModel, FooEvent>
+        public class BarEvent : IIdentifiableEvent
         {
-            public bool ShouldHold(TestModel model, FooEvent @event, IEventContext context)
+            public BarEvent(string payload)
+            {
+                Payload = payload;
+                Id = Guid.NewGuid();
+            }
+
+            public string Payload { get; private set; }
+
+            public Guid Id { get; private set; }
+        }
+
+        public class HoldEventsBasedOnModelStrategy<TEvent> : IEventHoldingStrategy<TestModel, TEvent> where TEvent : IIdentifiableEvent
+        {
+            public bool ShouldHold(TestModel model, TEvent @event, IEventContext context)
             {
                 return model.HoldAllEvents;
             }
 
-            public IEventDescription GetEventDescription(TestModel model, FooEvent @event)
+            public IEventDescription GetEventDescription(TestModel model, TEvent @event)
             {
-                return new HeldEventDescription("Test Category", "Foo event being held", @event.Id);
+                return new HeldEventDescription("Test Category", "Event being held", @event.Id);
             }
         }
 
@@ -83,10 +97,15 @@ namespace Esp.Net.HeldEvents
         {
             _model = new TestModel();
             _router = new Router<TestModel>(_model, RouterScheduler.Default);
-            _receivedEvents = new List<FooEvent>();
-            _eventStreamDisposable =  _router.GetEventObservable(new FooEventHoldingStrategy()).Observe((m, e, c) =>
+            _receivedFooEvents = new List<FooEvent>();
+            _receivedBarEvents = new List<BarEvent>();
+            _eventStreamDisposable = _router.GetEventObservable(new HoldEventsBasedOnModelStrategy<FooEvent>()).Observe((m, e, c) =>
             {
-                _receivedEvents.Add(e);
+                _receivedFooEvents.Add(e);
+            });
+            _router.GetEventObservable(new HoldEventsBasedOnModelStrategy<BarEvent>()).Observe((m, e, c) =>
+            {
+                _receivedBarEvents.Add(e);
             });
             _model.HoldAllEvents = true;
         }
@@ -104,7 +123,7 @@ namespace Esp.Net.HeldEvents
         public void WhenAnEventIsHeldObserverDoesNotReceiveIt()
         {
             _router.PublishEvent(new FooEvent("EventPayload"));
-            _receivedEvents.Count.ShouldBe(0);
+            _receivedFooEvents.Count.ShouldBe(0);
         }
 
         [Test]
@@ -120,8 +139,8 @@ namespace Esp.Net.HeldEvents
         {
             _router.PublishEvent(new FooEvent("EventPayload"));
             ReleasedEvent(_model.HeldEvents[0].EventId, HeldEventAction.Release);
-            _receivedEvents.Count.ShouldBe(1);
-            _receivedEvents[0].Payload.ShouldBe("EventPayload");
+            _receivedFooEvents.Count.ShouldBe(1);
+            _receivedFooEvents[0].Payload.ShouldBe("EventPayload");
         }
 
         [Test]
@@ -145,12 +164,12 @@ namespace Esp.Net.HeldEvents
             _router.PublishEvent(event2);
 
             ReleasedEvent(_model.HeldEvents[1].EventId, HeldEventAction.Release);
-            _receivedEvents.Count.ShouldBe(1);
-            _receivedEvents[0].Payload.ShouldBe("EventPayload2");
+            _receivedFooEvents.Count.ShouldBe(1);
+            _receivedFooEvents[0].Payload.ShouldBe("EventPayload2");
 
             ReleasedEvent(_model.HeldEvents[0].EventId, HeldEventAction.Release);
-            _receivedEvents.Count.ShouldBe(2);
-            _receivedEvents[1].Payload.ShouldBe("EventPayload1");
+            _receivedFooEvents.Count.ShouldBe(2);
+            _receivedFooEvents[1].Payload.ShouldBe("EventPayload1");
         }
 
         [Test]
@@ -165,9 +184,9 @@ namespace Esp.Net.HeldEvents
             ReleasedEvent(event3.Id, HeldEventAction.Ignore);
             ReleasedEvent(event1.Id, HeldEventAction.Release);
             ReleasedEvent(event2.Id, HeldEventAction.Release);
-            _receivedEvents.Count.ShouldBe(2);
-            _receivedEvents[0].Payload.ShouldBe("EventPayload1");
-            _receivedEvents[1].Payload.ShouldBe("EventPayload2");
+            _receivedFooEvents.Count.ShouldBe(2);
+            _receivedFooEvents[0].Payload.ShouldBe("EventPayload1");
+            _receivedFooEvents[1].Payload.ShouldBe("EventPayload2");
         }
 
         [Test]
@@ -177,10 +196,25 @@ namespace Esp.Net.HeldEvents
             _router.PublishEvent(event1);
             _eventStreamDisposable.Dispose();
             ReleasedEvent(event1.Id, HeldEventAction.Ignore);
-            _receivedEvents.Count.ShouldBe(0);
+            _receivedFooEvents.Count.ShouldBe(0);
 
             // TODO note disposing the stream doesn't trash the held events on the model. Need to do something about this
             _model.HeldEvents.Count.ShouldBe(1);
+        }
+
+        [Test]
+        public void CanHoldDifferingEventTypes()
+        {
+            var event1 = new FooEvent("EventPayload1");
+            var event2 = new BarEvent("EventPayload2");
+            _router.PublishEvent(event1);
+            _router.PublishEvent(event2);
+            ReleasedEvent(event1.Id, HeldEventAction.Release);
+            ReleasedEvent(event2.Id, HeldEventAction.Release);
+            _receivedFooEvents.Count.ShouldBe(1);
+            _receivedFooEvents[0].Payload.ShouldBe("EventPayload1");
+            _receivedBarEvents.Count.ShouldBe(1);
+            _receivedBarEvents[0].Payload.ShouldBe("EventPayload2");
         }
 
         private void ReleasedEvent(Guid eventId, HeldEventAction heldEventAction)

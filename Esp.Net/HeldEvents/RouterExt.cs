@@ -48,15 +48,19 @@ namespace Esp.Net.HeldEvents
                     }));
                     disposables.Add(router.GetEventObservable<HeldEventActionEvent>().Observe((m, e, c) =>
                     {
-                        // We're received an event to clean up.
-                        var heldEventData = heldEvents[e.EventId];
-                        heldEvents.Remove(e.EventId);
-                        m.RemoveHeldEventDescription(heldEventData.EventDescription);
-                        if (e.Action == HeldEventAction.Release)
+                        // Since we're listening to a pipe of all events we need to filter out anything we don't know about.
+                        if (heldEvents.ContainsKey(e.EventId))
                         {
-                            // Temporarly store the evnet we're republishing so we don't re-hold it
-                            releasedEvents.Add(e.EventId);
-                            router.PublishEvent(heldEventData.Event);
+                            // We're received an event to clean up.
+                            var heldEventData = heldEvents[e.EventId];
+                            heldEvents.Remove(e.EventId);
+                            m.RemoveHeldEventDescription(heldEventData.EventDescription);
+                            if (e.Action == HeldEventAction.Release)
+                            {
+                                // Temporarly store the evnet we're republishing so we don't re-hold it
+                                releasedEvents.Add(e.EventId);
+                                router.PublishEvent(heldEventData.Event);
+                            }
                         }
                     }));
                     return disposables;
