@@ -1,10 +1,8 @@
-﻿using System;
-
-namespace Esp.Net.HeldEvents
+﻿namespace Esp.Net.HeldEvents
 {
     public interface IHeldEventStore
     {
-        void AddHeldEventDescription(Guid id, IEventDescription e);
-        void RemoveHeldEventDescription(Guid id);
+        void AddHeldEventDescription(IEventDescription description);
+        void RemoveHeldEventDescription(IEventDescription description);
     }
 }

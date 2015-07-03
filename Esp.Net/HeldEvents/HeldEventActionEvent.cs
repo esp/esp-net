@@ -4,7 +4,7 @@ namespace Esp.Net.HeldEvents
 {
     public class HeldEventActionEvent
     {
-        public HeldEventActionEvent(HeldEventAction action, Guid eventId)
+        public HeldEventActionEvent(Guid eventId, HeldEventAction action)
         {
             Action = action;
             EventId = eventId;
