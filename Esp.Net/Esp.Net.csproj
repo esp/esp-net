@@ -48,8 +48,16 @@
     <Compile Include="EventContext.cs" />
     <Compile Include="EventProcessors.cs" />
     <Compile Include="Guard.cs" />
+    <Compile Include="HeldEvents\HeldEventAction.cs" />
+    <Compile Include="HeldEvents\HeldEventActionEvent.cs" />
+    <Compile Include="HeldEvents\IEventDescription.cs" />
+    <Compile Include="HeldEvents\IEventHoldingStrategy.cs" />
+    <Compile Include="HeldEvents\IHeldEventStore.cs" />
+    <Compile Include="HeldEvents\IIdentifiableEvent.cs" />
+    <Compile Include="HeldEvents\RouterExt.cs" />
     <Compile Include="IClonable.cs" />
     <Compile Include="Model\DisposableBase.cs" />
+    <Compile Include="Model\EspSerialDisposable.cs" />
     <Compile Include="ObservationStage.cs" />
     <Compile Include="Concurrency\Pipeline.cs" />
     <Compile Include="Concurrency\BeginAsync.cs" />
