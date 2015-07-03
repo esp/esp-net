@@ -3,7 +3,7 @@
 #if ESP_EXPERIMENTAL
 namespace Esp.Net.HeldEvents
 {
-    public interface IEventHoldingStrategy<in TModel, in TEvent>
+    public interface IEventHoldingStrategy<in TModel, in TEvent> where TEvent : IIdentifiableEvent
     {
         bool ShouldHold(TModel model, TEvent @event, IEventContext context);
         IEventDescription GetEventDescription(TModel model, TEvent @event);

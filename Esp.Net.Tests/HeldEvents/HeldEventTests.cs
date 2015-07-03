@@ -12,7 +12,7 @@ namespace Esp.Net.HeldEvents
         private TestModel _model;
         private Router<TestModel> _router;
         private List<FooEvent> _receivedEvents;
-        private IDisposable _holdingStrategyDisposable;
+        private IDisposable _eventStreamDisposable;
 
         public class TestModel : IHeldEventStore
         {
@@ -58,19 +58,22 @@ namespace Esp.Net.HeldEvents
 
             public IEventDescription GetEventDescription(TestModel model, FooEvent @event)
             {
-                return new HeldEventDescription("Foo event being held", @event.Id);
+                return new HeldEventDescription("Test Category", "Foo event being held", @event.Id);
             }
         }
 
         public class HeldEventDescription : IEventDescription
         {
-            public HeldEventDescription(string description, Guid eventId)
+            public HeldEventDescription(string category, string description, Guid eventId)
             {
                 Description = description;
+                Category = category;
                 EventId = eventId;
             }
 
             public Guid EventId { get; private set; }
+
+            public string Category { get; private set; }
 
             public string Description { get; private set; }
         }
@@ -81,8 +84,10 @@ namespace Esp.Net.HeldEvents
             _model = new TestModel();
             _router = new Router<TestModel>(_model, RouterScheduler.Default);
             _receivedEvents = new List<FooEvent>();
-            _router.GetEventObservable<FooEvent>().Observe((m, e, c) => _receivedEvents.Add(e));
-            _holdingStrategyDisposable =  _router.AddEventHoldingStrategy(new FooEventHoldingStrategy());
+            _eventStreamDisposable =  _router.GetEventObservable(new FooEventHoldingStrategy()).Observe((m, e, c) =>
+            {
+                _receivedEvents.Add(e);
+            });
             _model.HoldAllEvents = true;
         }
 
@@ -170,7 +175,7 @@ namespace Esp.Net.HeldEvents
         {
             var event1 = new FooEvent("EventPayload1");
             _router.PublishEvent(event1);
-            _holdingStrategyDisposable.Dispose();
+            _eventStreamDisposable.Dispose();
             ReleasedEvent(event1.Id, HeldEventAction.Ignore);
             _receivedEvents.Count.ShouldBe(0);
 

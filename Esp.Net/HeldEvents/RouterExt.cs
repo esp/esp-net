@@ -8,14 +8,14 @@ namespace Esp.Net.HeldEvents
 {
     public static class RouterExt
     {
-        public static IDisposable AddEventHoldingStrategy<TModel, TEvent>(
-            this IRouter<TModel> router, 
+        public static IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TModel, TEvent>(
+            this IRouter<TModel> router,
             IEventHoldingStrategy<TModel, TEvent> strategy
         )
             where TEvent : IIdentifiableEvent
             where TModel : IHeldEventStore
         {
-            var stream = EventObservable.Create<TModel, TEvent, IEventContext>(
+            return EventObservable.Create<TModel, TEvent, IEventContext>(
                 o =>
                 {
                     var heldEvents = new Dictionary<Guid, HeldEventData<TEvent>>();
@@ -27,6 +27,7 @@ namespace Esp.Net.HeldEvents
                         if (releasedEvents.Contains(e.Id))
                         {
                             releasedEvents.Remove(e.Id);
+                            o.OnNext(m, e, c);
                         }
                         else
                         {
@@ -61,7 +62,6 @@ namespace Esp.Net.HeldEvents
                     return disposables;
                 }
             );
-            return stream.Observe((m, e, c) => { /* Noop */ });
         }
 
         private class HeldEventData<TEvent>
