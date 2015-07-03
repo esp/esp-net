@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using NUnit.Framework;
 using Shouldly;
 
+#if ESP_EXPERIMENTAL
 namespace Esp.Net.HeldEvents
 {
     [TestFixture]
@@ -189,3 +188,4 @@ namespace Esp.Net.HeldEvents
         }
     }
 }
+#endif

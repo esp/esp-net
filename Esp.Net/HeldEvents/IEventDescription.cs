@@ -1,5 +1,6 @@
 ﻿using System;
 
+#if ESP_EXPERIMENTAL
 namespace Esp.Net.HeldEvents
 {
     public interface IEventDescription
@@ -8,3 +9,4 @@ namespace Esp.Net.HeldEvents
         string Description { get; }
     }
 }
+#endif

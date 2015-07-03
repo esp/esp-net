@@ -1,5 +1,6 @@
 using System;
 
+#if ESP_EXPERIMENTAL
 namespace Esp.Net.HeldEvents
 {
     public class HeldEventActionEvent
@@ -15,3 +16,4 @@ namespace Esp.Net.HeldEvents
         public Guid EventId { get; private set; }
     }
 }
+#endif

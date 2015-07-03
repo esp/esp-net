@@ -1,4 +1,5 @@
-﻿namespace Esp.Net.HeldEvents
+﻿#if ESP_EXPERIMENTAL
+namespace Esp.Net.HeldEvents
 {
     public interface IEventHoldingStrategy<in TModel, in TEvent>
     {
@@ -6,3 +7,4 @@
         IEventDescription GetEventDescription(TModel model, TEvent @event);
     }
 }
+#endif

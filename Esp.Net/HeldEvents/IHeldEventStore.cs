@@ -1,4 +1,5 @@
-﻿namespace Esp.Net.HeldEvents
+﻿#if ESP_EXPERIMENTAL
+namespace Esp.Net.HeldEvents
 {
     public interface IHeldEventStore
     {
@@ -6,3 +7,4 @@
         void RemoveHeldEventDescription(IEventDescription description);
     }
 }
+#endif
