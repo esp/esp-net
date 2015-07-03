@@ -12,7 +12,7 @@ namespace Esp.Net.HeldEvents
         private TestModel _model;
         private Router<TestModel> _router;
         private List<FooEvent> _receivedEvents;
-        private IDisposable _observationDisposable;
+        private IDisposable _holdingStrategyDisposable;
 
         public class TestModel : IHeldEventStore
         {
@@ -81,12 +81,8 @@ namespace Esp.Net.HeldEvents
             _model = new TestModel();
             _router = new Router<TestModel>(_model, RouterScheduler.Default);
             _receivedEvents = new List<FooEvent>();
-            _observationDisposable =  _router.GetEventObservable(new FooEventHoldingStrategy()).Observe(
-                (m, e, c) =>
-                {
-                    _receivedEvents.Add(e);
-                }
-            );
+            _router.GetEventObservable<FooEvent>().Observe((m, e, c) => _receivedEvents.Add(e));
+            _holdingStrategyDisposable =  _router.AddEventHoldingStrategy(new FooEventHoldingStrategy());
             _model.HoldAllEvents = true;
         }
 
@@ -174,7 +170,7 @@ namespace Esp.Net.HeldEvents
         {
             var event1 = new FooEvent("EventPayload1");
             _router.PublishEvent(event1);
-            _observationDisposable.Dispose();
+            _holdingStrategyDisposable.Dispose();
             ReleasedEvent(event1.Id, HeldEventAction.Ignore);
             _receivedEvents.Count.ShouldBe(0);
 
