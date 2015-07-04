@@ -32,13 +32,13 @@ namespace Esp.Net.Reactive
 			}
         }
 
-        public IDisposable Observe(Action<TModel, TEvent> onNext)
+        public IDisposable Observe(ObserveAction<TModel, TEvent> onNext)
         {
             var observer = new EventObserver<TModel, TEvent, TContext>(onNext);
             return Observe(observer);
         }
 
-        public IDisposable Observe(Action<TModel, TEvent, TContext> onNext)
+        public IDisposable Observe(ObserveAction<TModel, TEvent, TContext> onNext)
         {
             var observer = new EventObserver<TModel, TEvent, TContext>(onNext);
             return Observe(observer);
