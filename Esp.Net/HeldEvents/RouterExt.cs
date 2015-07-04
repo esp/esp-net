@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Esp.Net.Model;
 using Esp.Net.Reactive;
 
@@ -8,6 +9,25 @@ namespace Esp.Net.HeldEvents
 {
     public static class RouterExt
     {
+        private static readonly MethodInfo GetEventObservableMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(RouterExt), "GetEventObservable", 2, 2);
+
+        public static IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TEvent, TBaseEvent>(
+            this IRouter<TModel> router,
+            IEventHoldingStrategy<TModel, TEvent, TBaseEvent> strategy
+        )
+            where TEvent : TBaseEvent, IIdentifiableEvent
+            where TModel : IHeldEventStore
+        {
+            return EventObservable.Create<TModel, TBaseEvent, IEventContext>(
+                o =>
+                {
+                    var getEventStreamMethod = GetEventObservableMethodInfo.MakeGenericMethod(typeof(TModel), typeof(TEvent));
+                    dynamic observable = getEventStreamMethod.Invoke(null, new object[] { router, strategy });
+                    return (IDisposable)observable.Observe(o);                    
+                }
+            );
+        }
+
         public static IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TModel, TEvent>(
             this IRouter<TModel> router,
             IEventHoldingStrategy<TModel, TEvent> strategy
@@ -36,7 +56,7 @@ namespace Esp.Net.HeldEvents
                             {
                                 // Cancel the event so no other observers will receive it.
                                 c.Cancel(); 
-                                // Model that we've canceled it, other code can now reflect the newly modeled values.
+                                // Model that we've cancelled it, other code can now reflect the newly modelled values.
                                 // That is other code needs to determine what to do with these held events on the model. 
                                 // When it figures that out it should raise a HeldEventActionEvent so we can proceed here.
                                 IEventDescription eventDescription = strategy.GetEventDescription(m, e);
@@ -57,7 +77,7 @@ namespace Esp.Net.HeldEvents
                             m.RemoveHeldEventDescription(heldEventData.EventDescription);
                             if (e.Action == HeldEventAction.Release)
                             {
-                                // Temporarly store the evnet we're republishing so we don't re-hold it
+                                // Temporarily store the event we're republishing so we don't re-hold it
                                 releasedEvents.Add(e.EventId);
                                 router.PublishEvent(heldEventData.Event);
                             }
