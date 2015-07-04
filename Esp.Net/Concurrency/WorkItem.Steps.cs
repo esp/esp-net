@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Reactive.Linq;
 using Esp.Net.Model;
 using Esp.Net.Reactive;
-using Esp.Net.RxBridge;
 
 #if ESP_EXPERIMENTAL
 namespace Esp.Net.Concurrency
@@ -43,7 +43,7 @@ namespace Esp.Net.Concurrency
 
         public override IObservable<TModel> GetExecuteStream(TModel model)
         {
-            return EspObservable.Create<TModel>(o =>
+            return Observable.Create<TModel>(o =>
             {
                 var disposables = new DisposableCollection();
                 var observable = _observableFactory(model);

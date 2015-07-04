@@ -9,19 +9,19 @@ namespace Esp.Net.Stubs
     {
         public StubEventSubject()
         {
-            Observers = new List<Action<TModel, TEvent, TContext>>();
+            Observers = new List<ObserveAction<TModel, TEvent, TContext>>();
         }
 
-        public List<Action<TModel, TEvent, TContext>> Observers { get; private set; }
+        public List<ObserveAction<TModel, TEvent, TContext>> Observers { get; private set; }
 
-        public IDisposable Observe(Action<TModel, TEvent> onNext)
+        public IDisposable Observe(ObserveAction<TModel, TEvent> onNext)
         {
-            Action<TModel, TEvent, TContext> action = (m, e, c) => onNext(m, e);
+            ObserveAction<TModel, TEvent, TContext> action = (m, e, c) => onNext(m, e);
             Observers.Add(action);
             return EspDisposable.Create(() => Observers.Remove(action));
         }
 
-        public IDisposable Observe(Action<TModel, TEvent, TContext> onNext)
+        public IDisposable Observe(ObserveAction<TModel, TEvent, TContext> onNext)
         {
             Observers.Add(onNext);
             return EspDisposable.Create(() => Observers.Remove(onNext));
@@ -36,7 +36,7 @@ namespace Esp.Net.Stubs
 
         public void OnNext(TModel model, TEvent @event, TContext context)
         {
-            foreach (Action<TModel, TEvent, TContext> eventObserver in Observers)
+            foreach (ObserveAction<TModel, TEvent, TContext> eventObserver in Observers)
             {
                 eventObserver(model, @event, context);
             }

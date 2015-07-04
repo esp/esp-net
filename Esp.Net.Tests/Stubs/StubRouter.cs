@@ -38,6 +38,12 @@ namespace Esp.Net.Stubs
             return subject;
         }
 
+        public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TSubEventType, TBaseEvent>(
+            ObservationStage observationStage = ObservationStage.Normal) where TSubEventType : TBaseEvent
+        {
+            throw new NotImplementedException();
+        }
+
         public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type eventType,
             ObservationStage observationStage = ObservationStage.Normal)
         {
