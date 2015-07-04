@@ -3,7 +3,7 @@ using Esp.Net.Model;
 
 namespace Esp.Net.Reactive
 {
-    public class StubIEventObservable<T> : IEventObservable<T, int, IEventContext>
+    public class StubEventObservable<T> : IEventObservable<T, int, IEventContext>
     {
         public bool IsDisposed { get; private set; }
         public bool IsObserved { get; set; }
