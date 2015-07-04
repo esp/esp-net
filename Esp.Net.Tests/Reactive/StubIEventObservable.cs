@@ -8,12 +8,12 @@ namespace Esp.Net.Reactive
         public bool IsDisposed { get; private set; }
         public bool IsObserved { get; set; }
 
-        public IDisposable Observe(ObserverDelegate<T, int> onNext)
+        public IDisposable Observe(ObserveAction<T, int> onNext)
         {
             return EspDisposable.Create(() => IsDisposed = true);
         }
 
-        public IDisposable Observe(ObserverDelegate<T, int, IEventContext> onNext)
+        public IDisposable Observe(ObserveAction<T, int, IEventContext> onNext)
         {
             return EspDisposable.Create(() => IsDisposed = true);
         }
