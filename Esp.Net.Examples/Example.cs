@@ -1,120 +1,127 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Net.NetworkInformation;
 using Esp.Net.Concurrency;
 using Esp.Net.Model;
-using Esp.Net.RxBridge;
 #if ESP_EXPERIMENTAL
 
 namespace Esp.Net.Examples
 {
-    public class StructuredProduct
+    public class FxOption
     {
         public string CurrencyPair { get; set; }
-        public DateTime[] FixingDates { get; set; }
+        public DateTime ExpiryDate { get; set; }
+        public string CurrentQuoteId { get; set; }
     }
 
-    public class UserChangedCCyPairEvent
+    public class AcceptQuoteEvent
     {
-        public string NewCcyPair { get; set; }
+        public string QuoteId { get; set; }
     }
 
-    public class ReferenceDataServiceClient : IReferenceDataServiceClient
+    public class BookingPipelineContext : IPipelineInstanceContext<AcceptQuoteEvent>
     {
-        private readonly List<IObserver<DateTime[]>> _observers = new List<IObserver<DateTime[]>>();
-
-        // hack to simulate server responding with sending dates
-        public void SendDates(params DateTime[] dates)
+        public BookingPipelineContext(AcceptQuoteEvent initialEvent)
         {
-            foreach (IObserver<DateTime[]> observer in _observers)
-            {
-                observer.OnNext(dates);
-            }
+            InitialEvent = initialEvent;
         }
 
-        public IObservable<DateTime[]> GetFixingDates(string currencyPair)
-        {
-            return EspObservable.Create<DateTime[]>(o =>
-            {
-                _observers.Add(o); // HACK side effect : hold observers locally
-                return () => { };
-            });
-        }
-    }
-
-    public interface IReferenceDataServiceClient
-    {
-        IObservable<DateTime[]> GetFixingDates(string currencyPair);
-    }
-
-    public class SerialDisposable : IDisposable
-    {
-        private IDisposable _disposable;
-
-        public IDisposable Disposable
-        {
-            get { return _disposable; }
-            set
-            {
-                using (_disposable) { }
-                _disposable = value;
-            }
-        }
-
-        public void Dispose()
-        {
-            using (_disposable) { }
-        }
+        public AcceptQuoteEvent InitialEvent { get; private set; }
     }
 
     public class ReferenceDatesEventProcessor  : DisposableBase, IEventProcessor
     {
-        private readonly IRouter<StructuredProduct> _router;
-        private readonly IReferenceDataServiceClient _referenceDataService;
-        private readonly IWorkItem<StructuredProduct> _getReferenceDatesWorkItem;
-        private readonly SerialDisposable _inflightWorkItem = new SerialDisposable();
+        private readonly IRouter<FxOption> _router;
+        private readonly IBookingService _bookingService;
+        private readonly IPipeline<FxOption> _getReferenceDatesPipeline;
+        private readonly EspSerialDisposable _inflightWorkItem = new EspSerialDisposable();
 
-        public ReferenceDatesEventProcessor(IRouter<StructuredProduct> router, IReferenceDataServiceClient referenceDataService)
+        public ReferenceDatesEventProcessor(IRouter<FxOption> router, IBookingService bookingService)
         {
             _router = router;
-            _referenceDataService = referenceDataService;
-            _getReferenceDatesWorkItem = _router
-               .CreateWorkItemBuilder()
-               .SubscribeTo(m => _referenceDataService.GetFixingDates(m.CurrencyPair), OnFixingDatesReceived)
-               .CreateWorkItem();
+            _bookingService = bookingService;
+            _getReferenceDatesPipeline = _router
+               .ConfigurePipeline()
+               .SubscribeTo(m => _bookingService.AcceptQuote(m.QuoteId), OnQuoteAccepted)
+               .SubscribeTo(m => _bookingService.AcceptQuote(m.QuoteId), OnTermsheetReceived)
+               .Create();
             AddDisposable(_inflightWorkItem);
         }
 
         public void Start()
         {
             AddDisposable(_router
-                .GetEventObservable<UserChangedCCyPairEvent>(ObservationStage.Committed)
+                .GetEventObservable<AcceptQuoteEvent>(ObservationStage.Committed)
                 .Observe((model, userChangedCCyPairEvent, context) =>
                 {
-                    IWorkItemInstance<StructuredProduct> instance = _getReferenceDatesWorkItem.CreateInstance();
+                    IPipelineInstance<FxOption> instance = _getReferenceDatesPipeline.CreateInstance();
                     _inflightWorkItem.Disposable = instance;
                     instance.Run(model, ex => { });
                 })
             );
         }
 
+
         public void Start2()
         {
-            AddDisposable(_router
-                .WorkItem()
-                .OnEvent<UserChangedCCyPairEvent>((m, e, c) => { }, ObservationStage.Committed)
-                .Do((m) => { })
-                .SubscribeTo(m => _referenceDataService.GetFixingDates(m.CurrencyPair), OnFixingDatesReceived)
-                .Do((m) => { })
-                .Run()
-            );
+            // By adding a pipeline context we can flow that right through the stack and provide it 
+            // anytime we invoke a deletage, for example on each step or on a pipeline instance exception.
+            //
+            // We can solve the problem of 'should run' not by returning empty observables (which the consumer may not own)
+            // but rather with a simple where filter that comes before that step. The pipeline context enables this.
+            _router
+                .ConfigurePipeline()
+                .OnEvent<AcceptQuoteEvent>((m, e, c) => new BookingPipelineContext(e))
+                .Where((model, pipeLineContext) => pipeLineContext.Event.QuoteId == model.CurrentQuoteId)
+                // select many functions much the same as select many in Rx, we stay subscribed to the 
+                // response stream and invoke the next step for each yield
+                .SelectMany((model, pipelineContext) => _bookingService.AcceptQuote(model.QuoteId), OnQuoteAccepted)
+                .SelectMany((model, pipelineContext) => _bookingService.GenerateTermsheet(model.QuoteId), OnTermsheetReceived)
+                .Do(OnBookingComlete)
+                // Run wraps Create and for eacn event creates a  new instance (via CreateInstance).
+                // so efictively each instance acts on it's own right, however all instances can be 
+                // disposed usng the disposable returned from Run().
+                .Run((pipelinContext, exception) => { });
         }
 
-        private void OnFixingDatesReceived(StructuredProduct model, DateTime[] fixingDates)
+//        public void Start2()
+//        {
+//            AddDisposable(_router
+//                .GetEventObservable<UserChangedCCyPairEvent>()
+//                .
+//                .OnEvent<UserChangedCCyPairEvent>((m, e, c) => { }, ObservationStage.Committed)
+//                .ThenSubscribeTo(m => _referenceDataService.GetFixingDates(m.CurrencyPair), OnFixingDatesReceived)
+//                .Run()
+//            );
+//
+//            AddDisposable(_router
+//                .BeginConfigureAsyncEventStream()
+//                .OnEvent<UserChangedCCyPairEvent>((m, e, c) => { }, ObservationStage.Committed)
+//                .ThenSubscribeTo(m => _referenceDataService.GetFixingDates(m.CurrencyPair), OnFixingDatesReceived)
+//                .Run()
+//            );
+//
+//            AddDisposable(_router
+//                .Pipeline()
+//                .OnEvent<UserChangedCCyPairEvent>((m, e, c) => { }, ObservationStage.Committed)
+//                .Do((m) => { })
+//                .SubscribeTo(m => _referenceDataService.GetFixingDates(m.CurrencyPair), OnFixingDatesReceived)
+//                .Do((m) => { })
+//                .Run()
+//            );
+//        }
+
+        private void OnQuoteAccepted(FxOption model, string response)
         {
             // apply dates to model
         }
 
+        private void OnTermsheetReceived(FxOption model, string response)
+        {
+            // apply dates to model
+        }
+
+        private void OnBookingComlete(FxOption model)
+        {
+        }
 
     }
 }

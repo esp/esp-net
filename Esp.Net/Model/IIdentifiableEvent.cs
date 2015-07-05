@@ -1,7 +1,7 @@
 using System;
 
 #if ESP_EXPERIMENTAL
-namespace Esp.Net.HeldEvents
+namespace Esp.Net.Model
 {
     public interface IIdentifiableEvent
     {

@@ -1,0 +1,19 @@
+using System;
+using Esp.Net.Model;
+
+namespace Esp.Net.Concurrency
+{
+    public class AyncResultsEvent<TResult> : IIdentifiableEvent
+    {
+        public AyncResultsEvent(TResult results, Guid id)
+        {
+            Result = results;
+            Id = id;
+        }
+
+        public TResult Result { get; private set; }
+
+        public Guid Id { get; private set; }
+
+    }
+}

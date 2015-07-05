@@ -44,7 +44,7 @@
     <Compile Include="..\AssemblyInfoCommon.cs">
       <Link>Properties\AssemblyInfoCommon.cs</Link>
     </Compile>
-    <Compile Include="Concurrency\IdentifiableEvent.cs" />
+    <Compile Include="Concurrency\AyncResultsEvent.cs" />
     <Compile Include="EventContext.cs" />
     <Compile Include="EventProcessors.cs" />
     <Compile Include="Guard.cs" />
@@ -53,15 +53,15 @@
     <Compile Include="HeldEvents\IEventDescription.cs" />
     <Compile Include="HeldEvents\IEventHoldingStrategy.cs" />
     <Compile Include="HeldEvents\IHeldEventStore.cs" />
-    <Compile Include="HeldEvents\IIdentifiableEvent.cs" />
+    <Compile Include="Model\IIdentifiableEvent.cs" />
     <Compile Include="HeldEvents\RouterExt.cs" />
     <Compile Include="IClonable.cs" />
     <Compile Include="Model\DictionaryDisposable.cs" />
     <Compile Include="Model\DisposableBase.cs" />
     <Compile Include="Model\EspSerialDisposable.cs" />
     <Compile Include="ObservationStage.cs" />
-    <Compile Include="Concurrency\WorkItem.cs" />
-    <Compile Include="Concurrency\WorkItem.Steps.cs" />
+    <Compile Include="Concurrency\Pipeline.cs" />
+    <Compile Include="Concurrency\Pipeline.Steps.cs" />
     <Compile Include="Reactive\ModelObservable.cs" />
     <Compile Include="Reactive\ModelObserver.cs" />
     <Compile Include="Reactive\ModelSubject.cs" />
@@ -77,6 +77,7 @@
     <Compile Include="Reactive\EventSubject.cs" />
     <Compile Include="Router.cs" />
     <Compile Include="RouterScheduler.cs" />
+    <Compile Include="RxBridge\Unit.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Esp.Net.SourcePackage.nuspec" />

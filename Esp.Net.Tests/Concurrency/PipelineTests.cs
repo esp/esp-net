@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using Esp.Net.Model;
 using Esp.Net.Stubs;
 using NUnit.Framework;
 using Shouldly;
@@ -11,7 +9,7 @@ using Shouldly;
 namespace Esp.Net.Concurrency
 {
     [TestFixture]
-    public class WorkItemTests
+    public class PipelineTests
     {
         public class TestModel
         {
@@ -49,11 +47,11 @@ namespace Esp.Net.Concurrency
         [Test]
         public void WhenStepResultAreContinueObservableIsSubscribed()
         {
-            IWorkItem<TestModel> workItem = _router.CreateWorkItemBuilder()
+            IPipeline<TestModel> pipeline = _router.ConfigurePipeline()
                 .SubscribeTo(GetStringObservble, OnStringResultsReceived)
-                .CreateWorkItem();
+                .Create();
             _stringSubject.Observers.Count.ShouldBe(0);
-            workItem.CreateInstance().Run(_model, OnError);
+            pipeline.CreateInstance().Run(_model, OnError);
             _stringSubject.Observers.Count.ShouldBe(1);
         }
 
@@ -61,9 +59,9 @@ namespace Esp.Net.Concurrency
         public void WhenAsyncResultsReturndResultsDelegateInvoked()
         {
             _router
-                .CreateWorkItemBuilder()
+                .ConfigurePipeline()
                 .SubscribeTo(GetStringObservble, OnStringResultsReceived)
-                .CreateWorkItem()
+                .Create()
                 .CreateInstance()
                 .Run(_model, OnError);            
             _stringSubject.OnNext("Foo");
@@ -80,10 +78,10 @@ namespace Esp.Net.Concurrency
 
             var eventSubject = _router.GetEventSubject<AyncResultsEvent<string>>();
 
-            IWorkItem<TestModel> workItem = _router.CreateWorkItemBuilder()
+            IPipeline<TestModel> pipeline = _router.ConfigurePipeline()
                 .SubscribeTo(GetStringObservble, OnStringResultsReceived)
-                .CreateWorkItem();
-            workItem.CreateInstance().Run(_model, OnError);
+                .Create();
+            pipeline.CreateInstance().Run(_model, OnError);
             
             eventSubject.Observers.Count.ShouldBe(1);
             _stringSubject.Observers.Count.ShouldBe(1);
@@ -99,10 +97,10 @@ namespace Esp.Net.Concurrency
             var stringEventObservable = _router.GetEventSubject<AyncResultsEvent<string>>();
             var decimalEventObservable = _router.GetEventSubject<AyncResultsEvent<decimal>>();
             _router
-                .CreateWorkItemBuilder()
+                .ConfigurePipeline()
                 .SubscribeTo(GetStringObservble, OnStringResultsReceived)
                 .SubscribeTo(GetDecimalObservable, OnDecialResultsReceived)
-                .CreateWorkItem()
+                .Create()
                 .CreateInstance()
                 .Run(_model, OnError);
             _stringSubject.OnNext("Foo");

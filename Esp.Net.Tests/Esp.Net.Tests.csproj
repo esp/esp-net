@@ -53,7 +53,7 @@
     <Compile Include="Model\EspDisposableTests.cs" />
     <Compile Include="Stubs\StubEventSubject.cs" />
     <Compile Include="Stubs\StubRouter.cs" />
-    <Compile Include="Concurrency\WorkItemTests.cs" />
+    <Compile Include="Concurrency\PipelineTests.cs" />
     <Compile Include="Stubs\StubSubject.cs" />
     <Compile Include="HeldEvents\HeldEventTests.cs" />
     <Compile Include="Reactive\ReactiveTests.cs" />

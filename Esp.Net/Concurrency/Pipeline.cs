@@ -8,81 +8,80 @@ using System.Reactive.Linq;
 
 namespace Esp.Net.Concurrency
 {
-    public static class WorkItemRouterExt
+    public interface IPipelineInstanceContext<out TEvent>
     {
-        public static IWorkItemBuilder<TModel> WorkItem<TModel>(this IRouter<TModel> router)
-        {
-            // step 0 L listen to TEvent
-            return new WorkItemBuilder<TModel>(router);
-        }
+        TEvent Event{ get; }
+    }
 
-        public static WorkItemBuilder<TModel> CreateWorkItemBuilder<TModel>(this IRouter<TModel> router)
+    public static class PipelineRouterExt
+    {
+        public static PipelineBuilder<TModel> ConfigurePipeline<TModel>(this IRouter<TModel> router)
         {
-            return new WorkItemBuilder<TModel>(router);
+            return new PipelineBuilder<TModel>(router);
         }
     }
 
-    public interface IWorkItem<in TModel>
+    public interface IPipeline<in TModel>
     {
-        IWorkItemInstance<TModel> CreateInstance();
+        IPipelineInstance<TModel> CreateInstance();
     }
 
-    public interface IWorkItemInstance<in TModel> : IDisposable
+    public interface IPipelineInstance<in TModel> : IDisposable
     {
         void Run(TModel currentModel, Action<Exception> onError = null);
     }
 
-    public interface IWorkItemBuilder<out TModel>
-    {
-        IWorkItemStepBuilder<TModel> OnEvent<TEvent>(
-            Action<TModel, TEvent, IEventContext> onEvent,
-            ObservationStage stage = ObservationStage.Normal
-        );
-    }
+//    public interface IWorkItemBuilder<out TModel>
+//    {
+//        IWorkItemStepBuilder<TModel> OnEvent<TEvent>(
+//            Action<TModel, TEvent, IEventContext> onEvent,
+//            ObservationStage stage = ObservationStage.Normal
+//        );
+//    }
+//
+//    public interface IWorkItemStepBuilder<out TModel>
+//    {
+//        IWorkItemStepBuilder<TModel> Do(Action<TModel> onEvent);
+//        IWorkItemStepBuilder<TModel> SubscribeTo<TResult>(
+//            Func<TModel, IObservable<TResult>> observableFactory,
+//            Action<TModel, TResult> onResultsReceived
+//        );
+//        IDisposable Run();
+//    }
 
-    public interface IWorkItemStepBuilder<out TModel>
-    {
-        IWorkItemStepBuilder<TModel> Do(Action<TModel> onEvent);
-        IWorkItemStepBuilder<TModel> SubscribeTo<TResult>(
-            Func<TModel, IObservable<TResult>> observableFactory,
-            Action<TModel, TResult> onResultsReceived
-        );
-        IDisposable Run();
-    }
-
-    public class WorkItemBuilder<TModel> : IWorkItemBuilder<TModel>, IWorkItemStepBuilder<TModel>
+    public class PipelineBuilder<TModel> // : IWorkItemBuilder<TModel>, IWorkItemStepBuilder<TModel>
     {
         private readonly IRouter<TModel> _router;
         private readonly List<Step<TModel>> _steps = new List<Step<TModel>>(); 
 
-        public WorkItemBuilder(IRouter<TModel> router)
+        public PipelineBuilder(IRouter<TModel> router)
         {
             _router = router;
         }
 
-        public IWorkItemStepBuilder<TModel> OnEvent<TEvent>(
-            Action<TModel, TEvent, IEventContext> onEvent,
-            ObservationStage stage = ObservationStage.Normal
-        )
-        {
-//            var step = new ObservableStep<TModel, TResult>(_router, observableFactory, onResultsReceived);
-//            _steps.Add(step);
-            return this;
-        }
+//        public IWorkItemStepBuilder<TModel> OnEvent<TEvent>(
+//            Action<TModel, TEvent, IEventContext> onEvent,
+//            ObservationStage stage = ObservationStage.Normal
+//        )
+//        {
+////            var step = new ObservableStep<TModel, TResult>(_router, observableFactory, onResultsReceived);
+////            _steps.Add(step);
+//            return this;
+//        }
 
-        public IWorkItemStepBuilder<TModel> Do(Action<TModel> onEvent)
-        {
-            //            var step = new ObservableStep<TModel, TResult>(_router, observableFactory, onResultsReceived);
-            //            _steps.Add(step);
-            return this;
-        }
+//        public IWorkItemStepBuilder<TModel> Do(Action<TModel> onEvent)
+//        {
+//            //            var step = new ObservableStep<TModel, TResult>(_router, observableFactory, onResultsReceived);
+//            //            _steps.Add(step);
+//            return this;
+//        }
 
-        public IDisposable Run()
-        {
-            return null;
-        }
+//        public IDisposable Run()
+//        {
+//            return null;
+//        }
 
-        public IWorkItemStepBuilder<TModel> SubscribeTo<TResult>(
+        public PipelineBuilder<TModel> SubscribeTo<TResult>(
             Func<TModel, IObservable<TResult>> observableFactory,
             Action<TModel, TResult> onResultsReceived
         )
@@ -92,41 +91,41 @@ namespace Esp.Net.Concurrency
             return this;
         }
 
-        public IWorkItem<TModel> CreateWorkItem()
+        public IPipeline<TModel> Create()
         {
-            return new WorkItem<TModel>(_steps);
+            return new Pipeline<TModel>(_steps);
         }
     }
 
-    public class WorkItem<TModel> : DisposableBase, IWorkItem<TModel>
+    public class Pipeline<TModel> : DisposableBase, IPipeline<TModel>
     {
         private readonly List<Step<TModel>> _steps;
 
-        public WorkItem(List<Step<TModel>> steps)
+        public Pipeline(List<Step<TModel>> steps)
         {
             _steps = steps;
         }
 
-        public IWorkItemInstance<TModel> CreateInstance()
+        public IPipelineInstance<TModel> CreateInstance()
         {
             var firstStep = _steps[0];
             for (int i = 1; i < _steps.Count; i++)
             {
                 firstStep.Next = _steps[i];
             }
-            return new WorkItemInstance(firstStep);
+            return new PipelineInstance(firstStep);
         }
 
-        // it's entirely possible that a WorkItem instance is never disposed, it may just run it's course. 
+        // it's entirely possible that a Pipeline instance is never disposed, it may just run it's course. 
         // however it if it's disposed before this point father step won't be run.
-        private class WorkItemInstance : DisposableBase, IWorkItemInstance<TModel>
+        private class PipelineInstance : DisposableBase, IPipelineInstance<TModel>
         {
             private readonly Step<TModel> _firstStep;
             private Action< Exception> _onError;
             private readonly Queue<Action<TModel>> _queue = new Queue<Action<TModel>>();
             private bool _purging;
 
-            public WorkItemInstance(Step<TModel> firstStep)
+            public PipelineInstance(Step<TModel> firstStep)
             {
                 _firstStep = firstStep;
             }
