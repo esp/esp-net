@@ -18,11 +18,12 @@ namespace Esp.Net.HeldEvents
             where TEvent : TBaseEvent, IIdentifiableEvent
             where TModel : IHeldEventStore
         {
+            object[] parameters = new object[] { router, strategy };
             return EventObservable.Create<TModel, TBaseEvent, IEventContext>(
                 o =>
                 {
                     var getEventStreamMethod = GetEventObservableMethodInfo.MakeGenericMethod(typeof(TModel), typeof(TEvent));
-                    dynamic observable = getEventStreamMethod.Invoke(null, new object[] { router, strategy });
+                    dynamic observable = getEventStreamMethod.Invoke(null, parameters);
                     return (IDisposable)observable.Observe(o);                    
                 }
             );
@@ -68,11 +69,11 @@ namespace Esp.Net.HeldEvents
                     }));
                     disposables.Add(router.GetEventObservable<HeldEventActionEvent>().Observe((m, e, c) =>
                     {
+                        HeldEventData<TEvent> heldEventData;
                         // Since we're listening to a pipe of all events we need to filter out anything we don't know about.
-                        if (heldEvents.ContainsKey(e.EventId))
+                        if (heldEvents.TryGetValue(e.EventId, out heldEventData))
                         {
                             // We're received an event to clean up.
-                            var heldEventData = heldEvents[e.EventId];
                             heldEvents.Remove(e.EventId);
                             m.RemoveHeldEventDescription(heldEventData.EventDescription);
                             if (e.Action == HeldEventAction.Release)
