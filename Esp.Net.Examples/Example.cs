@@ -43,84 +43,35 @@ namespace Esp.Net.Examples
     {
         private readonly IRouter<FxOption> _router;
         private readonly IBookingService _bookingService;
-       // private readonly IPipeline<FxOption> _getReferenceDatesPipeline;
         private readonly EspSerialDisposable _inflightWorkItem = new EspSerialDisposable();
 
         public ReferenceDatesEventProcessor(IRouter<FxOption> router, IBookingService bookingService)
         {
             _router = router;
             _bookingService = bookingService;
-//            _getReferenceDatesPipeline = _router
-//               .ConfigurePipeline()
-//               .SelectMany(m => _bookingService.AcceptQuote(m.QuoteId), OnQuoteAccepted)
-//               .SelectMany(m => _bookingService.AcceptQuote(m.QuoteId), OnTermsheetReceived)
-//               .Create();
             AddDisposable(_inflightWorkItem);
         }
-
-//        public void Start()
-//        {
-//            AddDisposable(_router
-//                .GetEventObservable<AcceptQuoteEvent>(ObservationStage.Committed)
-//                .Observe((model, userChangedCCyPairEvent, context) =>
-//                {
-//                    IPipelineInstance<FxOption> instance = _getReferenceDatesPipeline.CreateInstance();
-//                    _inflightWorkItem.Disposable = instance;
-//                    instance.Run(model, ex => { });
-//                })
-//            );
-//        }
-
 
         public void Start()
         {
             // By adding a pipeline context we can flow that right through the stack and provide it 
             // anytime we invoke a deletage, for example on each step or on a pipeline instance exception.
             //
-            // We can solve the problem of 'should run' not by returning empty observables (which the consumer may not own)
-            // but rather with a simple where filter that comes before that step. The pipeline context enables this.
+            // We can solve the problem of if a step'should run' not by returning empty observables (which the consumer may not own)
+            // but rather by using the context. Similar to the GetEventObservable api we can just cancel the contexxt 
             IDisposable disposable = _router
                 .ConfigurePipeline<FxOption, BookingPipelineContext, AcceptQuoteEvent>((m, e, c) => new BookingPipelineContext(e))
-                // we don't need where, a do with a context that can be canceled is more inline with the 
-                // existing api 
-                //.Where((model, pipeLineContext) => pipeLineContext.Event.QuoteId == model.CurrentQuoteId)
                 // select many functions much the same as select many in Rx, we stay subscribed to the 
-                // response stream and invoke the next step for each yield\
+                // response stream and invoke the next step for each yield. If the stream completes 
+                // the pipeline instance will stay subscribed to the next stream until that completes.
                 .SelectMany((model, pipelineContext) => _bookingService.AcceptQuote(model.CurrentQuoteId), OnQuoteAccepted)
                 .SelectMany((model, pipelineContext) => _bookingService.GenerateTermsheet(model.CurrentQuoteId), OnTermsheetReceived)
                 .Do(OnBookingComlete)
-                // Run wraps Create and for eacn event creates a  new instance (via CreateInstance).
-                // so efictively each instance acts on it's own right, however all instances can be 
+                // Run wraps Create and for each event creates a new pipeline instance (via CreateInstance).
+                // so efictively each instance acts in it's own right, however all instances can be 
                 // disposed usng the disposable returned from Run().
                 .Run((pipelinContext, exception) => { });
         }
-
-//        public void Start2()
-//        {
-//            AddDisposable(_router
-//                .GetEventObservable<UserChangedCCyPairEvent>()
-//                .
-//                .OnEvent<UserChangedCCyPairEvent>((m, e, c) => { }, ObservationStage.Committed)
-//                .ThenSubscribeTo(m => _referenceDataService.GetFixingDates(m.CurrencyPair), OnFixingDatesReceived)
-//                .Run()
-//            );
-//
-//            AddDisposable(_router
-//                .BeginConfigureAsyncEventStream()
-//                .OnEvent<UserChangedCCyPairEvent>((m, e, c) => { }, ObservationStage.Committed)
-//                .ThenSubscribeTo(m => _referenceDataService.GetFixingDates(m.CurrencyPair), OnFixingDatesReceived)
-//                .Run()
-//            );
-//
-//            AddDisposable(_router
-//                .Pipeline()
-//                .OnEvent<UserChangedCCyPairEvent>((m, e, c) => { }, ObservationStage.Committed)
-//                .Do((m) => { })
-//                .SelectMany(m => _referenceDataService.GetFixingDates(m.CurrencyPair), OnFixingDatesReceived)
-//                .Do((m) => { })
-//                .Run()
-//            );
-//        }
 
         private void OnQuoteAccepted(FxOption model, string response)
         {

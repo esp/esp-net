@@ -45,21 +45,13 @@ namespace Esp.Net.Concurrency
         }
 
         [Test]
-        public void WhenStepResultAreContinueObservableIsSubscribed()
-        {
-            _router.ConfigurePipeline<TestModel, string>()
-                .SelectMany(GetStringObservble, OnStringResultsReceived)
-                .Run(OnError);
-            _stringSubject.Observers.Count.ShouldBe(1);
-        }
-
-        [Test]
         public void WhenAsyncResultsReturndResultsDelegateInvoked()
         {
             _router
-                .ConfigurePipeline<TestModel, string>()
+                .ConfigurePipeline<TestModel, InitialEvent>()
                 .SelectMany(GetStringObservble, OnStringResultsReceived)
-                .Run(OnError);            
+                .Run(OnError);    
+            _router.PublishEvent(new InitialEvent());
             _stringSubject.OnNext("Foo");
             _stringSubject.OnNext("Bar");
             _stringSubject.OnNext("Baz");
@@ -75,10 +67,12 @@ namespace Esp.Net.Concurrency
             var eventSubject = _router.GetEventSubject<AyncResultsEvent<string>>();
 
             _router
-                .ConfigurePipeline<TestModel, string>()
+                .ConfigurePipeline<TestModel, InitialEvent>()
                 .SelectMany(GetStringObservble, OnStringResultsReceived)
-                .Run(OnError);  
-            
+                .Run(OnError);
+
+            _router.PublishEvent(new InitialEvent());
+
             eventSubject.Observers.Count.ShouldBe(1);
             _stringSubject.Observers.Count.ShouldBe(1);
             
@@ -94,10 +88,12 @@ namespace Esp.Net.Concurrency
             var decimalEventObservable = _router.GetEventSubject<AyncResultsEvent<decimal>>(); 
             
             _router
-                .ConfigurePipeline<TestModel, string>()
+                .ConfigurePipeline<TestModel, InitialEvent>()
                 .SelectMany(GetStringObservble, OnStringResultsReceived)
                 .SelectMany(GetDecimalObservable, OnDecialResultsReceived)
-                .Run(OnError);  
+                .Run(OnError);
+
+            _router.PublishEvent(new InitialEvent());
 
             _stringSubject.OnNext("Foo");
             _stringSubject.Observers.Count.ShouldBe(1);

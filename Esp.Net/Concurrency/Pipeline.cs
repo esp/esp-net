@@ -89,9 +89,12 @@ namespace Esp.Net.Concurrency
 
         public IDisposable Run(Action<TPipelineContext, Exception> onError)
         {
-            var pipeline = Create();
+            IPipeline<TModel, TPipelineContext> pipeline = Create();
             return _router.GetEventObservable<TInitialEvent>().Observe((m, e, c) =>
             {
+                // TODO build in complete and dispose symantics 
+                // so we can return a dictionary disposable that tracks each underlying
+                // pipeline instance 
                 IPipelineInstance<TModel, TPipelineContext> pipelineInstance = pipeline.CreateInstance();
                 TPipelineContext pipelineInstanceContext = _contextFactory(m, e, c);
                 pipelineInstance.Run(m, pipelineInstanceContext);
