@@ -8,105 +8,108 @@ using System.Reactive.Linq;
 
 namespace Esp.Net.Concurrency
 {
-    public interface IPipelineInstanceContext<out TEvent>
+    public interface IPipelineInstanceContext
     {
-        TEvent Event{ get; }
+        bool IsCanceled { get; }
+        void Cancel();
     }
 
     public static class PipelineRouterExt
     {
-        public static PipelineBuilder<TModel> ConfigurePipeline<TModel>(this IRouter<TModel> router)
+        public static PipelineBuilder<TModel, DefatultPipelineInstanceContext, TInitialEvent> ConfigurePipeline<TModel, TInitialEvent>(
+            this IRouter<TModel> router
+        )
         {
-            return new PipelineBuilder<TModel>(router);
+            return new PipelineBuilder<TModel, DefatultPipelineInstanceContext, TInitialEvent>(
+                router, 
+                (m, e, c) => new DefatultPipelineInstanceContext()
+            );
+        }
+
+        public static PipelineBuilder<TModel, TPipelineContext, TInitialEvent> ConfigurePipeline<TModel, TPipelineContext, TInitialEvent>(
+            this IRouter<TModel> router,
+            Func<TModel, TInitialEvent, IEventContext, TPipelineContext> contextFactory
+        ) 
+            where TPipelineContext : IPipelineInstanceContext
+        {
+            return new PipelineBuilder<TModel, TPipelineContext, TInitialEvent>(router, contextFactory);
         }
     }
 
-    public interface IPipeline<in TModel>
+    public interface IPipeline<in TModel, TPipelineContext>
+        where TPipelineContext : IPipelineInstanceContext
     {
-        IPipelineInstance<TModel> CreateInstance();
+        IPipelineInstance<TModel, TPipelineContext> CreateInstance();
     }
 
-    public interface IPipelineInstance<in TModel> : IDisposable
+    public interface IPipelineInstance<in TModel, TPipelineContext> : IDisposable
+        where TPipelineContext : IPipelineInstanceContext
     {
-        void Run(TModel currentModel, Action<Exception> onError = null);
+        void Run(TModel currentModel, TPipelineContext context, Action<TPipelineContext, Exception> onError = null);
     }
 
-//    public interface IWorkItemBuilder<out TModel>
-//    {
-//        IWorkItemStepBuilder<TModel> OnEvent<TEvent>(
-//            Action<TModel, TEvent, IEventContext> onEvent,
-//            ObservationStage stage = ObservationStage.Normal
-//        );
-//    }
-//
-//    public interface IWorkItemStepBuilder<out TModel>
-//    {
-//        IWorkItemStepBuilder<TModel> Do(Action<TModel> onEvent);
-//        IWorkItemStepBuilder<TModel> SubscribeTo<TResult>(
-//            Func<TModel, IObservable<TResult>> observableFactory,
-//            Action<TModel, TResult> onResultsReceived
-//        );
-//        IDisposable Run();
-//    }
-
-    public class PipelineBuilder<TModel> // : IWorkItemBuilder<TModel>, IWorkItemStepBuilder<TModel>
+    public class PipelineBuilder<TModel, TPipelineContext, TInitialEvent> 
+        where TPipelineContext : IPipelineInstanceContext
     {
         private readonly IRouter<TModel> _router;
-        private readonly List<Step<TModel>> _steps = new List<Step<TModel>>(); 
+        private readonly Func<TModel, TInitialEvent, IEventContext, TPipelineContext> _contextFactory;
+        private readonly List<Step<TModel, TPipelineContext>> _steps = new List<Step<TModel, TPipelineContext>>();
 
-        public PipelineBuilder(IRouter<TModel> router)
+        public PipelineBuilder(
+            IRouter<TModel> router,
+            Func<TModel, TInitialEvent, IEventContext, TPipelineContext> contextFactory)
         {
             _router = router;
+            _contextFactory = contextFactory;
         }
 
-//        public IWorkItemStepBuilder<TModel> OnEvent<TEvent>(
-//            Action<TModel, TEvent, IEventContext> onEvent,
-//            ObservationStage stage = ObservationStage.Normal
-//        )
-//        {
-////            var step = new ObservableStep<TModel, TResult>(_router, observableFactory, onResultsReceived);
-////            _steps.Add(step);
-//            return this;
-//        }
-
-//        public IWorkItemStepBuilder<TModel> Do(Action<TModel> onEvent)
-//        {
-//            //            var step = new ObservableStep<TModel, TResult>(_router, observableFactory, onResultsReceived);
-//            //            _steps.Add(step);
-//            return this;
-//        }
-
-//        public IDisposable Run()
-//        {
-//            return null;
-//        }
-
-        public PipelineBuilder<TModel> SubscribeTo<TResult>(
-            Func<TModel, IObservable<TResult>> observableFactory,
+        public PipelineBuilder<TModel, TPipelineContext, TInitialEvent> SelectMany<TResult>(
+            Func<TModel, TPipelineContext, IObservable<TResult>> observableFactory,
             Action<TModel, TResult> onResultsReceived
         )
         {
-            var step = new ObservableStep<TModel, TResult>(_router, observableFactory, onResultsReceived);
+            var step = new ObservableStep<TModel, TPipelineContext, TResult>(_router, observableFactory, onResultsReceived);
             _steps.Add(step);
             return this;
         }
 
-        public IPipeline<TModel> Create()
+        public PipelineBuilder<TModel, TPipelineContext, TInitialEvent> Do(
+            Action<TModel, TPipelineContext> action
+        )
         {
-            return new Pipeline<TModel>(_steps);
+            var step = new SyncStep<TModel, TPipelineContext>(action);
+            _steps.Add(step);
+            return this;
+        }
+        
+        public IPipeline<TModel, TPipelineContext> Create()
+        {
+            return new Pipeline<TModel, TPipelineContext>(_steps);
+        }
+
+        public IDisposable Run(Action<TPipelineContext, Exception> onError)
+        {
+            var pipeline = Create();
+            return _router.GetEventObservable<TInitialEvent>().Observe((m, e, c) =>
+            {
+                IPipelineInstance<TModel, TPipelineContext> pipelineInstance = pipeline.CreateInstance();
+                TPipelineContext pipelineInstanceContext = _contextFactory(m, e, c);
+                pipelineInstance.Run(m, pipelineInstanceContext);
+            });
         }
     }
 
-    public class Pipeline<TModel> : DisposableBase, IPipeline<TModel>
+    public class Pipeline<TModel, TPipelineContext> : DisposableBase, IPipeline<TModel, TPipelineContext>
+        where TPipelineContext : IPipelineInstanceContext
     {
-        private readonly List<Step<TModel>> _steps;
+        private readonly List<Step<TModel, TPipelineContext>> _steps;
 
-        public Pipeline(List<Step<TModel>> steps)
+        public Pipeline(List<Step<TModel, TPipelineContext>> steps)
         {
             _steps = steps;
         }
 
-        public IPipelineInstance<TModel> CreateInstance()
+        public IPipelineInstance<TModel, TPipelineContext> CreateInstance()
         {
             var firstStep = _steps[0];
             for (int i = 1; i < _steps.Count; i++)
@@ -118,28 +121,28 @@ namespace Esp.Net.Concurrency
 
         // it's entirely possible that a Pipeline instance is never disposed, it may just run it's course. 
         // however it if it's disposed before this point father step won't be run.
-        private class PipelineInstance : DisposableBase, IPipelineInstance<TModel>
+        private class PipelineInstance : DisposableBase, IPipelineInstance<TModel, TPipelineContext>
         {
-            private readonly Step<TModel> _firstStep;
-            private Action< Exception> _onError;
-            private readonly Queue<Action<TModel>> _queue = new Queue<Action<TModel>>();
+            private readonly Step<TModel, TPipelineContext> _firstStep;
+            private Action<TPipelineContext, Exception> _onError;
+            private readonly Queue<Action<TModel, TPipelineContext>> _queue = new Queue<Action<TModel, TPipelineContext>>();
             private bool _purging;
 
-            public PipelineInstance(Step<TModel> firstStep)
+            public PipelineInstance(Step<TModel, TPipelineContext> firstStep)
             {
                 _firstStep = firstStep;
             }
 
-            public void Run(TModel currentModel, Action<Exception> onError = null)
+            public void Run(TModel currentModel, TPipelineContext context, Action<TPipelineContext, Exception> onError = null)
             {
                 _onError = onError;
                 _queue.Enqueue(CreateStep(_firstStep));
-                PurgeQueue(currentModel);
+                PurgeQueue(currentModel, context);
             }
 
-            private Action<TModel> CreateStep(Step<TModel> step)
+            private Action<TModel, TPipelineContext> CreateStep(Step<TModel, TPipelineContext> step)
             {
-                return (currentModel) =>
+                return (currentModel, context) =>
                 {
                     if (step.Type == StepType.Async)
                     {
@@ -147,12 +150,12 @@ namespace Esp.Net.Concurrency
                         // note that the step may yield multiple times and we just stay subscribed until it 
                         // errors or completes. This means we may run a step once, then run subsequent steps 
                         // multiple times. 
-                        stepDisposable = step.GetExecuteStream(currentModel).Subscribe(latestModel =>
+                        stepDisposable = step.GetExecuteStream(currentModel, context).Subscribe(latestModel =>
                         {
                             if (step.Next != null)
                             {
                                 _queue.Enqueue(CreateStep(step.Next));
-                                PurgeQueue(latestModel);
+                                PurgeQueue(latestModel, context);
                             }
                         },
                         ex =>
@@ -161,7 +164,7 @@ namespace Esp.Net.Concurrency
                             {
                                 throw ex;
                             }
-                            _onError(ex);
+                            _onError(context, ex);
                         },
                         () =>
                         {
@@ -171,17 +174,17 @@ namespace Esp.Net.Concurrency
                     }
                     else
                     {
-                        step.Execute(currentModel);
+                        step.Execute(currentModel, context);
                         if (step.Next != null)
                         {
                             _queue.Enqueue(CreateStep(step.Next));
-                            PurgeQueue(currentModel);
+                            PurgeQueue(currentModel, context);
                         }
                     }
                 };
             }
 
-            private void PurgeQueue(TModel currentModel)
+            private void PurgeQueue(TModel currentModel, TPipelineContext context)
             {
                 Debug.Assert(!_purging);
                 _purging = true;
@@ -191,7 +194,7 @@ namespace Esp.Net.Concurrency
                     while (hasItems)
                     {
                         var action = _queue.Dequeue();
-                        action(currentModel);
+                        action(currentModel, context);
                         hasItems = _queue.Count > 0;
                     }
                 }
@@ -200,6 +203,22 @@ namespace Esp.Net.Concurrency
                     _purging = false;
                 }
             }
+        }
+    }
+
+    public class DefatultPipelineInstanceContext : IPipelineInstanceContext
+    {
+        private bool _isCanceled;
+
+        public bool IsCanceled
+        {
+            get { return _isCanceled; }
+        }
+
+        public void Cancel()
+        {
+            if (_isCanceled) throw new InvalidOperationException("Already canceled");
+            _isCanceled = true;
         }
     }
 }

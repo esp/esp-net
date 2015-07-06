@@ -47,11 +47,9 @@ namespace Esp.Net.Concurrency
         [Test]
         public void WhenStepResultAreContinueObservableIsSubscribed()
         {
-            IPipeline<TestModel> pipeline = _router.ConfigurePipeline()
-                .SubscribeTo(GetStringObservble, OnStringResultsReceived)
-                .Create();
-            _stringSubject.Observers.Count.ShouldBe(0);
-            pipeline.CreateInstance().Run(_model, OnError);
+            _router.ConfigurePipeline<TestModel, string>()
+                .SelectMany(GetStringObservble, OnStringResultsReceived)
+                .Run(OnError);
             _stringSubject.Observers.Count.ShouldBe(1);
         }
 
@@ -59,11 +57,9 @@ namespace Esp.Net.Concurrency
         public void WhenAsyncResultsReturndResultsDelegateInvoked()
         {
             _router
-                .ConfigurePipeline()
-                .SubscribeTo(GetStringObservble, OnStringResultsReceived)
-                .Create()
-                .CreateInstance()
-                .Run(_model, OnError);            
+                .ConfigurePipeline<TestModel, string>()
+                .SelectMany(GetStringObservble, OnStringResultsReceived)
+                .Run(OnError);            
             _stringSubject.OnNext("Foo");
             _stringSubject.OnNext("Bar");
             _stringSubject.OnNext("Baz");
@@ -78,10 +74,10 @@ namespace Esp.Net.Concurrency
 
             var eventSubject = _router.GetEventSubject<AyncResultsEvent<string>>();
 
-            IPipeline<TestModel> pipeline = _router.ConfigurePipeline()
-                .SubscribeTo(GetStringObservble, OnStringResultsReceived)
-                .Create();
-            pipeline.CreateInstance().Run(_model, OnError);
+            _router
+                .ConfigurePipeline<TestModel, string>()
+                .SelectMany(GetStringObservble, OnStringResultsReceived)
+                .Run(OnError);  
             
             eventSubject.Observers.Count.ShouldBe(1);
             _stringSubject.Observers.Count.ShouldBe(1);
@@ -95,14 +91,14 @@ namespace Esp.Net.Concurrency
         public void WhenStepProcessessResultsItThenCallsNextStep()
         {
             var stringEventObservable = _router.GetEventSubject<AyncResultsEvent<string>>();
-            var decimalEventObservable = _router.GetEventSubject<AyncResultsEvent<decimal>>();
+            var decimalEventObservable = _router.GetEventSubject<AyncResultsEvent<decimal>>(); 
+            
             _router
-                .ConfigurePipeline()
-                .SubscribeTo(GetStringObservble, OnStringResultsReceived)
-                .SubscribeTo(GetDecimalObservable, OnDecialResultsReceived)
-                .Create()
-                .CreateInstance()
-                .Run(_model, OnError);
+                .ConfigurePipeline<TestModel, string>()
+                .SelectMany(GetStringObservble, OnStringResultsReceived)
+                .SelectMany(GetDecimalObservable, OnDecialResultsReceived)
+                .Run(OnError);  
+
             _stringSubject.OnNext("Foo");
             _stringSubject.Observers.Count.ShouldBe(1);
             stringEventObservable.Observers.Count.ShouldBe(1);
@@ -125,7 +121,7 @@ namespace Esp.Net.Concurrency
             decimalEventObservable.Observers.Count.ShouldBe(2);
         }
 
-        private IObservable<string> GetStringObservble(TestModel model)
+        private IObservable<string> GetStringObservble(TestModel model, IPipelineInstanceContext context)
         {
             return _stringSubject;
         }
@@ -135,7 +131,7 @@ namespace Esp.Net.Concurrency
             model.ReceivedStrings.Add(results);
         }
 
-        private IObservable<decimal> GetDecimalObservable(TestModel model)
+        private IObservable<decimal> GetDecimalObservable(TestModel model, IPipelineInstanceContext context)
         {
             return _decimalSubject;
         }
@@ -145,7 +141,7 @@ namespace Esp.Net.Concurrency
             model.ReceivedDecimals.Add(results);
         }
 
-        private IObservable<int> GetIntObservable(TestModel model)
+        private IObservable<int> GetIntObservable(TestModel model, IPipelineInstanceContext context)
         {
             return _intSubject;
         }
@@ -155,7 +151,7 @@ namespace Esp.Net.Concurrency
             model.ReceivedInts.Add(results);
         }
 
-        private void OnError(Exception ex)
+        private void OnError(IPipelineInstanceContext context, Exception ex)
         {
             _exception = ex;
         }

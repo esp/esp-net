@@ -12,24 +12,24 @@ namespace Esp.Net.Concurrency
         Sync
     }
 
-    public abstract class Step<TModel> : DisposableBase
+    public abstract class Step<TModel, TPipelineContext> : DisposableBase
     {
         public abstract StepType Type { get; }
 
-        public abstract IObservable<TModel> GetExecuteStream(TModel model);
+        public abstract IObservable<TModel> GetExecuteStream(TModel model, TPipelineContext context);
         
-        public abstract void Execute(TModel model);
+        public abstract void Execute(TModel model, TPipelineContext context);
 
-        public Step<TModel> Next { get; set; }
+        public Step<TModel, TPipelineContext> Next { get; set; }
     }
 
-    public class ObservableStep<TModel, TResults> : Step<TModel>
+    public class ObservableStep<TModel, TPipelineContext, TResults> : Step<TModel, TPipelineContext>
     {
         private readonly IRouter<TModel> _router;
-        private readonly Func<TModel, IObservable<TResults>> _observableFactory;
+        private readonly Func<TModel, TPipelineContext, IObservable<TResults>> _observableFactory;
         private readonly Action<TModel, TResults> _onAsyncResults;
 
-        public ObservableStep(IRouter<TModel> router, Func<TModel, IObservable<TResults>> observableFactory, Action<TModel, TResults> onAsyncResults)
+        public ObservableStep(IRouter<TModel> router, Func<TModel, TPipelineContext, IObservable<TResults>> observableFactory, Action<TModel, TResults> onAsyncResults)
         {
             _router = router;
             _observableFactory = observableFactory;
@@ -41,12 +41,17 @@ namespace Esp.Net.Concurrency
             get { return StepType.Async; }
         }
 
-        public override IObservable<TModel> GetExecuteStream(TModel model)
+        public override IObservable<TModel> GetExecuteStream(TModel model, TPipelineContext context)
         {
             return Observable.Create<TModel>(o =>
             {
                 var disposables = new DisposableCollection();
-                var observable = _observableFactory(model);
+                var observable = _observableFactory(model, context);
+
+//                if(context.IsCanceled))
+//                {
+//                }
+
                 var id = Guid.NewGuid();
                 var eventStreamDisposable = _router
                     .GetEventObservable<AyncResultsEvent<TResults>>()
@@ -81,17 +86,17 @@ namespace Esp.Net.Concurrency
             });
         }
 
-        public override void Execute(TModel model)
+        public override void Execute(TModel model, TPipelineContext context)
         {
             throw new InvalidOperationException();
         }
     }
 
-    public class SyncStep<TModel> : Step<TModel>
+    public class SyncStep<TModel, TPipelineContext> : Step<TModel, TPipelineContext>
     {
-        private readonly Action<TModel> _action;
+        private readonly Action<TModel, TPipelineContext> _action;
 
-        public SyncStep(Action<TModel> action)
+        public SyncStep(Action<TModel, TPipelineContext> action)
         {
             _action = action;
         }
@@ -101,14 +106,14 @@ namespace Esp.Net.Concurrency
             get { return StepType.Sync; }
         }
 
-        public override IObservable<TModel> GetExecuteStream(TModel model)
+        public override IObservable<TModel> GetExecuteStream(TModel model, TPipelineContext context)
         {
             throw new InvalidOperationException();
         }
 
-        public override void Execute(TModel model)
+        public override void Execute(TModel model, TPipelineContext context)
         {
-            _action(model);
+            _action(model, context);
         }
     }
 }
