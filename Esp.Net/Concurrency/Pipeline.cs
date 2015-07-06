@@ -94,7 +94,6 @@ namespace Esp.Net.Concurrency
             {
                 // TODO build in complete and dispose symantics 
                 // so we can return a dictionary disposable that tracks each underlying
-                // pipeline instance 
                 IPipelineInstance<TModel, TPipelineContext> pipelineInstance = pipeline.CreateInstance();
                 TPipelineContext pipelineInstanceContext = _contextFactory(m, e, c);
                 pipelineInstance.Run(m, pipelineInstanceContext);
