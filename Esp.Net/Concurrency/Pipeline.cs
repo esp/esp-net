@@ -6,6 +6,8 @@ using System.Diagnostics;
 using Esp.Net.Model;
 using System.Reactive.Linq;
 
+// TODO threading!! it's completely unsafe atm given the introduction of IObservable
+
 namespace Esp.Net.Concurrency
 {
     public interface IPipelineInstanceContext
@@ -36,16 +38,21 @@ namespace Esp.Net.Concurrency
         }
     }
 
-    public interface IPipeline<in TModel, TPipelineContext>
+    public interface IPipeline<TModel, TPipelineContext>
         where TPipelineContext : IPipelineInstanceContext
     {
         IPipelineInstance<TModel, TPipelineContext> CreateInstance();
     }
 
-    public interface IPipelineInstance<in TModel, TPipelineContext> : IDisposable
+    public interface IPipelineInstance<TModel, TPipelineContext> : IDisposable
         where TPipelineContext : IPipelineInstanceContext
     {
-        void Run(TModel currentModel, TPipelineContext context, Action<TPipelineContext, Exception> onError = null);
+        void Run(
+            TModel currentModel, 
+            TPipelineContext context,
+            Action<TModel, TPipelineContext, Exception> onError,
+            Action<TModel, TPipelineContext> onCompleted
+        );
     }
 
     public class PipelineBuilder<TModel, TPipelineContext, TInitialEvent> 
@@ -65,7 +72,7 @@ namespace Esp.Net.Concurrency
 
         public PipelineBuilder<TModel, TPipelineContext, TInitialEvent> SelectMany<TResult>(
             Func<TModel, TPipelineContext, IObservable<TResult>> observableFactory,
-            Action<TModel, TResult> onResultsReceived
+            Action<TModel, TPipelineContext, TResult> onResultsReceived
         )
         {
             var step = new ObservableStep<TModel, TPipelineContext, TResult>(_router, observableFactory, onResultsReceived);
@@ -87,17 +94,33 @@ namespace Esp.Net.Concurrency
             return new Pipeline<TModel, TPipelineContext>(_steps);
         }
 
-        public IDisposable Run(Action<TPipelineContext, Exception> onError)
+        public IDisposable Run(Action<TModel, TPipelineContext, Exception> onError, Action<TModel, TPipelineContext> onCompleted)
         {
+            var disposables = new DictionaryDisposable<Guid>();
             IPipeline<TModel, TPipelineContext> pipeline = Create();
-            return _router.GetEventObservable<TInitialEvent>().Observe((m, e, c) =>
+            var eventSubscription = _router.GetEventObservable<TInitialEvent>().Observe((model, e, eventContext) =>
             {
-                // TODO build in complete and dispose symantics 
-                // so we can return a dictionary disposable that tracks each underlying
+                var instanceId = Guid.NewGuid();
                 IPipelineInstance<TModel, TPipelineContext> pipelineInstance = pipeline.CreateInstance();
-                TPipelineContext pipelineInstanceContext = _contextFactory(m, e, c);
-                pipelineInstance.Run(m, pipelineInstanceContext);
+                TPipelineContext pipelineInstanceContext = _contextFactory(model, e, eventContext);
+                disposables.Add(instanceId, pipelineInstance);
+                pipelineInstance.Run(
+                    model, 
+                    pipelineInstanceContext, 
+                    (model1, context, ex) =>
+                    {
+                        disposables.Remove(instanceId);
+                        onError(model1, pipelineInstanceContext, ex);
+                    },
+                    (model1, context) =>
+                    {
+                        disposables.Remove(instanceId);
+                        onCompleted(model1, pipelineInstanceContext);
+                    }
+                );
             });
+            disposables.Add(Guid.NewGuid(), eventSubscription);
+            return disposables;
         }
     }
 
@@ -121,23 +144,30 @@ namespace Esp.Net.Concurrency
             return new PipelineInstance(firstStep);
         }
 
-        // it's entirely possible that a Pipeline instance is never disposed, it may just run it's course. 
-        // however it if it's disposed before this point father step won't be run.
+        // TODO it's entirely possible that a Pipeline instance is never disposed, it may just run it's course. 
+        // however it if it's disposed before this point further should't run.
         private class PipelineInstance : DisposableBase, IPipelineInstance<TModel, TPipelineContext>
         {
             private readonly Step<TModel, TPipelineContext> _firstStep;
-            private Action<TPipelineContext, Exception> _onError;
+            private Action<TModel, TPipelineContext, Exception> _onError;
             private readonly Queue<Action<TModel, TPipelineContext>> _queue = new Queue<Action<TModel, TPipelineContext>>();
             private bool _purging;
+            private Action<TModel, TPipelineContext> _onCompleted;
 
             public PipelineInstance(Step<TModel, TPipelineContext> firstStep)
             {
                 _firstStep = firstStep;
             }
 
-            public void Run(TModel currentModel, TPipelineContext context, Action<TPipelineContext, Exception> onError = null)
+            public void Run(
+                TModel currentModel, 
+                TPipelineContext context,
+                Action<TModel, TPipelineContext, Exception> onError,
+                Action<TModel, TPipelineContext> onCompleted
+            )
             {
                 _onError = onError;
+                _onCompleted = onCompleted;
                 _queue.Enqueue(CreateStep(_firstStep));
                 PurgeQueue(currentModel, context);
             }
@@ -166,11 +196,13 @@ namespace Esp.Net.Concurrency
                             {
                                 throw ex;
                             }
-                            _onError(context, ex);
+                           // _onError(model, context, ex);
                         },
                         () =>
                         {
-                            // need to dispose of child steps        
+                            // TODO need to dispose of child steps
+                            // need to finish instance workflow, i.e. hook back into PurgeQueue or lift that 
+                            // workflow so we can poke the instance and get it to wind up in this case.
                         });
                         AddDisposable(stepDisposable);
                     }
@@ -199,6 +231,7 @@ namespace Esp.Net.Concurrency
                         action(currentModel, context);
                         hasItems = _queue.Count > 0;
                     }
+                    _onCompleted(currentModel, context);
                 }
                 finally
                 {

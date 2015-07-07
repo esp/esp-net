@@ -4,7 +4,7 @@ namespace Esp.Net.Model
 {
     public abstract class DisposableBase : IDisposable
     {
-        private readonly DisposableCollection _disposables = new DisposableCollection();
+        private readonly CollectionDisposable _disposables = new CollectionDisposable();
 
         public void AddDisposable(IDisposable disposable)
         {

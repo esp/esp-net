@@ -27,9 +27,9 @@ namespace Esp.Net.Concurrency
     {
         private readonly IRouter<TModel> _router;
         private readonly Func<TModel, TPipelineContext, IObservable<TResults>> _observableFactory;
-        private readonly Action<TModel, TResults> _onAsyncResults;
+        private readonly Action<TModel, TPipelineContext, TResults> _onAsyncResults;
 
-        public ObservableStep(IRouter<TModel> router, Func<TModel, TPipelineContext, IObservable<TResults>> observableFactory, Action<TModel, TResults> onAsyncResults)
+        public ObservableStep(IRouter<TModel> router, Func<TModel, TPipelineContext, IObservable<TResults>> observableFactory, Action<TModel, TPipelineContext, TResults> onAsyncResults)
         {
             _router = router;
             _observableFactory = observableFactory;
@@ -45,9 +45,10 @@ namespace Esp.Net.Concurrency
         {
             return Observable.Create<TModel>(o =>
             {
-                var disposables = new DisposableCollection();
+                var disposables = new CollectionDisposable();
                 var observable = _observableFactory(model, context);
 
+                // TODO
 //                if(context.IsCanceled))
 //                {
 //                }
@@ -57,9 +58,9 @@ namespace Esp.Net.Concurrency
                     .GetEventObservable<AyncResultsEvent<TResults>>()
                     .Where((m, e, c) => e.Id == id)
                     .Observe(
-                        (m, e, c) =>
+                        (m, e) =>
                         {
-                            _onAsyncResults(m, e.Result);
+                            _onAsyncResults(m, context, e.Result);
                             o.OnNext(model);
                         }
                     );

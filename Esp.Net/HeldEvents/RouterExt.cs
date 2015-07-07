@@ -40,7 +40,7 @@ namespace Esp.Net.HeldEvents
                 {
                     var heldEvents = new Dictionary<Guid, HeldEventData<TEvent>>();
                     var releasedEvents = new HashSet<Guid>();
-                    var disposables = new DisposableCollection();
+                    var disposables = new CollectionDisposable();
                     disposables.Add(router.GetEventObservable<TEvent>(ObservationStage.Preview).Observe((m, e, c) =>
                     {
                         // Have we already re-published this event? If so we don't want to hold it again.

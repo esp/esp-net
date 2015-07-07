@@ -71,15 +71,18 @@ namespace Esp.Net.Examples
                 // Run wraps Create and for each event creates a new pipeline instance (via CreateInstance).
                 // so efictively each instance acts in it's own right, however all instances can be 
                 // disposed usng the disposable returned from Run().
-                .Run((pipelinContext, exception) => { });
+                .Run(
+                    (model, pipelinContext, exception) => { }, 
+                    (model, context) => { }
+                );
         }
 
-        private void OnQuoteAccepted(FxOption model, string response)
+        private void OnQuoteAccepted(FxOption model, BookingPipelineContext context, string response)
         {
             // apply dates to model
         }
 
-        private void OnTermsheetReceived(FxOption model, string response)
+        private void OnTermsheetReceived(FxOption model, BookingPipelineContext context, string response)
         {
             // apply dates to model
         }

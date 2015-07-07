@@ -51,7 +51,7 @@ namespace Esp.Net.Concurrency
             _router
                 .ConfigurePipeline<TestModel, InitialEvent>()
                 .SelectMany(GetStringObservble, OnStringResultsReceived)
-                .Run(OnError);    
+                .Run(OnError, OnCompleted);    
             _router.PublishEvent(new InitialEvent());
             _stringSubject.OnNext("Foo");
             _stringSubject.OnNext("Bar");
@@ -70,7 +70,7 @@ namespace Esp.Net.Concurrency
             _router
                 .ConfigurePipeline<TestModel, InitialEvent>()
                 .SelectMany(GetStringObservble, OnStringResultsReceived)
-                .Run(OnError);
+                .Run(OnError, OnCompleted);
 
             _router.PublishEvent(new InitialEvent());
 
@@ -92,7 +92,7 @@ namespace Esp.Net.Concurrency
                 .ConfigurePipeline<TestModel, InitialEvent>()
                 .SelectMany(GetStringObservble, OnStringResultsReceived)
                 .SelectMany(GetDecimalObservable, OnDecialResultsReceived)
-                .Run(OnError);
+                .Run(OnError, OnCompleted);
 
             _router.PublishEvent(new InitialEvent());
 
@@ -123,7 +123,7 @@ namespace Esp.Net.Concurrency
             return _stringSubject;
         }
 
-        private void OnStringResultsReceived(TestModel model, string results)
+        private void OnStringResultsReceived(TestModel model, IPipelineInstanceContext context, string results)
         {
             model.ReceivedStrings.Add(results);
         }
@@ -133,7 +133,7 @@ namespace Esp.Net.Concurrency
             return _decimalSubject;
         }
 
-        private void OnDecialResultsReceived(TestModel model, decimal results)
+        private void OnDecialResultsReceived(TestModel model, IPipelineInstanceContext context, decimal results)
         {
             model.ReceivedDecimals.Add(results);
         }
@@ -143,14 +143,18 @@ namespace Esp.Net.Concurrency
             return _intSubject;
         }
 
-        private void OnIntResultsReceived(TestModel model, int results)
+        private void OnIntResultsReceived(TestModel model, IPipelineInstanceContext context, int results)
         {
             model.ReceivedInts.Add(results);
         }
 
-        private void OnError(IPipelineInstanceContext context, Exception ex)
+        private void OnError(TestModel model, IPipelineInstanceContext context, Exception ex)
         {
             _exception = ex;
+        }
+
+        private void OnCompleted(TestModel model, IPipelineInstanceContext context)
+        {
         }
     }
 }

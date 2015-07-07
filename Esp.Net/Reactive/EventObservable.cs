@@ -46,7 +46,7 @@ namespace Esp.Net.Reactive
             return Create<TModel, TEvent, TContext>(
                 o =>
                 {
-                    var disposables = new DisposableCollection();
+                    var disposables = new CollectionDisposable();
                     foreach (IEventObservable<TModel, TEvent, TContext> source in sources)
                     {
                         disposables.Add(source.Observe(o));
