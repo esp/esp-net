@@ -10,7 +10,7 @@ using Shouldly;
 namespace Esp.Net.Concurrency
 {
     [TestFixture]
-    public class PipelineTests
+    public class WorkflowTests
     {
         public class TestModel
         {
@@ -49,7 +49,7 @@ namespace Esp.Net.Concurrency
         public void WhenAsyncResultsReturndResultsDelegateInvoked()
         {
             _router
-                .ConfigurePipeline<TestModel, InitialEvent>()
+                .ConfigureWorkflow<TestModel, InitialEvent>()
                 .SelectMany(GetStringObservble, OnStringResultsReceived)
                 .Run(OnError, OnCompleted);    
             _router.PublishEvent(new InitialEvent());
@@ -68,7 +68,7 @@ namespace Esp.Net.Concurrency
             var eventSubject = _router.GetEventSubject<AyncResultsEvent<string>>();
 
             _router
-                .ConfigurePipeline<TestModel, InitialEvent>()
+                .ConfigureWorkflow<TestModel, InitialEvent>()
                 .SelectMany(GetStringObservble, OnStringResultsReceived)
                 .Run(OnError, OnCompleted);
 
@@ -89,7 +89,7 @@ namespace Esp.Net.Concurrency
             var decimalEventObservable = _router.GetEventSubject<AyncResultsEvent<decimal>>(); 
             
             _router
-                .ConfigurePipeline<TestModel, InitialEvent>()
+                .ConfigureWorkflow<TestModel, InitialEvent>()
                 .SelectMany(GetStringObservble, OnStringResultsReceived)
                 .SelectMany(GetDecimalObservable, OnDecialResultsReceived)
                 .Run(OnError, OnCompleted);
@@ -118,42 +118,42 @@ namespace Esp.Net.Concurrency
             decimalEventObservable.Observers.Count.ShouldBe(2);
         }
 
-        private IObservable<string> GetStringObservble(TestModel model, IPipelineInstanceContext context)
+        private IObservable<string> GetStringObservble(TestModel model, IWorkflowInstanceContext context)
         {
             return _stringSubject;
         }
 
-        private void OnStringResultsReceived(TestModel model, IPipelineInstanceContext context, string results)
+        private void OnStringResultsReceived(TestModel model, IWorkflowInstanceContext context, string results)
         {
             model.ReceivedStrings.Add(results);
         }
 
-        private IObservable<decimal> GetDecimalObservable(TestModel model, IPipelineInstanceContext context)
+        private IObservable<decimal> GetDecimalObservable(TestModel model, IWorkflowInstanceContext context)
         {
             return _decimalSubject;
         }
 
-        private void OnDecialResultsReceived(TestModel model, IPipelineInstanceContext context, decimal results)
+        private void OnDecialResultsReceived(TestModel model, IWorkflowInstanceContext context, decimal results)
         {
             model.ReceivedDecimals.Add(results);
         }
 
-        private IObservable<int> GetIntObservable(TestModel model, IPipelineInstanceContext context)
+        private IObservable<int> GetIntObservable(TestModel model, IWorkflowInstanceContext context)
         {
             return _intSubject;
         }
 
-        private void OnIntResultsReceived(TestModel model, IPipelineInstanceContext context, int results)
+        private void OnIntResultsReceived(TestModel model, IWorkflowInstanceContext context, int results)
         {
             model.ReceivedInts.Add(results);
         }
 
-        private void OnError(TestModel model, IPipelineInstanceContext context, Exception ex)
+        private void OnError(TestModel model, IWorkflowInstanceContext context, Exception ex)
         {
             _exception = ex;
         }
 
-        private void OnCompleted(TestModel model, IPipelineInstanceContext context)
+        private void OnCompleted(TestModel model, IWorkflowInstanceContext context)
         {
         }
     }

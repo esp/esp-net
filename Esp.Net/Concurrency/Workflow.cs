@@ -10,112 +10,112 @@ using System.Reactive.Linq;
 
 namespace Esp.Net.Concurrency
 {
-    public interface IPipelineInstanceContext
+    public interface IWorkflowInstanceContext
     {
         bool IsCanceled { get; }
         void Cancel();
     }
 
-    public static class PipelineRouterExt
+    public static class WorkflowRouterExt
     {
-        public static PipelineBuilder<TModel, DefatultPipelineInstanceContext, TInitialEvent> ConfigurePipeline<TModel, TInitialEvent>(
+        public static WorkflowBuilder<TModel, DefatultWorkflowInstanceContext, TInitialEvent> ConfigureWorkflow<TModel, TInitialEvent>(
             this IRouter<TModel> router
         )
         {
-            return new PipelineBuilder<TModel, DefatultPipelineInstanceContext, TInitialEvent>(
+            return new WorkflowBuilder<TModel, DefatultWorkflowInstanceContext, TInitialEvent>(
                 router, 
-                (m, e, c) => new DefatultPipelineInstanceContext()
+                (m, e, c) => new DefatultWorkflowInstanceContext()
             );
         }
 
-        public static PipelineBuilder<TModel, TPipelineContext, TInitialEvent> ConfigurePipeline<TModel, TPipelineContext, TInitialEvent>(
+        public static WorkflowBuilder<TModel, TWorkflowContext, TInitialEvent> ConfigureWorkflow<TModel, TWorkflowContext, TInitialEvent>(
             this IRouter<TModel> router,
-            Func<TModel, TInitialEvent, IEventContext, TPipelineContext> contextFactory
+            Func<TModel, TInitialEvent, IEventContext, TWorkflowContext> contextFactory
         ) 
-            where TPipelineContext : IPipelineInstanceContext
+            where TWorkflowContext : IWorkflowInstanceContext
         {
-            return new PipelineBuilder<TModel, TPipelineContext, TInitialEvent>(router, contextFactory);
+            return new WorkflowBuilder<TModel, TWorkflowContext, TInitialEvent>(router, contextFactory);
         }
     }
 
-    public interface IPipeline<TModel, TPipelineContext>
-        where TPipelineContext : IPipelineInstanceContext
+    public interface IWorkflow<TModel, TWorkflowContext>
+        where TWorkflowContext : IWorkflowInstanceContext
     {
-        IPipelineInstance<TModel, TPipelineContext> CreateInstance();
+        IWorkflowInstance<TModel, TWorkflowContext> CreateInstance();
     }
 
-    public interface IPipelineInstance<TModel, TPipelineContext> : IDisposable
-        where TPipelineContext : IPipelineInstanceContext
+    public interface IWorkflowInstance<TModel, TWorkflowContext> : IDisposable
+        where TWorkflowContext : IWorkflowInstanceContext
     {
         void Run(
             TModel currentModel, 
-            TPipelineContext context,
-            Action<TModel, TPipelineContext, Exception> onError,
-            Action<TModel, TPipelineContext> onCompleted
+            TWorkflowContext context,
+            Action<TModel, TWorkflowContext, Exception> onError,
+            Action<TModel, TWorkflowContext> onCompleted
         );
     }
 
-    public class PipelineBuilder<TModel, TPipelineContext, TInitialEvent> 
-        where TPipelineContext : IPipelineInstanceContext
+    public class WorkflowBuilder<TModel, TWorkflowContext, TInitialEvent> 
+        where TWorkflowContext : IWorkflowInstanceContext
     {
         private readonly IRouter<TModel> _router;
-        private readonly Func<TModel, TInitialEvent, IEventContext, TPipelineContext> _contextFactory;
-        private readonly List<Step<TModel, TPipelineContext>> _steps = new List<Step<TModel, TPipelineContext>>();
+        private readonly Func<TModel, TInitialEvent, IEventContext, TWorkflowContext> _contextFactory;
+        private readonly List<Step<TModel, TWorkflowContext>> _steps = new List<Step<TModel, TWorkflowContext>>();
 
-        public PipelineBuilder(
+        public WorkflowBuilder(
             IRouter<TModel> router,
-            Func<TModel, TInitialEvent, IEventContext, TPipelineContext> contextFactory)
+            Func<TModel, TInitialEvent, IEventContext, TWorkflowContext> contextFactory)
         {
             _router = router;
             _contextFactory = contextFactory;
         }
 
-        public PipelineBuilder<TModel, TPipelineContext, TInitialEvent> SelectMany<TResult>(
-            Func<TModel, TPipelineContext, IObservable<TResult>> observableFactory,
-            Action<TModel, TPipelineContext, TResult> onResultsReceived
+        public WorkflowBuilder<TModel, TWorkflowContext, TInitialEvent> SelectMany<TResult>(
+            Func<TModel, TWorkflowContext, IObservable<TResult>> observableFactory,
+            Action<TModel, TWorkflowContext, TResult> onResultsReceived
         )
         {
-            var step = new ObservableStep<TModel, TPipelineContext, TResult>(_router, observableFactory, onResultsReceived);
+            var step = new ObservableStep<TModel, TWorkflowContext, TResult>(_router, observableFactory, onResultsReceived);
             _steps.Add(step);
             return this;
         }
 
-        public PipelineBuilder<TModel, TPipelineContext, TInitialEvent> Do(
-            Action<TModel, TPipelineContext> action
+        public WorkflowBuilder<TModel, TWorkflowContext, TInitialEvent> Do(
+            Action<TModel, TWorkflowContext> action
         )
         {
-            var step = new SyncStep<TModel, TPipelineContext>(action);
+            var step = new SyncStep<TModel, TWorkflowContext>(action);
             _steps.Add(step);
             return this;
         }
         
-        public IPipeline<TModel, TPipelineContext> Create()
+        public IWorkflow<TModel, TWorkflowContext> Create()
         {
-            return new Pipeline<TModel, TPipelineContext>(_steps);
+            return new Workflow<TModel, TWorkflowContext>(_steps);
         }
 
-        public IDisposable Run(Action<TModel, TPipelineContext, Exception> onError, Action<TModel, TPipelineContext> onCompleted)
+        public IDisposable Run(Action<TModel, TWorkflowContext, Exception> onError, Action<TModel, TWorkflowContext> onCompleted)
         {
             var disposables = new DictionaryDisposable<Guid>();
-            IPipeline<TModel, TPipelineContext> pipeline = Create();
+            IWorkflow<TModel, TWorkflowContext> workflow = Create();
             var eventSubscription = _router.GetEventObservable<TInitialEvent>().Observe((model, e, eventContext) =>
             {
                 var instanceId = Guid.NewGuid();
-                IPipelineInstance<TModel, TPipelineContext> pipelineInstance = pipeline.CreateInstance();
-                TPipelineContext pipelineInstanceContext = _contextFactory(model, e, eventContext);
-                disposables.Add(instanceId, pipelineInstance);
-                pipelineInstance.Run(
+                IWorkflowInstance<TModel, TWorkflowContext> workflowInstance = workflow.CreateInstance();
+                TWorkflowContext workflowInstanceContext = _contextFactory(model, e, eventContext);
+                disposables.Add(instanceId, workflowInstance);
+                workflowInstance.Run(
                     model, 
-                    pipelineInstanceContext, 
+                    workflowInstanceContext, 
                     (model1, context, ex) =>
                     {
                         disposables.Remove(instanceId);
-                        onError(model1, pipelineInstanceContext, ex);
+                        onError(model1, workflowInstanceContext, ex);
                     },
                     (model1, context) =>
                     {
                         disposables.Remove(instanceId);
-                        onCompleted(model1, pipelineInstanceContext);
+                        onCompleted(model1, workflowInstanceContext);
                     }
                 );
             });
@@ -124,46 +124,46 @@ namespace Esp.Net.Concurrency
         }
     }
 
-    public class Pipeline<TModel, TPipelineContext> : DisposableBase, IPipeline<TModel, TPipelineContext>
-        where TPipelineContext : IPipelineInstanceContext
+    public class Workflow<TModel, TWorkflowContext> : DisposableBase, IWorkflow<TModel, TWorkflowContext>
+        where TWorkflowContext : IWorkflowInstanceContext
     {
-        private readonly List<Step<TModel, TPipelineContext>> _steps;
+        private readonly List<Step<TModel, TWorkflowContext>> _steps;
 
-        public Pipeline(List<Step<TModel, TPipelineContext>> steps)
+        public Workflow(List<Step<TModel, TWorkflowContext>> steps)
         {
             _steps = steps;
         }
 
-        public IPipelineInstance<TModel, TPipelineContext> CreateInstance()
+        public IWorkflowInstance<TModel, TWorkflowContext> CreateInstance()
         {
             var firstStep = _steps[0];
             for (int i = 1; i < _steps.Count; i++)
             {
                 firstStep.Next = _steps[i];
             }
-            return new PipelineInstance(firstStep);
+            return new WorkflowInstance(firstStep);
         }
 
-        // TODO it's entirely possible that a Pipeline instance is never disposed, it may just run it's course. 
+        // TODO it's entirely possible that a workflow instance is never disposed, it may just run it's course. 
         // however it if it's disposed before this point further should't run.
-        private class PipelineInstance : DisposableBase, IPipelineInstance<TModel, TPipelineContext>
+        private class WorkflowInstance : DisposableBase, IWorkflowInstance<TModel, TWorkflowContext>
         {
-            private readonly Step<TModel, TPipelineContext> _firstStep;
-            private Action<TModel, TPipelineContext, Exception> _onError;
-            private readonly Queue<Action<TModel, TPipelineContext>> _queue = new Queue<Action<TModel, TPipelineContext>>();
+            private readonly Step<TModel, TWorkflowContext> _firstStep;
+            private Action<TModel, TWorkflowContext, Exception> _onError;
+            private readonly Queue<Action<TModel, TWorkflowContext>> _queue = new Queue<Action<TModel, TWorkflowContext>>();
             private bool _purging;
-            private Action<TModel, TPipelineContext> _onCompleted;
+            private Action<TModel, TWorkflowContext> _onCompleted;
 
-            public PipelineInstance(Step<TModel, TPipelineContext> firstStep)
+            public WorkflowInstance(Step<TModel, TWorkflowContext> firstStep)
             {
                 _firstStep = firstStep;
             }
 
             public void Run(
                 TModel currentModel, 
-                TPipelineContext context,
-                Action<TModel, TPipelineContext, Exception> onError,
-                Action<TModel, TPipelineContext> onCompleted
+                TWorkflowContext context,
+                Action<TModel, TWorkflowContext, Exception> onError,
+                Action<TModel, TWorkflowContext> onCompleted
             )
             {
                 _onError = onError;
@@ -172,7 +172,7 @@ namespace Esp.Net.Concurrency
                 PurgeQueue(currentModel, context);
             }
 
-            private Action<TModel, TPipelineContext> CreateStep(Step<TModel, TPipelineContext> step)
+            private Action<TModel, TWorkflowContext> CreateStep(Step<TModel, TWorkflowContext> step)
             {
                 return (currentModel, context) =>
                 {
@@ -218,7 +218,7 @@ namespace Esp.Net.Concurrency
                 };
             }
 
-            private void PurgeQueue(TModel currentModel, TPipelineContext context)
+            private void PurgeQueue(TModel currentModel, TWorkflowContext context)
             {
                 Debug.Assert(!_purging);
                 _purging = true;
@@ -241,7 +241,7 @@ namespace Esp.Net.Concurrency
         }
     }
 
-    public class DefatultPipelineInstanceContext : IPipelineInstanceContext
+    public class DefatultWorkflowInstanceContext : IWorkflowInstanceContext
     {
         private bool _isCanceled;
 

@@ -12,24 +12,24 @@ namespace Esp.Net.Concurrency
         Sync
     }
 
-    public abstract class Step<TModel, TPipelineContext> : DisposableBase
+    public abstract class Step<TModel, TWorkflowContext> : DisposableBase
     {
         public abstract StepType Type { get; }
 
-        public abstract IObservable<TModel> GetExecuteStream(TModel model, TPipelineContext context);
+        public abstract IObservable<TModel> GetExecuteStream(TModel model, TWorkflowContext context);
         
-        public abstract void Execute(TModel model, TPipelineContext context);
+        public abstract void Execute(TModel model, TWorkflowContext context);
 
-        public Step<TModel, TPipelineContext> Next { get; set; }
+        public Step<TModel, TWorkflowContext> Next { get; set; }
     }
 
-    public class ObservableStep<TModel, TPipelineContext, TResults> : Step<TModel, TPipelineContext>
+    public class ObservableStep<TModel, TWorkflowContext, TResults> : Step<TModel, TWorkflowContext>
     {
         private readonly IRouter<TModel> _router;
-        private readonly Func<TModel, TPipelineContext, IObservable<TResults>> _observableFactory;
-        private readonly Action<TModel, TPipelineContext, TResults> _onAsyncResults;
+        private readonly Func<TModel, TWorkflowContext, IObservable<TResults>> _observableFactory;
+        private readonly Action<TModel, TWorkflowContext, TResults> _onAsyncResults;
 
-        public ObservableStep(IRouter<TModel> router, Func<TModel, TPipelineContext, IObservable<TResults>> observableFactory, Action<TModel, TPipelineContext, TResults> onAsyncResults)
+        public ObservableStep(IRouter<TModel> router, Func<TModel, TWorkflowContext, IObservable<TResults>> observableFactory, Action<TModel, TWorkflowContext, TResults> onAsyncResults)
         {
             _router = router;
             _observableFactory = observableFactory;
@@ -41,7 +41,7 @@ namespace Esp.Net.Concurrency
             get { return StepType.Async; }
         }
 
-        public override IObservable<TModel> GetExecuteStream(TModel model, TPipelineContext context)
+        public override IObservable<TModel> GetExecuteStream(TModel model, TWorkflowContext context)
         {
             return Observable.Create<TModel>(o =>
             {
@@ -87,17 +87,17 @@ namespace Esp.Net.Concurrency
             });
         }
 
-        public override void Execute(TModel model, TPipelineContext context)
+        public override void Execute(TModel model, TWorkflowContext context)
         {
             throw new InvalidOperationException();
         }
     }
 
-    public class SyncStep<TModel, TPipelineContext> : Step<TModel, TPipelineContext>
+    public class SyncStep<TModel, TWorkflowContext> : Step<TModel, TWorkflowContext>
     {
-        private readonly Action<TModel, TPipelineContext> _action;
+        private readonly Action<TModel, TWorkflowContext> _action;
 
-        public SyncStep(Action<TModel, TPipelineContext> action)
+        public SyncStep(Action<TModel, TWorkflowContext> action)
         {
             _action = action;
         }
@@ -107,12 +107,12 @@ namespace Esp.Net.Concurrency
             get { return StepType.Sync; }
         }
 
-        public override IObservable<TModel> GetExecuteStream(TModel model, TPipelineContext context)
+        public override IObservable<TModel> GetExecuteStream(TModel model, TWorkflowContext context)
         {
             throw new InvalidOperationException();
         }
 
-        public override void Execute(TModel model, TPipelineContext context)
+        public override void Execute(TModel model, TWorkflowContext context)
         {
             _action(model, context);
         }

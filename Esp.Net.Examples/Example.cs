@@ -18,11 +18,11 @@ namespace Esp.Net.Examples
         public string QuoteId { get; set; }
     }
 
-    public class BookingPipelineContext : IPipelineInstanceContext
+    public class BookingWorkflowContext : IWorkflowInstanceContext
     {
         private bool _isCanceled;
 
-        public BookingPipelineContext(AcceptQuoteEvent initialEvent)
+        public BookingWorkflowContext(AcceptQuoteEvent initialEvent)
         {
             Event = initialEvent;
         }
@@ -55,20 +55,20 @@ namespace Esp.Net.Examples
 
         public void Start()
         {
-            // By adding a pipeline context we can flow that right through the stack and provide it 
-            // anytime we invoke a deletage, for example on each step or on a pipeline instance exception.
+            // By adding a workflow context we can flow that right through the stack and provide it 
+            // anytime we invoke a deletage, for example on each step or on a workflow instance exception.
             //
             // We can solve the problem of if a step'should run' not by returning empty observables (which the consumer may not own)
             // but rather by using the context. Similar to the GetEventObservable api we can just cancel the contexxt 
             IDisposable disposable = _router
-                .ConfigurePipeline<FxOption, BookingPipelineContext, AcceptQuoteEvent>((m, e, c) => new BookingPipelineContext(e))
+                .ConfigureWorkflow<FxOption, BookingWorkflowContext, AcceptQuoteEvent>((m, e, c) => new BookingWorkflowContext(e))
                 // select many functions much the same as select many in Rx, we stay subscribed to the 
                 // response stream and invoke the next step for each yield. If the stream completes 
-                // the pipeline instance will stay subscribed to the next stream until that completes.
-                .SelectMany((model, pipelineContext) => _bookingService.AcceptQuote(model.CurrentQuoteId), OnQuoteAccepted)
-                .SelectMany((model, pipelineContext) => _bookingService.GenerateTermsheet(model.CurrentQuoteId), OnTermsheetReceived)
+                // the workflow instance will stay subscribed to the next stream until that completes.
+                .SelectMany((model, workflowContext) => _bookingService.AcceptQuote(model.CurrentQuoteId), OnQuoteAccepted)
+                .SelectMany((model, workflowContext) => _bookingService.GenerateTermsheet(model.CurrentQuoteId), OnTermsheetReceived)
                 .Do(OnBookingComlete)
-                // Run wraps Create and for each event creates a new pipeline instance (via CreateInstance).
+                // Run wraps Create and for each event creates a new workflow instance (via CreateInstance).
                 // so efictively each instance acts in it's own right, however all instances can be 
                 // disposed usng the disposable returned from Run().
                 .Run(
@@ -77,17 +77,17 @@ namespace Esp.Net.Examples
                 );
         }
 
-        private void OnQuoteAccepted(FxOption model, BookingPipelineContext context, string response)
+        private void OnQuoteAccepted(FxOption model, BookingWorkflowContext context, string response)
         {
             // apply dates to model
         }
 
-        private void OnTermsheetReceived(FxOption model, BookingPipelineContext context, string response)
+        private void OnTermsheetReceived(FxOption model, BookingWorkflowContext context, string response)
         {
             // apply dates to model
         }
 
-        private void OnBookingComlete(FxOption model, BookingPipelineContext context)
+        private void OnBookingComlete(FxOption model, BookingWorkflowContext context)
         {
         }
 
