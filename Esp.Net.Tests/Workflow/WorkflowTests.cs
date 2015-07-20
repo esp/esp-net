@@ -7,7 +7,7 @@ using Esp.Net.Stubs;
 using NUnit.Framework;
 using Shouldly;
 
-namespace Esp.Net.Concurrency
+namespace Esp.Net.Workflow
 {
     [TestFixture]
     public class WorkflowTests

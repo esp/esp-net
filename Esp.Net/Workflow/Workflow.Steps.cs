@@ -4,7 +4,7 @@ using System.Reactive.Linq;
 using Esp.Net.Model;
 using Esp.Net.Reactive;
 
-namespace Esp.Net.Concurrency
+namespace Esp.Net.Workflow
 {
     public enum StepType
     {

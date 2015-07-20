@@ -2,7 +2,7 @@
 using System;
 using Esp.Net.Model;
 
-namespace Esp.Net.Concurrency
+namespace Esp.Net.Workflow
 {
     public class AyncResultsEvent<TResult> : IIdentifiableEvent
     {

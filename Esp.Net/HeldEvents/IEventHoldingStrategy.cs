@@ -1,6 +1,6 @@
-﻿using Esp.Net.Model;
+﻿#if ESP_EXPERIMENTAL
+using Esp.Net.Model;
 
-#if ESP_EXPERIMENTAL
 namespace Esp.Net.HeldEvents
 {
     public interface IEventHoldingStrategy<in TModel, in TEvent> where TEvent : IIdentifiableEvent

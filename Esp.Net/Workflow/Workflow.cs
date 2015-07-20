@@ -3,12 +3,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Esp.Net.Model;
 using System.Reactive.Linq;
+using Esp.Net.Model;
 
 // TODO threading!! it's completely unsafe atm given the introduction of IObservable
 
-namespace Esp.Net.Concurrency
+namespace Esp.Net.Workflow
 {
     public interface IWorkflowInstanceContext
     {
