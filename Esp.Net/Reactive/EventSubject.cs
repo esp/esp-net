@@ -48,11 +48,7 @@ namespace Esp.Net.Reactive
         public IDisposable Observe(IEventObserver<TModel, TEvent, TContext> observer)
         {
             _observers.Add(observer);
-            return EspDisposable.Create(() =>
-            {
-                var wasRemoved = _observers.Remove(observer);
-                Debug.Assert(wasRemoved);
-            });
+            return EspDisposable.Create(() =>_observers.Remove(observer));
         }
     }
 }
