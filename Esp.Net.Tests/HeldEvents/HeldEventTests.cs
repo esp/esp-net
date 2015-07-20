@@ -1,10 +1,11 @@
-﻿using System;
+﻿#if ESP_EXPERIMENTAL
+using System;
 using System.Collections.Generic;
+using Esp.Net.Model;
 using Esp.Net.Reactive;
 using NUnit.Framework;
 using Shouldly;
 
-#if ESP_EXPERIMENTAL
 namespace Esp.Net.HeldEvents
 {
     [TestFixture]

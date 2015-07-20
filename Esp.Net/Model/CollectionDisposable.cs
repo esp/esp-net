@@ -19,11 +19,11 @@ using System.Collections.Generic;
 
 namespace Esp.Net.Model
 {
-    public class DisposableCollection : IDisposable
+    public class CollectionDisposable : IDisposable
     {
         private readonly List<IDisposable> _disposables;
 
-        public DisposableCollection(params IDisposable[] disposables)
+        public CollectionDisposable(params IDisposable[] disposables)
         {
             _disposables = new List<IDisposable>(disposables);
         }

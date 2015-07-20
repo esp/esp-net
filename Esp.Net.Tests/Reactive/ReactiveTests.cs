@@ -86,7 +86,7 @@ namespace Esp.Net.Reactive
         [Test]
         public void WhereChainsSourceDisposableOnDispose()
         {
-            var mockIEventObservable = new StubIEventObservable<TestModel>();
+            var mockIEventObservable = new StubEventObservable<TestModel>();
             var disposable = mockIEventObservable
                 .Where((m, e, c) => true)
                 .Observe((m, e, c) => { });
@@ -125,7 +125,7 @@ namespace Esp.Net.Reactive
         [Test]
         public void TakeChainsSourceDisposableOnDispose()
         {
-            var mockIEventObservable = new StubIEventObservable<TestModel>();
+            var mockIEventObservable = new StubEventObservable<TestModel>();
             var disposable = mockIEventObservable.Take(3).Observe((m, e, c) => { });
             disposable.Dispose();
             Assert.IsTrue(mockIEventObservable.IsDisposed);

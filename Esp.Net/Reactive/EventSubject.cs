@@ -15,6 +15,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Esp.Net.Model;
 
 namespace Esp.Net.Reactive
@@ -47,7 +48,7 @@ namespace Esp.Net.Reactive
         public IDisposable Observe(IEventObserver<TModel, TEvent, TContext> observer)
         {
             _observers.Add(observer);
-            return EspDisposable.Create(() => _observers.Remove(observer));
+            return EspDisposable.Create(() =>_observers.Remove(observer));
         }
     }
 }
