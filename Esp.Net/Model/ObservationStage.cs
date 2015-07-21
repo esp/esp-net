@@ -13,29 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #endregion
-namespace Esp.Net
+namespace Esp.Net.Model
 {
-    public interface IRouterScheduler
+    public enum ObservationStage
     {
-        bool CheckAccess();
-    }
-
-    public class RouterScheduler : IRouterScheduler
-    {
-        public static IRouterScheduler Default { get; private set; }
-
-        static RouterScheduler()
-        {
-            Default  = new RouterScheduler();
-        }
-
-        private RouterScheduler()
-        {
-        }
-        
-        public bool CheckAccess()
-        {
-            return true;
-        }
+        Preview,
+        Normal,
+        Committed
     }
 }

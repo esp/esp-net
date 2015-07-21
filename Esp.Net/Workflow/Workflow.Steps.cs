@@ -3,6 +3,7 @@ using System;
 using System.Reactive.Linq;
 using Esp.Net.Model;
 using Esp.Net.Reactive;
+using Esp.Net.Router;
 
 namespace Esp.Net.Workflow
 {
@@ -16,7 +17,7 @@ namespace Esp.Net.Workflow
     {
         public abstract StepType Type { get; }
 
-        public abstract IObservable<TModel> GetExecuteStream(TModel model, TWorkflowContext context);
+        public abstract IObservable<TModel> GetExecuteStream(Guid modelId, TModel model, TWorkflowContext context);
         
         public abstract void Execute(TModel model, TWorkflowContext context);
 
@@ -25,11 +26,11 @@ namespace Esp.Net.Workflow
 
     public class ObservableStep<TModel, TWorkflowContext, TResults> : Step<TModel, TWorkflowContext>
     {
-        private readonly IRouter<TModel> _router;
+        private readonly IRouter _router;
         private readonly Func<TModel, TWorkflowContext, IObservable<TResults>> _observableFactory;
         private readonly Action<TModel, TWorkflowContext, TResults> _onAsyncResults;
 
-        public ObservableStep(IRouter<TModel> router, Func<TModel, TWorkflowContext, IObservable<TResults>> observableFactory, Action<TModel, TWorkflowContext, TResults> onAsyncResults)
+        public ObservableStep(IRouter router, Func<TModel, TWorkflowContext, IObservable<TResults>> observableFactory, Action<TModel, TWorkflowContext, TResults> onAsyncResults)
         {
             _router = router;
             _observableFactory = observableFactory;
@@ -41,7 +42,7 @@ namespace Esp.Net.Workflow
             get { return StepType.Async; }
         }
 
-        public override IObservable<TModel> GetExecuteStream(TModel model, TWorkflowContext context)
+        public override IObservable<TModel> GetExecuteStream(Guid modelId, TModel model, TWorkflowContext context)
         {
             return Observable.Create<TModel>(o =>
             {
@@ -55,7 +56,7 @@ namespace Esp.Net.Workflow
 
                 var id = Guid.NewGuid();
                 var eventStreamDisposable = _router
-                    .GetEventObservable<AyncResultsEvent<TResults>>()
+                    .GetEventObservable<TModel, AyncResultsEvent<TResults>>(modelId)
                     .Where((m, e, c) => e.Id == id)
                     .Observe(
                         (m, e) =>
@@ -69,7 +70,7 @@ namespace Esp.Net.Workflow
                 var observableStreamDispsoable = observable.Subscribe(
                     result => 
                     {
-                        _router.PublishEvent(new AyncResultsEvent<TResults>(result, id));
+                        _router.PublishEvent(modelId, new AyncResultsEvent<TResults>(result, id));
                     },
                     exception =>
                     {
@@ -107,7 +108,7 @@ namespace Esp.Net.Workflow
             get { return StepType.Sync; }
         }
 
-        public override IObservable<TModel> GetExecuteStream(TModel model, TWorkflowContext context)
+        public override IObservable<TModel> GetExecuteStream(Guid modelId, TModel model, TWorkflowContext context)
         {
             throw new InvalidOperationException();
         }

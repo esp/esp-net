@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Esp.Net.Model;
 using Esp.Net.Reactive;
+using Esp.Net.Router;
 
 namespace Esp.Net.HeldEvents
 {
@@ -12,7 +13,7 @@ namespace Esp.Net.HeldEvents
         private static readonly MethodInfo GetEventObservableMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(RouterExt), "GetEventObservable", 2, 2);
 
         public static IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TEvent, TBaseEvent>(
-            this IRouter<TModel> router,
+            this IRouter router,
             IEventHoldingStrategy<TModel, TEvent, TBaseEvent> strategy
         )
             where TEvent : TBaseEvent, IIdentifiableEvent
@@ -30,7 +31,8 @@ namespace Esp.Net.HeldEvents
         }
 
         public static IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TModel, TEvent>(
-            this IRouter<TModel> router,
+            this IRouter router,
+            Guid modelId,
             IEventHoldingStrategy<TModel, TEvent> strategy
         )
             where TEvent : IIdentifiableEvent
@@ -42,7 +44,7 @@ namespace Esp.Net.HeldEvents
                     var heldEvents = new Dictionary<Guid, HeldEventData<TEvent>>();
                     var releasedEvents = new HashSet<Guid>();
                     var disposables = new CollectionDisposable();
-                    disposables.Add(router.GetEventObservable<TEvent>(ObservationStage.Preview).Observe((m, e, c) =>
+                    disposables.Add(router.GetEventObservable<TModel, TEvent>(modelId, ObservationStage.Preview).Observe((m, e, c) =>
                     {
                         // Have we already re-published this event? If so we don't want to hold it again.
                         if (releasedEvents.Contains(e.Id))
@@ -67,7 +69,7 @@ namespace Esp.Net.HeldEvents
                             }
                         }
                     }));
-                    disposables.Add(router.GetEventObservable<HeldEventActionEvent>().Observe((m, e, c) =>
+                    disposables.Add(router.GetEventObservable<TModel, HeldEventActionEvent>(modelId).Observe((m, e, c) =>
                     {
                         HeldEventData<TEvent> heldEventData;
                         // Since we're listening to a pipe of all events we need to filter out anything we don't know about.
@@ -80,7 +82,7 @@ namespace Esp.Net.HeldEvents
                             {
                                 // Temporarily store the event we're republishing so we don't re-hold it
                                 releasedEvents.Add(e.EventId);
-                                router.PublishEvent(heldEventData.Event);
+                                router.PublishEvent(modelId, heldEventData.Event);
                             }
                         }
                     }));

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Esp.Net.Model;
 using Esp.Net.Reactive;
+using Esp.Net.Router;
 using NUnit.Framework;
 using Shouldly;
 
@@ -116,7 +117,7 @@ namespace Esp.Net.HeldEvents
         public void SetUp()
         {
             _model = new TestModel();
-            _router = new Router<TestModel>(_model, RouterScheduler.Default);
+            _router = new Router<TestModel>(_model, ThreadGuard.Default);
             _model.HoldAllEvents = true;
         }
 

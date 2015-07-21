@@ -13,12 +13,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #endregion
-namespace Esp.Net
+namespace Esp.Net.Model
 {
-    public enum ObservationStage
+    public interface IPreEventProcessor<in TModel>
     {
-        Preview,
-        Normal,
-        Committed
+        void Process(TModel model);
+    }
+
+    public interface IEventProcessor
+    {
+        void Start();
+    }
+
+    public interface IPostEventProcessor<in TModel>
+    {
+        void Process(TModel model);
     }
 }

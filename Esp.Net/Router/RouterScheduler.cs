@@ -13,20 +13,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #endregion
-namespace Esp.Net
+namespace Esp.Net.Router
 {
-    public interface IPreEventProcessor<in TModel>
+    public interface IThreadGuard
     {
-        void Process(TModel model);
+        bool CheckAccess();
     }
 
-    public interface IEventProcessor
+    public class ThreadGuard : IThreadGuard
     {
-        void Start();
-    }
+        public static IThreadGuard Default { get; private set; }
 
-    public interface IPostEventProcessor<in TModel>
-    {
-        void Process(TModel model);
+        static ThreadGuard()
+        {
+            Default  = new ThreadGuard();
+        }
+
+        private ThreadGuard()
+        {
+        }
+        
+        public bool CheckAccess()
+        {
+            return true;
+        }
     }
 }

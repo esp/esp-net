@@ -15,7 +15,9 @@
 #endregion
 using System;
 using System.Collections.Generic;
+using Esp.Net.Model;
 using Esp.Net.Reactive;
+using Esp.Net.Router;
 using NUnit.Framework;
 using Shouldly;
 
@@ -26,6 +28,11 @@ namespace Esp.Net
     {
         public class TestModel
         {
+            public TestModel()
+            {
+                Id = Guid.NewGuid();
+            }
+            public Guid Id { get; private set; }
             public int AnInt { get; set; }
             public string AString { get; set; }
             public decimal ADecimal { get; set; }
@@ -39,27 +46,28 @@ namespace Esp.Net
 
         private TestModel _model;
 
-        private Router<TestModel> _router;
+        private Router.Router _router;
 
         [SetUp]
         public void SetUp()
         {
             _model = new TestModel();
-            _router = new Router<TestModel>(_model, RouterScheduler.Default);
+            _router = new Router.Router(ThreadGuard.Default);
+            _router.RegisterModel(_model.Id, _model);
         }
 
         [Test]
         public void PublishedEventsGetDeliveredToObservers()
         {
             int deliveryCount1 = 0, deliveryCount2 = 0;
-            _router.GetEventObservable<string>().Observe(
+            _router.GetEventObservable<TestModel, string>(_model.Id).Observe(
                 (model, e, context) => deliveryCount1++
             );
-            _router.GetEventObservable<string>().Observe(
+            _router.GetEventObservable<TestModel, string>(_model.Id).Observe(
                 (model, e, context) => deliveryCount2++
             );
-            _router.PublishEvent("Foo");
-            _router.PublishEvent("Foo");
+            _router.PublishEvent(_model.Id, "Foo");
+            _router.PublishEvent(_model.Id, "Foo");
             deliveryCount1.ShouldBe(2);
             deliveryCount2.ShouldBe(2);
         }
@@ -68,19 +76,19 @@ namespace Esp.Net
         public void DisposingAnEventSubscriptionRemovesTheObserver()
         {
             int deliveryCount1 = 0, deliveryCount2 = 0;
-            var disposable = _router.GetEventObservable<string>().Observe(
+            var disposable = _router.GetEventObservable<TestModel, string>(_model.Id).Observe(
                 (model, e, context) => deliveryCount1++
             );
-            _router.GetEventObservable<string>().Observe(
+            _router.GetEventObservable<TestModel, string>(_model.Id).Observe(
                 (model, e, context) => deliveryCount2++
             );
-            _router.PublishEvent("Foo");
-            _router.PublishEvent("Foo");
+            _router.PublishEvent(_model.Id, "Foo");
+            _router.PublishEvent(_model.Id, "Foo");
             deliveryCount1.ShouldBe(2);
             deliveryCount2.ShouldBe(2);
             disposable.Dispose();
-            _router.PublishEvent("Foo");
-            _router.PublishEvent("Foo");
+            _router.PublishEvent(_model.Id, "Foo");
+            _router.PublishEvent(_model.Id, "Foo");
             deliveryCount1.ShouldBe(2);
             deliveryCount2.ShouldBe(4);
         }
@@ -89,10 +97,10 @@ namespace Esp.Net
         public void PreviewEventObserversReceiveEvent()
         {
             int deliveryCount1 = 0;
-            _router.GetEventObservable<string>(ObservationStage.Preview).Observe(
+            _router.GetEventObservable<TestModel, string>(_model.Id, ObservationStage.Preview).Observe(
                 (model, e, context) => deliveryCount1++
             );
-            _router.PublishEvent("Foo");
+            _router.PublishEvent(_model.Id, "Foo");
             deliveryCount1.ShouldBe(1);
         }
 
@@ -100,20 +108,20 @@ namespace Esp.Net
         public void CancelingAnEventAtPreviewStopsEventPropagation()
         {
             int previewDeliveryCount = 0, normalDeliveryCount = 0;
-            _router.GetEventObservable<string>(ObservationStage.Preview).Observe(
+            _router.GetEventObservable<TestModel, string>(_model.Id, ObservationStage.Preview).Observe(
                 (model, e, context) =>
                 {
                     previewDeliveryCount++;
                     context.Cancel();
                 }
             );
-            _router.GetEventObservable<string>().Observe(
+            _router.GetEventObservable<TestModel, string>(_model.Id).Observe(
                 (model, e, context) =>
                 {
                     normalDeliveryCount++;
                 }
             );
-            _router.PublishEvent("Foo");
+            _router.PublishEvent(_model.Id, "Foo");
             previewDeliveryCount.ShouldBe(1);
             normalDeliveryCount.ShouldBe(0);
         }
@@ -122,30 +130,30 @@ namespace Esp.Net
         public void CommittedEventObserversReceiveEvent()
         {
             int normalDeliveryCount = 0, committedDeliveryCount1 = 0, committedDeliveryCount2 = 0;
-            _router.GetEventObservable<string>().Observe(
+            _router.GetEventObservable<TestModel, string>(_model.Id).Observe(
                 (model, e, context) =>
                 {
                     normalDeliveryCount++;
                     context.Commit();
                 }
             );
-            _router.GetEventObservable<string>(ObservationStage.Committed).Observe(
+            _router.GetEventObservable<TestModel, string>(_model.Id, ObservationStage.Committed).Observe(
                 (model, e, context) =>
                 {
                     committedDeliveryCount1++;
                 }
             );
-            _router.GetEventObservable<string>(ObservationStage.Committed).Observe(
+            _router.GetEventObservable<TestModel, string>(_model.Id, ObservationStage.Committed).Observe(
                 (model, e, context) =>
                 {
                     committedDeliveryCount2++;
                 }
             );
-            _router.PublishEvent("Foo");
+            _router.PublishEvent(_model.Id, "Foo");
             normalDeliveryCount.ShouldBe(1);
             committedDeliveryCount1.ShouldBe(1);
             committedDeliveryCount2.ShouldBe(1);
-            _router.PublishEvent("Foo");
+            _router.PublishEvent(_model.Id, "Foo");
             normalDeliveryCount.ShouldBe(2);
             committedDeliveryCount1.ShouldBe(2);
             committedDeliveryCount2.ShouldBe(2);
@@ -156,28 +164,28 @@ namespace Esp.Net
         {
             int event1Count = 0, event2Count = 0;
             bool testPassed = false;
-            _router.GetEventObservable<string>().Observe(
+            _router.GetEventObservable<TestModel, string>(_model.Id).Observe(
                 (model, e, context) =>
                 {
-                    _router.PublishEvent(1);
+                    _router.PublishEvent(_model.Id, 1);
                     event1Count++;
                     context.Commit();
                 }
             );
-            _router.GetEventObservable<string>(ObservationStage.Committed).Observe(
+            _router.GetEventObservable<TestModel, string>(_model.Id, ObservationStage.Committed).Observe(
                 (model, e, context) =>
                 {
                     testPassed = event1Count == 1 && event2Count == 0;
                 }
             );
-            _router.GetEventObservable<int>().Observe(
+            _router.GetEventObservable<TestModel, int>(_model.Id).Observe(
                 (model, e, context) =>
                 {
                     event2Count++;
                     context.Commit();
                 }
             );
-            _router.PublishEvent("foo");
+            _router.PublishEvent(_model.Id, "foo");
             testPassed = testPassed && event2Count == 1;
             testPassed.ShouldBe(true);
         }
@@ -191,17 +199,17 @@ namespace Esp.Net
             // typed for BaseEvent not Event1.
             var receivedEvents1 = new List<BaseEvent>();
             var receivedEvents2 = new List<BaseEvent>();
-            _router.GetEventObservable<BaseEvent>(typeof(Event1))
+            _router.GetEventObservable<TestModel, BaseEvent>(_model.Id, typeof(Event1))
                 .Observe((model, baseEvent, context) =>
                 {
                     receivedEvents1.Add(baseEvent);
                 });
-            _router.GetEventObservable<Event1, BaseEvent>()
+            _router.GetEventObservable<TestModel, Event1, BaseEvent>(_model.Id)
                 .Observe((model, baseEvent, context) =>
                 {
                     receivedEvents2.Add(baseEvent);
                 });
-            _router.PublishEvent(new Event1());
+            _router.PublishEvent(_model.Id, new Event1());
             receivedEvents1.Count.ShouldBe(1);
             receivedEvents2.Count.ShouldBe(1);
         }
@@ -209,8 +217,8 @@ namespace Esp.Net
         [Test]
         public void WhenObservingByBaseTypeItThrowsIfSubTypeDoesntDeriveFromBase()
         {
-            Assert.Throws<InvalidOperationException>(() => { 
-                _router.GetEventObservable<BaseEvent>(typeof (EventWithoutBaseType)).Observe((m, e, c) => { });
+            Assert.Throws<InvalidOperationException>(() => {
+                _router.GetEventObservable<TestModel, BaseEvent>(_model.Id, typeof(EventWithoutBaseType)).Observe((m, e, c) => { });
             });
         }
 
@@ -219,66 +227,66 @@ namespace Esp.Net
         {
             var receivedEvents = new List<BaseEvent>();
             var stream = EventObservable.Concat(
-                _router.GetEventObservable<BaseEvent>(typeof(Event1)),
-                _router.GetEventObservable<BaseEvent>(typeof(Event2)),
-                _router.GetEventObservable<BaseEvent>(typeof(Event3))
+                _router.GetEventObservable<TestModel, BaseEvent>(_model.Id, typeof(Event1)),
+                _router.GetEventObservable<TestModel, BaseEvent>(_model.Id, typeof(Event2)),
+                _router.GetEventObservable<TestModel, BaseEvent>(_model.Id, typeof(Event3))
             );
             stream.Observe((model, baseEvent, context) =>
             {
                 receivedEvents.Add(baseEvent);
             });
-            _router.PublishEvent(new Event1());
-            _router.PublishEvent(new Event2());
-            _router.PublishEvent(new Event3());
+            _router.PublishEvent(_model.Id, new Event1());
+            _router.PublishEvent(_model.Id, new Event2());
+            _router.PublishEvent(_model.Id, new Event3());
             receivedEvents.Count.ShouldBe(3);
         }
 
         [Test]
         public void OnPublishExceptionsBubbleUp()
         {
-            _router.GetEventObservable<string>().Observe(
+            _router.GetEventObservable<TestModel, string>(_model.Id).Observe(
                 (model, e, context) =>
                 {
                    throw new InvalidOperationException("POP");
                 }
             );
 
-            Should.Throw<InvalidOperationException>(() => _router.PublishEvent("foo"));
+            Should.Throw<InvalidOperationException>(() => _router.PublishEvent(_model.Id, "foo"));
         }
 
         [Test]
         public void OnceHaltedSubsequentEventPublicationThrows()
         {
-            _router.GetEventObservable<string>().Observe(
+            _router.GetEventObservable<TestModel, string>(_model.Id).Observe(
                 (model, e, context) =>
                 {
                     throw new AccessViolationException("POP");
                 }
             );
 
-            Should.Throw<AccessViolationException>(() => _router.PublishEvent("foo"));
-            Should.Throw<AccessViolationException>(() => _router.PublishEvent("foo"));
+            Should.Throw<AccessViolationException>(() => _router.PublishEvent(_model.Id, "foo"));
+            Should.Throw<AccessViolationException>(() => _router.PublishEvent(_model.Id, "foo"));
         }
 
         [Test]
         public void ModelGetsDispatchedAfterEventsProcessed()
         {
             int updateCount = 0;
-            _router.GetEventObservable<int>().Observe(
+            _router.GetEventObservable<TestModel, int>(_model.Id).Observe(
                 (model, e, context) =>
                 {
                     model.AnInt = e;
-                    _router.PublishEvent("pew pew");
+                    _router.PublishEvent(_model.Id, "pew pew");
                 }
             );
-            _router.GetEventObservable<string>().Observe(
+            _router.GetEventObservable<TestModel, string>(_model.Id).Observe(
                 (model, e, context) =>
                 {
                     model.AString = e;
-                    _router.PublishEvent(1.1m);
+                    _router.PublishEvent(_model.Id, 1.1m);
                 }
             );
-            _router.GetEventObservable<decimal>().Observe(
+            _router.GetEventObservable<TestModel, decimal>(_model.Id).Observe(
                 (model, e, context) =>
                 {
                     model.ADecimal = e;
@@ -286,14 +294,14 @@ namespace Esp.Net
             );
 
             TestModel resultModel = null;
-            _router.GetModelObservable().Observe(
+            _router.GetModelObservable<TestModel>(_model.Id).Observe(
                model =>
                {
                    updateCount++;
                    resultModel = model;
                }
             );
-            _router.PublishEvent(1);
+            _router.PublishEvent(_model.Id, 1);
             updateCount.ShouldBe(1);
             resultModel.ShouldSatisfyAllConditions(
                 () => resultModel.AString.ShouldBe("pew pew"),
@@ -308,19 +316,20 @@ namespace Esp.Net
             List<int> receivedEvents = new List<int>();
             var model = new TestModel();
             var modelUpdateCount = 0;
-            Router<TestModel> router = null;
+            Router.Router router = null;
             var preEventProcessor = new DelegeatePreEventProcessor(m =>
             {
-                router.PublishEvent(1);
+                router.PublishEvent(_model.Id, 1);
             });
-            router = new Router<TestModel>(model, RouterScheduler.Default, preEventProcessor);
-            router.GetEventObservable<int>().Observe((m, e, c) => {
+            router = new Router.Router(ThreadGuard.Default);
+            router.RegisterModel(model.Id, model, preEventProcessor);
+            router.GetEventObservable<TestModel, int>(_model.Id).Observe((m, e, c) => {
                 receivedEvents.Add(e);
             });
-            router.GetModelObservable().Observe(model1 => {
+            router.GetModelObservable<TestModel>(_model.Id).Observe(model1 => {
                 modelUpdateCount++;
             });
-            router.PublishEvent(0);
+            router.PublishEvent(_model.Id, 0);
             receivedEvents.ShouldBe(new[]{ 0, 1});
             modelUpdateCount.ShouldBe(1);
         }
@@ -332,26 +341,27 @@ namespace Esp.Net
             List<int> receivedEvents = new List<int>();
             var model = new TestModel();
             var modelUpdateCount = 0;
-            Router<TestModel> router = null;
+            Router.Router router = null;
             var postEventProcessor = new DelegeatePostEventProcessor(m =>
             {
                 if (m.AnInt < 1)
                 {
-                    router.PublishEvent(1);
+                    router.PublishEvent(_model.Id, 1);
                 }
             });
-            router = new Router<TestModel>(model, RouterScheduler.Default, postEventProcessor);
-            router.GetEventObservable<int>().Observe((m, e, c) => {
+            router = new Router.Router(ThreadGuard.Default);
+            router.RegisterModel(model.Id, model, postEventProcessor);
+            router.GetEventObservable<TestModel, int>(_model.Id).Observe((m, e, c) => {
                 m.AnInt = e;
                 receivedEvents.Add(e);
             });
-            router.GetModelObservable().Observe(
+            router.GetModelObservable<TestModel>(_model.Id).Observe(
                model1 =>
                {
                    modelUpdateCount++;
                }
             );
-            router.PublishEvent(0);
+            router.PublishEvent(_model.Id, 0);
             receivedEvents.ShouldBe(new[] { 0, 1 });
             modelUpdateCount.ShouldBe(1);
         }
@@ -367,13 +377,13 @@ namespace Esp.Net
             var receivedEvents = new List<int>();
             var model = new TestModel();
             int preProcessorCount = 0, postProcessorCount = 0, modelCount = 0;
-            Router<TestModel> router = null;
+            Router.Router router = null;
             var preEventProcessor = new DelegeatePreEventProcessor(m =>
             {
                 preProcessorCount++;
                 if (m.AnInt == 0)
                 {
-                    router.PublishEvent(1);
+                    router.PublishEvent(_model.Id, 1);
                 }
             });
             var postEventProcessor = new DelegeatePostEventProcessor(m =>
@@ -381,22 +391,23 @@ namespace Esp.Net
                 postProcessorCount++;
                 if (m.AnInt == 1)
                 {
-                    router.PublishEvent(2);
+                    router.PublishEvent(_model.Id, 2);
                 }
             });
-            router = new Router<TestModel>(model, RouterScheduler.Default, preEventProcessor, postEventProcessor);
-            router.GetEventObservable<int>().Observe((m, e, c) =>
+            router = new Router.Router(ThreadGuard.Default);
+            router.RegisterModel(model.Id, model, preEventProcessor, postEventProcessor);
+            router.GetEventObservable<TestModel, int>(_model.Id).Observe((m, e, c) =>
             {
                 m.AnInt = e;
                 receivedEvents.Add(e);
             });
-            router.GetModelObservable().Observe(
+            router.GetModelObservable<TestModel>(_model.Id).Observe(
                model1 =>
                {
                    modelCount++;
                }
             );
-            router.PublishEvent(0);
+            router.PublishEvent(_model.Id, 0);
             receivedEvents.ShouldBe(new[] { 0, 1, 2 });
             modelCount.ShouldBe(1);
             preProcessorCount.ShouldBe(2);
@@ -407,20 +418,20 @@ namespace Esp.Net
         public void EventsPublishedDuringModelUpdateDispatchGetProcessed()
         {
             int updateCount = 0;
-            _router.GetEventObservable<int>().Observe((m, e, c) => {
+            _router.GetEventObservable<TestModel, int>(_model.Id).Observe((m, e, c) => {
                 m.AnInt = e;
             });
-            _router.GetModelObservable().Observe(
+            _router.GetModelObservable<TestModel>(_model.Id).Observe(
                model =>
                {
                    updateCount++;
                    if (model.AnInt == 0)
                    {
-                       _router.PublishEvent(1);
+                       _router.PublishEvent(_model.Id, 1);
                    }
                }
            );
-            _router.PublishEvent(0);
+            _router.PublishEvent(_model.Id, 0);
             updateCount.ShouldBe(2);
         }
 

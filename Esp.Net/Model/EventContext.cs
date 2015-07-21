@@ -16,7 +16,7 @@
 
 using System;
 
-namespace Esp.Net
+namespace Esp.Net.Model
 {
     public interface IEventContext
     {

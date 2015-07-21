@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reactive.Linq;
 using Esp.Net.Model;
+using Esp.Net.Router;
 
 // TODO threading!! it's completely unsafe atm given the introduction of IObservable
 
@@ -19,7 +20,7 @@ namespace Esp.Net.Workflow
     public static class WorkflowRouterExt
     {
         public static WorkflowBuilder<TModel, DefatultWorkflowInstanceContext, TInitialEvent> ConfigureWorkflow<TModel, TInitialEvent>(
-            this IRouter<TModel> router
+            this IRouter router
         )
         {
             return new WorkflowBuilder<TModel, DefatultWorkflowInstanceContext, TInitialEvent>(
@@ -29,7 +30,7 @@ namespace Esp.Net.Workflow
         }
 
         public static WorkflowBuilder<TModel, TWorkflowContext, TInitialEvent> ConfigureWorkflow<TModel, TWorkflowContext, TInitialEvent>(
-            this IRouter<TModel> router,
+            this IRouter router,
             Func<TModel, TInitialEvent, IEventContext, TWorkflowContext> contextFactory
         ) 
             where TWorkflowContext : IWorkflowInstanceContext
@@ -48,6 +49,7 @@ namespace Esp.Net.Workflow
         where TWorkflowContext : IWorkflowInstanceContext
     {
         void Run(
+            Guid modelId,
             TModel currentModel, 
             TWorkflowContext context,
             Action<TModel, TWorkflowContext, Exception> onError,
@@ -58,12 +60,12 @@ namespace Esp.Net.Workflow
     public class WorkflowBuilder<TModel, TWorkflowContext, TInitialEvent> 
         where TWorkflowContext : IWorkflowInstanceContext
     {
-        private readonly IRouter<TModel> _router;
+        private readonly IRouter _router;
         private readonly Func<TModel, TInitialEvent, IEventContext, TWorkflowContext> _contextFactory;
         private readonly List<Step<TModel, TWorkflowContext>> _steps = new List<Step<TModel, TWorkflowContext>>();
 
         public WorkflowBuilder(
-            IRouter<TModel> router,
+            IRouter router,
             Func<TModel, TInitialEvent, IEventContext, TWorkflowContext> contextFactory)
         {
             _router = router;
@@ -94,17 +96,18 @@ namespace Esp.Net.Workflow
             return new Workflow<TModel, TWorkflowContext>(_steps);
         }
 
-        public IDisposable Run(Action<TModel, TWorkflowContext, Exception> onError, Action<TModel, TWorkflowContext> onCompleted)
+        public IDisposable Run(Guid modelId, Action<TModel, TWorkflowContext, Exception> onError, Action<TModel, TWorkflowContext> onCompleted)
         {
             var disposables = new DictionaryDisposable<Guid>();
             IWorkflow<TModel, TWorkflowContext> workflow = Create();
-            var eventSubscription = _router.GetEventObservable<TInitialEvent>().Observe((model, e, eventContext) =>
+            var eventSubscription = _router.GetEventObservable<TModel, TInitialEvent>(modelId).Observe((model, e, eventContext) =>
             {
                 var instanceId = Guid.NewGuid();
                 IWorkflowInstance<TModel, TWorkflowContext> workflowInstance = workflow.CreateInstance();
                 TWorkflowContext workflowInstanceContext = _contextFactory(model, e, eventContext);
                 disposables.Add(instanceId, workflowInstance);
                 workflowInstance.Run(
+                    modelId,
                     model, 
                     workflowInstanceContext, 
                     (model1, context, ex) =>
@@ -160,6 +163,7 @@ namespace Esp.Net.Workflow
             }
 
             public void Run(
+                Guid modelId,
                 TModel currentModel, 
                 TWorkflowContext context,
                 Action<TModel, TWorkflowContext, Exception> onError,
@@ -168,11 +172,11 @@ namespace Esp.Net.Workflow
             {
                 _onError = onError;
                 _onCompleted = onCompleted;
-                _queue.Enqueue(CreateStep(_firstStep));
+                _queue.Enqueue(CreateStep(modelId, _firstStep));
                 PurgeQueue(currentModel, context);
             }
 
-            private Action<TModel, TWorkflowContext> CreateStep(Step<TModel, TWorkflowContext> step)
+            private Action<TModel, TWorkflowContext> CreateStep(Guid modelId, Step<TModel, TWorkflowContext> step)
             {
                 return (currentModel, context) =>
                 {
@@ -182,11 +186,11 @@ namespace Esp.Net.Workflow
                         // note that the step may yield multiple times and we just stay subscribed until it 
                         // errors or completes. This means we may run a step once, then run subsequent steps 
                         // multiple times. 
-                        stepDisposable = step.GetExecuteStream(currentModel, context).Subscribe(latestModel =>
+                        stepDisposable = step.GetExecuteStream(modelId, currentModel, context).Subscribe(latestModel =>
                         {
                             if (step.Next != null)
                             {
-                                _queue.Enqueue(CreateStep(step.Next));
+                                _queue.Enqueue(CreateStep(modelId, step.Next));
                                 PurgeQueue(latestModel, context);
                             }
                         },
@@ -211,7 +215,7 @@ namespace Esp.Net.Workflow
                         step.Execute(currentModel, context);
                         if (step.Next != null)
                         {
-                            _queue.Enqueue(CreateStep(step.Next));
+                            _queue.Enqueue(CreateStep(modelId, step.Next));
                             PurgeQueue(currentModel, context);
                         }
                     }
