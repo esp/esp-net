@@ -24,14 +24,18 @@ namespace Esp.Net.Router
     public class Router : IRouter
     {
         private readonly Dictionary<Guid, IModelEntry> _modelsById = new Dictionary<Guid, IModelEntry>();
-        private readonly IThreadGuard _threadGuard;
         private readonly State _state = new State();
         private readonly RouterGuard _routerGuard;
+        private readonly EventObservationRegistrar _eventObservationRegistrar = new EventObservationRegistrar();
 
         public Router(IThreadGuard threadGuard)
         {
-            _threadGuard = threadGuard;
             _routerGuard = new RouterGuard(_state, threadGuard);
+        }
+
+        public EventObservationRegistrar EventObservationRegistrar
+        {
+            get { return _eventObservationRegistrar; }
         }
 
         public void PublishEvent<TEvent>(Guid modelId, TEvent @event)

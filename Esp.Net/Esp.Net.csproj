@@ -44,6 +44,7 @@
     <Compile Include="..\AssemblyInfoCommon.cs">
       <Link>Properties\AssemblyInfoCommon.cs</Link>
     </Compile>
+    <Compile Include="Reactive\EventObservationRegistrar.cs" />
     <Compile Include="Router\IEventPublisher.cs" />
     <Compile Include="Router\IModelEventPublisher.cs" />
     <Compile Include="Router\IModelRouter.cs" />

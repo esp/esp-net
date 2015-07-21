@@ -13,7 +13,7 @@ namespace Esp.Net.HeldEvents
     public class HeldEventTests
     {
         private TestModel _model;
-        private Router<TestModel> _router;
+        private Router.Router _router;
         private List<FooEvent> _receivedFooEvents;
         private IDisposable _fooEventStreamDisposable;
         private List<BarEvent> _receivedBarEvents;
@@ -24,7 +24,10 @@ namespace Esp.Net.HeldEvents
             public TestModel()
             {
                 HeldEvents = new List<IEventDescription>();
+                Id = Guid.NewGuid();
             }
+
+            public Guid Id { get; private set; }
 
             public bool HoldAllEvents { get; set; }
 
@@ -117,7 +120,8 @@ namespace Esp.Net.HeldEvents
         public void SetUp()
         {
             _model = new TestModel();
-            _router = new Router<TestModel>(_model, ThreadGuard.Default);
+            _router = new Router.Router(ThreadGuard.Default);
+            _router.RegisterModel(_model.Id, _model);
             _model.HoldAllEvents = true;
         }
 
@@ -126,7 +130,7 @@ namespace Esp.Net.HeldEvents
         {
             SetUpFooEventHoldingStrategy();
             var e = new FooEvent("EventPayload");
-            _router.PublishEvent(e);
+            _router.PublishEvent(_model.Id, e);
             _model.HeldEvents.Count.ShouldBe(1);
             _model.HeldEvents[0].EventId.ShouldBe(e.Id);
         }
@@ -135,7 +139,7 @@ namespace Esp.Net.HeldEvents
         public void WhenAnEventIsHeldObserverDoesNotReceiveIt()
         {
             SetUpFooEventHoldingStrategy();
-            _router.PublishEvent(new FooEvent("EventPayload"));
+            _router.PublishEvent(_model.Id, new FooEvent("EventPayload"));
             _receivedFooEvents.Count.ShouldBe(0);
         }
 
@@ -143,7 +147,7 @@ namespace Esp.Net.HeldEvents
         public void WhenAnEventIsRelesedTheDiscriptionIsRemovedFromTheModel()
         {
             SetUpFooEventHoldingStrategy();
-            _router.PublishEvent(new FooEvent("EventPayload"));
+            _router.PublishEvent(_model.Id, new FooEvent("EventPayload"));
             ReleasedEvent(_model.HeldEvents[0].EventId, HeldEventAction.Release);
             _model.HeldEvents.Count.ShouldBe(0);
         }
@@ -152,7 +156,7 @@ namespace Esp.Net.HeldEvents
         public void WhenAnEventIsRelesedItIsPassedToTheObserver()
         {
             SetUpFooEventHoldingStrategy();
-            _router.PublishEvent(new FooEvent("EventPayload"));
+            _router.PublishEvent(_model.Id, new FooEvent("EventPayload"));
             ReleasedEvent(_model.HeldEvents[0].EventId, HeldEventAction.Release);
             _receivedFooEvents.Count.ShouldBe(1);
             _receivedFooEvents[0].Payload.ShouldBe("EventPayload");
@@ -164,8 +168,8 @@ namespace Esp.Net.HeldEvents
             SetUpFooEventHoldingStrategy();
             var event1 = new FooEvent("EventPayload1");
             var event2 = new FooEvent("EventPayload2");
-            _router.PublishEvent(event1);
-            _router.PublishEvent(event2);
+            _router.PublishEvent(_model.Id, event1);
+            _router.PublishEvent(_model.Id, event2);
             _model.HeldEvents.Count.ShouldBe(2);
             _model.HeldEvents[0].EventId.ShouldBe(event1.Id);
             _model.HeldEvents[1].EventId.ShouldBe(event2.Id);
@@ -177,8 +181,8 @@ namespace Esp.Net.HeldEvents
             SetUpFooEventHoldingStrategy();
             var event1 = new FooEvent("EventPayload1");
             var event2 = new FooEvent("EventPayload2");
-            _router.PublishEvent(event1);
-            _router.PublishEvent(event2);
+            _router.PublishEvent(_model.Id, event1);
+            _router.PublishEvent(_model.Id, event2);
 
             ReleasedEvent(_model.HeldEvents[1].EventId, HeldEventAction.Release);
             _receivedFooEvents.Count.ShouldBe(1);
@@ -196,9 +200,9 @@ namespace Esp.Net.HeldEvents
             var event1 = new FooEvent("EventPayload1");
             var event2 = new FooEvent("EventPayload2");
             var event3 = new FooEvent("EventPayload3");
-            _router.PublishEvent(event1);
-            _router.PublishEvent(event2);
-            _router.PublishEvent(event3);
+            _router.PublishEvent(_model.Id, event1);
+            _router.PublishEvent(_model.Id, event2);
+            _router.PublishEvent(_model.Id, event3);
             ReleasedEvent(event3.Id, HeldEventAction.Ignore);
             ReleasedEvent(event1.Id, HeldEventAction.Release);
             ReleasedEvent(event2.Id, HeldEventAction.Release);
@@ -212,7 +216,7 @@ namespace Esp.Net.HeldEvents
         {
             SetUpFooEventHoldingStrategy();
             var event1 = new FooEvent("EventPayload1");
-            _router.PublishEvent(event1);
+            _router.PublishEvent(_model.Id, event1);
             _fooEventStreamDisposable.Dispose();
             ReleasedEvent(event1.Id, HeldEventAction.Ignore);
             _receivedFooEvents.Count.ShouldBe(0);
@@ -228,8 +232,8 @@ namespace Esp.Net.HeldEvents
             SetUpBarEventHoldingStrategy();
             var event1 = new FooEvent("EventPayload1");
             var event2 = new BarEvent("EventPayload2");
-            _router.PublishEvent(event1);
-            _router.PublishEvent(event2);
+            _router.PublishEvent(_model.Id, event1);
+            _router.PublishEvent(_model.Id, event2);
             ReleasedEvent(event1.Id, HeldEventAction.Release);
             ReleasedEvent(event2.Id, HeldEventAction.Release);
             _receivedFooEvents.Count.ShouldBe(1);
@@ -251,8 +255,8 @@ namespace Esp.Net.HeldEvents
             });
             var event1 = new FooEvent("EventPayload1");
             var event2 = new BarEvent("EventPayload2");
-            _router.PublishEvent(event1);
-            _router.PublishEvent(event2);
+            _router.PublishEvent(_model.Id, event1);
+            _router.PublishEvent(_model.Id, event2);
             ReleasedEvent(event1.Id, HeldEventAction.Release);
             ReleasedEvent(event2.Id, HeldEventAction.Release);
             receivedBarEvents.Count.ShouldBe(2);
@@ -263,7 +267,7 @@ namespace Esp.Net.HeldEvents
         public void SetUpFooEventHoldingStrategy()
         {
             _receivedFooEvents = new List<FooEvent>();
-            _fooEventStreamDisposable = _router.GetEventObservable(new HoldEventsBasedOnModelStrategy<FooEvent>()).Observe((m, e, c) =>
+            _fooEventStreamDisposable = _router.GetEventObservable(_model.Id, new HoldEventsBasedOnModelStrategy<FooEvent>()).Observe((m, e, c) =>
             {
                 _receivedFooEvents.Add(e);
             });
@@ -272,7 +276,7 @@ namespace Esp.Net.HeldEvents
         public void SetUpBarEventHoldingStrategy()
         {
             _receivedBarEvents = new List<BarEvent>();
-            _barEventStreamDisposable = _router.GetEventObservable(new HoldEventsBasedOnModelStrategy<BarEvent>()).Observe((m, e, c) =>
+            _barEventStreamDisposable = _router.GetEventObservable(_model.Id, new HoldEventsBasedOnModelStrategy<BarEvent>()).Observe((m, e, c) =>
             {
                 _receivedBarEvents.Add(e);
             });
@@ -280,7 +284,7 @@ namespace Esp.Net.HeldEvents
 
         private void ReleasedEvent(Guid eventId, HeldEventAction heldEventAction)
         {
-            _router.PublishEvent(new HeldEventActionEvent(eventId, heldEventAction));
+            _router.PublishEvent(_model.Id, new HeldEventActionEvent(eventId, heldEventAction));
         }
     }
 }

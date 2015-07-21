@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Esp.Net.Router;
 using Esp.Net.Stubs;
 using NUnit.Framework;
 using Shouldly;
@@ -19,7 +20,9 @@ namespace Esp.Net.Workflow
                 ReceivedInts = new List<int>();
                 ReceivedStrings = new List<string>();
                 ReceivedDecimals = new List<decimal>();
+                Id = Guid.NewGuid();
             }
+            public Guid Id { get; private set; }
             public List<int> ReceivedInts { get; set; }
             public List<string> ReceivedStrings { get; set; }
             public List<decimal> ReceivedDecimals { get; set; }
@@ -28,7 +31,7 @@ namespace Esp.Net.Workflow
         public class InitialEvent { }
         public class AnAsyncEvent { }
 
-        private StubRouter<TestModel> _router;
+        private Router.Router _router;
         private TestModel _model;
         private StubSubject<string> _stringSubject;
         private StubSubject<int> _intSubject;
@@ -39,7 +42,8 @@ namespace Esp.Net.Workflow
         public void SetUp()
         {
             _model = new TestModel();
-            _router = new StubRouter<TestModel>(_model);
+            _router = new Router.Router(ThreadGuard.Default);
+            _router.RegisterModel(_model.Id, _model);
             _stringSubject = new StubSubject<string>();
             _intSubject = new StubSubject<int>();
             _decimalSubject = new StubSubject<decimal>();
@@ -51,11 +55,11 @@ namespace Esp.Net.Workflow
             _router
                 .ConfigureWorkflow<TestModel, InitialEvent>()
                 .SelectMany(GetStringObservble, OnStringResultsReceived)
-                .Run(OnError, OnCompleted);    
-            _router.PublishEvent(new InitialEvent());
-            _stringSubject.OnNext("Foo");
-            _stringSubject.OnNext("Bar");
-            _stringSubject.OnNext("Baz");
+                .Run(_model.Id, OnError, OnCompleted);    
+            _router.PublishEvent(_model.Id, new InitialEvent());
+            _router.PublishEvent(_model.Id, "Foo");
+            _router.PublishEvent(_model.Id, "Bar");
+            _router.PublishEvent(_model.Id, "Baz");
             _model.ReceivedStrings.SequenceEqual(new[] {"Foo", "Bar", "Baz"}).ShouldBe(true);
         }
 
@@ -65,36 +69,41 @@ namespace Esp.Net.Workflow
             // we need to introduce a stub/mock router so we can properly test things are getting disposed.
             // ATM thers is no good way to assert that the internal observations against the router are getting disposed.
 
-            var eventSubject = _router.GetEventSubject<AyncResultsEvent<string>>();
-
             _router
                 .ConfigureWorkflow<TestModel, InitialEvent>()
                 .SelectMany(GetStringObservble, OnStringResultsReceived)
-                .Run(OnError, OnCompleted);
+                .Run(_model.Id, OnError, OnCompleted);
 
-            _router.PublishEvent(new InitialEvent());
+            _router.PublishEvent(_model.Id, new InitialEvent());
 
-            eventSubject.Observers.Count.ShouldBe(1);
+            _router
+                .EventObservationRegistrar
+                .GetEventObservationCount(_model.Id, typeof(string))
+                .ShouldBe(1);
+
             _stringSubject.Observers.Count.ShouldBe(1);
             
             _stringSubject.OnCompleted();
 
-            eventSubject.Observers.Count.ShouldBe(0);
+            _router
+                .EventObservationRegistrar
+                .GetEventObservationCount(_model.Id, typeof(string))
+                .ShouldBe(0);
         }
 
         [Test]
         public void WhenStepProcessessResultsItThenCallsNextStep()
         {
-            var stringEventObservable = _router.GetEventSubject<AyncResultsEvent<string>>();
-            var decimalEventObservable = _router.GetEventSubject<AyncResultsEvent<decimal>>(); 
-            
+//            var stringEventObservable = _router.GetEventSubject<AyncResultsEvent<string>>();
+//            var decimalEventObservable = _router.GetEventSubject<AyncResultsEvent<decimal>>(); 
+//            
             _router
                 .ConfigureWorkflow<TestModel, InitialEvent>()
                 .SelectMany(GetStringObservble, OnStringResultsReceived)
                 .SelectMany(GetDecimalObservable, OnDecialResultsReceived)
-                .Run(OnError, OnCompleted);
+                .Run(_model.Id, OnError, OnCompleted);
 
-            _router.PublishEvent(new InitialEvent());
+            _router.PublishEvent(_model.Id, new InitialEvent());
 
             _stringSubject.OnNext("Foo");
             _stringSubject.Observers.Count.ShouldBe(1);

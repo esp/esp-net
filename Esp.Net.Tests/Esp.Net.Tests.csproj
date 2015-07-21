@@ -51,10 +51,8 @@
       <Link>Properties\AssemblyInfoCommon.cs</Link>
     </Compile>
     <Compile Include="Model\EspDisposableTests.cs" />
-    <Compile Include="Stubs\StubEventSubject.cs" />
-    <Compile Include="Stubs\StubRouter.cs" />
-    <Compile Include="Workflow\WorkflowTests.cs" />
     <Compile Include="Stubs\StubSubject.cs" />
+    <Compile Include="Workflow\WorkflowTests.cs" />
     <Compile Include="HeldEvents\HeldEventTests.cs" />
     <Compile Include="Reactive\ReactiveTests.cs" />
     <Compile Include="Reactive\StubEventObservable.cs" />

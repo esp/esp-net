@@ -213,8 +213,6 @@ namespace Esp.Net.Router
             };
         }
 
-
-
         private class EventSubjects<TEvent>
         {
             public EventSubjects()

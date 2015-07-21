@@ -11,44 +11,37 @@ namespace Esp.Net.Stubs
     {
         public StubRouter()
         {
-            RouterEntries = new Dictionary<Guid, RouterEntry>();
+            ModelEnteries = new Dictionary<Guid, Dictionary<Type, dynamic>>();
         }
 
-        public class RouterEntry
-        {
-            public Guid Id { get; set; }
-            public object Model { get; set; }
-            public Dictionary<Type, object> EventSubjects { get; private set; }
-
-            private StubEventSubject<TModel, TEvent, IEventContext> GetOrSetEventSubject<TEvent>(Guid modelId)
-            {
-                // it's eaiser to just use a real subject here rather than mocking that.
-                StubEventSubject<TModel, TEvent, IEventContext> result;
-                object subject;
-                if (!EventSubjects.TryGetValue(typeof(TEvent), out subject))
-                {
-                    result = new StubEventSubject<TModel, TEvent, IEventContext>();
-                    EventSubjects.Add(typeof(TEvent), result);
-                }
-                else
-                {
-                    result = (StubEventSubject<TModel, TEvent, IEventContext>)subject;
-                }
-                return result;
-            }
-        }
-
-        public Dictionary<Guid, RouterEntry> RouterEntries { get; private set; }
+        public Dictionary<Guid, Dictionary<Type, dynamic>> ModelEnteries { get; private set; }
 
         public void PublishEvent<TEvent>(Guid modelId, TEvent @event)
         {
-            var subject = GetOrSetEventSubject<TModel, TEvent>(modelId);
-            subject.OnNext(_model, @event, new EventContext());
+            dynamic subject = ModelEnteries[modelId][typeof (TEvent)];
+            subject.OnNext(@event);
         }
 
-        internal StubEventSubject<TModel, TEvent, IEventContext> GetEventSubject<TModel, TEvent>()
+        internal StubEventSubject<TModel, TEvent, IEventContext> GetEventSubject<TModel, TEvent>(Guid modelId)
         {
-            return GetOrSetEventSubject<TModel, TEvent>();
+            return GetOrSetEventSubject<TModel, TEvent>(modelId);
+        }
+
+        public void RegisterModel<TModel>(Guid modelId, TModel model)
+        {
+        }
+
+        public void RegisterModel<TModel>(Guid modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor)
+        {
+        }
+
+        public void RegisterModel<TModel>(Guid modelId, TModel model, IPostEventProcessor<TModel> postEventProcessor)
+        {
+        }
+
+        public void RegisterModel<TModel>(Guid modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor,
+            IPostEventProcessor<TModel> postEventProcessor)
+        {
         }
 
         public IModelObservable<TModel> GetModelObservable<TModel>(Guid modelId)
@@ -58,7 +51,7 @@ namespace Esp.Net.Stubs
 
         public IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TModel, TEvent>(Guid modelId, ObservationStage observationStage = ObservationStage.Normal)
         {
-            var subject = GetOrSetEventSubject<TModel, TEvent>();
+            var subject = GetOrSetEventSubject<TModel, TEvent>(modelId);
             return subject;
         }
 
@@ -69,12 +62,39 @@ namespace Esp.Net.Stubs
             throw new NotImplementedException();
         }
 
-        public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TBaseEvent>(Type eventType,
+        public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TBaseEvent>(Guid modelId, Type eventType,
             ObservationStage observationStage = ObservationStage.Normal)
         {
             throw new NotImplementedException();
         }
 
+        public IModelRouter<TModel> CreateModelRouter<TModel>(Guid modelId)
+        {
+            throw new NotImplementedException();
+        }
 
+        private StubEventSubject<TModel, TEvent, IEventContext> GetOrSetEventSubject<TModel, TEvent>(Guid modelId)
+        {
+            Dictionary<Type, dynamic> modelEntry;
+            if (!ModelEnteries.TryGetValue(modelId, out modelEntry))
+            {
+                modelEntry = new Dictionary<Type, dynamic>();
+                ModelEnteries.Add(modelId, modelEntry);
+            }
+
+            // it's eaiser to just use a real subject here rather than mocking that.
+            StubEventSubject<TModel, TEvent, IEventContext> result;
+            object subject;
+            if (!modelEntry.TryGetValue(typeof(TEvent), out subject))
+            {
+                result = new StubEventSubject<TModel, TEvent, IEventContext>();
+                modelEntry.Add(typeof(TEvent), result);
+            }
+            else
+            {
+                result = (StubEventSubject<TModel, TEvent, IEventContext>)subject;
+            }
+            return result;
+        }
     }
 }
