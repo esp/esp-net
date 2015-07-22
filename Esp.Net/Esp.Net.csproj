@@ -44,13 +44,14 @@
     <Compile Include="..\AssemblyInfoCommon.cs">
       <Link>Properties\AssemblyInfoCommon.cs</Link>
     </Compile>
-    <Compile Include="Reactive\EventObservationRegistrar.cs" />
+    <Compile Include="Reactive\IEventObservationRegistrar.cs" />
+    <Compile Include="Router\EventObservationRegistrar.cs" />
     <Compile Include="Router\IEventPublisher.cs" />
     <Compile Include="Router\IModelEventPublisher.cs" />
     <Compile Include="Router\IModelRouter.cs" />
     <Compile Include="Router\IRouter.cs" />
-    <Compile Include="Router\ModelEntry.cs" />
-    <Compile Include="Router\RouterGuard.cs" />
+    <Compile Include="Router\Router.ModelEntry.cs" />
+    <Compile Include="Router\Router.Guard.cs" />
     <Compile Include="Router\State.cs" />
     <Compile Include="Router\Status.cs" />
     <Compile Include="Workflow\AyncResultsEvent.cs" />

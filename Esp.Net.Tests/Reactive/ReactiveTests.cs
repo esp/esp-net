@@ -14,6 +14,7 @@
 // limitations under the License.
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Esp.Net.Model;
@@ -33,17 +34,20 @@ namespace Esp.Net.Reactive
 
         private IEventContext _eventContext;
 
+        private StubEventObservationRegistrar _eventObservationRegistrar;
+        
         [SetUp]
         public void SetUp()
         {
             _model = new TestModel();
             _eventContext = new EventContext();
+            _eventObservationRegistrar = new StubEventObservationRegistrar();
         }
 
         [Test]
         public void SubjectOnNextsItems()
         {
-            var subject = new EventSubject<TestModel, int, IEventContext>();
+            var subject = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
             TestModel receivedModel = null;
             int receivedEvent = 0;
             IEventContext receivedContext = null;
@@ -62,7 +66,7 @@ namespace Esp.Net.Reactive
         [Test]
         public void SubjectRemovesSubscriptionOnDispose()
         {
-            var subject = new EventSubject<TestModel, int, IEventContext>();
+            var subject = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
             int received = 0;
             var disposable = subject.Observe((m, e, c) => received = e);
             subject.OnNext(_model, 1, _eventContext);
@@ -75,7 +79,7 @@ namespace Esp.Net.Reactive
         [Test]
         public void WhereFiltersWithProvidedPredicate()
         {
-            var subject = new EventSubject<TestModel, int, IEventContext>();
+            var subject = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
             List<int> received = new List<int>();
             subject
                 .Where((m, e, c) => e%2 == 0)
@@ -98,8 +102,8 @@ namespace Esp.Net.Reactive
         [Test]
         public void CanConcatEventStreams()
         {
-            var subject1 = new EventSubject<TestModel, int, IEventContext>();
-            var subject2 = new EventSubject<TestModel, int, IEventContext>();
+            var subject1 = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
+            var subject2 = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
             var stream = EventObservable.Concat(subject1, subject2);
             List<int> received = new List<int>();
             stream.Observe((m, e, c) => received.Add(e));
@@ -114,7 +118,7 @@ namespace Esp.Net.Reactive
         public void TakeOnlyTakesGivenNumberOfEvents()
         {
             List<int> received = new List<int>();
-            var subject1 = new EventSubject<TestModel, int, IEventContext>();
+            var subject1 = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
             subject1.Take(3).Observe((m, e, c) => received.Add(e));
             subject1.OnNext(_model, 1, _eventContext);
             subject1.OnNext(_model, 2, _eventContext);
@@ -130,6 +134,38 @@ namespace Esp.Net.Reactive
             var disposable = mockIEventObservable.Take(3).Observe((m, e, c) => { });
             disposable.Dispose();
             Assert.IsTrue(mockIEventObservable.IsDisposed);
+        }
+
+        [Test]
+        public void IncrementsObservationRegistrarOnObserve()
+        {
+        }
+
+        private class StubEventObservationRegistrar : IEventObservationRegistrar
+        {
+            public StubEventObservationRegistrar()
+            {
+                Register = new Dictionary<Type, int>();
+            }
+
+            public Dictionary<Type, int> Register { get; private set; }
+          
+            public void IncrementRegistration<TEvent>()
+            {
+                if (Register.ContainsKey(typeof (TEvent)))
+                {
+                    Register[typeof (TEvent)]++;
+                }
+                else
+                {
+                    Register[typeof(TEvent)] = 1;
+                }
+            }
+
+            public void DecrementRegistration<TEvent>()
+            {
+                Register[typeof(TEvent)]--;
+            }
         }
     }
 }

@@ -76,19 +76,13 @@ namespace Esp.Net.Workflow
 
             _router.PublishEvent(_model.Id, new InitialEvent());
 
-            _router
-                .EventObservationRegistrar
-                .GetEventObservationCount(_model.Id, typeof(string))
-                .ShouldBe(1);
+            GetEventObserverCount(typeof(string)).ShouldBe(1);
 
             _stringSubject.Observers.Count.ShouldBe(1);
             
             _stringSubject.OnCompleted();
 
-            _router
-                .EventObservationRegistrar
-                .GetEventObservationCount(_model.Id, typeof(string))
-                .ShouldBe(0);
+            GetEventObserverCount(typeof(string)).ShouldBe(0);
         }
 
         [Test]
@@ -107,24 +101,24 @@ namespace Esp.Net.Workflow
 
             _stringSubject.OnNext("Foo");
             _stringSubject.Observers.Count.ShouldBe(1);
-            stringEventObservable.Observers.Count.ShouldBe(1);
+            GetEventObserverCount(typeof(string)).ShouldBe(1);
             _decimalSubject.Observers.Count.ShouldBe(1);
-            decimalEventObservable.Observers.Count.ShouldBe(1);
+            GetEventObserverCount(typeof(decimal)).ShouldBe(1);
 
             _stringSubject.OnNext("Bar");
             _stringSubject.Observers.Count.ShouldBe(1);
-            stringEventObservable.Observers.Count.ShouldBe(1);
+            GetEventObserverCount(typeof(string)).ShouldBe(1);
             _decimalSubject.Observers.Count.ShouldBe(2);
-            decimalEventObservable.Observers.Count.ShouldBe(2);
+            GetEventObserverCount(typeof(decimal)).ShouldBe(2);
 
             _decimalSubject.OnNext(1);
             _model.ReceivedDecimals.SequenceEqual(new [] {1m, 1m}).ShouldBe(true);
 
             _stringSubject.OnCompleted();
-            stringEventObservable.Observers.Count.ShouldBe(0);
+            GetEventObserverCount(typeof(string)).ShouldBe(0);
 
             // note that even though the prior step completed the next stays subscribed, this is in line with IObservabe<T>.SelectMany (from Rx).
-            decimalEventObservable.Observers.Count.ShouldBe(2);
+            GetEventObserverCount(typeof(decimal)).ShouldBe(2);
         }
 
         private IObservable<string> GetStringObservble(TestModel model, IWorkflowInstanceContext context)
@@ -164,6 +158,13 @@ namespace Esp.Net.Workflow
 
         private void OnCompleted(TestModel model, IWorkflowInstanceContext context)
         {
+        }
+
+        private int GetEventObserverCount(Type eventType)
+        {
+            return _router
+                .EventObservationRegistrar
+                .GetEventObservationCount(_model.Id, eventType);
         }
     }
 }

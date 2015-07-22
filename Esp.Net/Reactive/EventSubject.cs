@@ -21,7 +21,13 @@ namespace Esp.Net.Reactive
 {
     internal class EventSubject<TModel, TEvent, TContext> : IEventObservable<TModel, TEvent, TContext>, IEventObserver<TModel, TEvent, TContext>
     {
-        readonly List<IEventObserver<TModel, TEvent, TContext>> _observers = new List<IEventObserver<TModel, TEvent, TContext>>();
+        private readonly IEventObservationRegistrar _observationRegistrar;
+        private readonly List<IEventObserver<TModel, TEvent, TContext>> _observers = new List<IEventObserver<TModel, TEvent, TContext>>();
+
+        public EventSubject(IEventObservationRegistrar observationRegistrar)
+        {
+            _observationRegistrar = observationRegistrar;
+        }
 
         public void OnNext(TModel model, TEvent @event, TContext context)
         {
@@ -47,7 +53,12 @@ namespace Esp.Net.Reactive
         public IDisposable Observe(IEventObserver<TModel, TEvent, TContext> observer)
         {
             _observers.Add(observer);
-            return EspDisposable.Create(() =>_observers.Remove(observer));
+            _observationRegistrar.IncrementRegistration<TEvent>();
+            return EspDisposable.Create(() =>
+            {
+                _observers.Remove(observer);
+                _observationRegistrar.DecrementRegistration<TEvent>();
+            });
         }
     }
 }

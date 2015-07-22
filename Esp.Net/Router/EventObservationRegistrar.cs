@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using Esp.Net.Reactive;
 
-namespace Esp.Net.Reactive
+namespace Esp.Net.Router
 {
     public class EventObservationRegistrar
     {
@@ -12,7 +13,7 @@ namespace Esp.Net.Reactive
             _modelRegistries = new Dictionary<Guid, Dictionary<Type, int>>(); 
         }
 
-        internal void AddRegistration(Guid modelId, Type eventType)
+        internal void IncrementRegistration(Guid modelId, Type eventType)
         {
             Dictionary<Type, int> eventRegistrations = GetEventRegistrations(modelId);
             if (eventRegistrations.ContainsKey(eventType))
@@ -25,7 +26,7 @@ namespace Esp.Net.Reactive
             }
         }
 
-        internal void RemoveRegistration(Guid modelId, Type eventType)
+        internal void DecrementRegistration(Guid modelId, Type eventType)
         {
             Dictionary<Type, int> eventRegistrations = GetEventRegistrations(modelId);
             eventRegistrations[eventType]--;
@@ -46,6 +47,33 @@ namespace Esp.Net.Reactive
                 _modelRegistries.Add(modelId, eventRegistrations);
             }
             return eventRegistrations;
+        }
+
+        public IEventObservationRegistrar CreateForModel(Guid modelId)
+        {
+            return new ModelEventObservationRegistrar(modelId, this);
+        }
+
+        private class ModelEventObservationRegistrar : IEventObservationRegistrar
+        {
+            private readonly Guid _modelId;
+            private readonly EventObservationRegistrar _parent;
+
+            public ModelEventObservationRegistrar(Guid modelId, EventObservationRegistrar parent)
+            {
+                _modelId = modelId;
+                _parent = parent;
+            }
+
+            public void IncrementRegistration<TEvent>()
+            {
+                _parent.IncrementRegistration(_modelId, typeof(TEvent));
+            }
+
+            public void DecrementRegistration<TEvent>()
+            {
+                _parent.DecrementRegistration(_modelId, typeof(TEvent));
+            }
         }
     }
 }

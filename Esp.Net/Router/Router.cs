@@ -21,7 +21,7 @@ using Esp.Net.Reactive;
 
 namespace Esp.Net.Router
 {
-    public class Router : IRouter
+    public partial class Router : IRouter
     {
         private readonly Dictionary<Guid, IModelEntry> _modelsById = new Dictionary<Guid, IModelEntry>();
         private readonly State _state = new State();
@@ -64,7 +64,14 @@ namespace Esp.Net.Router
         public void RegisterModel<TModel>(Guid modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor, IPostEventProcessor<TModel> postEventProcessor)
         {
             _routerGuard.EnsureValid();
-            var entry = new ModelEntry<TModel>(modelId, model, preEventProcessor, postEventProcessor, _routerGuard);
+            var entry = new ModelEntry<TModel>(
+                modelId, 
+                model, 
+                preEventProcessor, 
+                postEventProcessor, 
+                _routerGuard,
+                _eventObservationRegistrar.CreateForModel(modelId)
+            );
             _modelsById.Add(modelId, entry);
         }
 
