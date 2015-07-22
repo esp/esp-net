@@ -1,6 +1,6 @@
 ﻿namespace Esp.Net.Reactive
 {
-    public interface IEventObservationRegistrar
+    internal interface IEventObservationRegistrar
     {
         void IncrementRegistration<TEvent>();
         void DecrementRegistration<TEvent>();

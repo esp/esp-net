@@ -14,7 +14,7 @@
 // limitations under the License.
 #endregion
 using System;
-using Esp.Net.Model;
+using Esp.Net.Disposables;
 
 namespace Esp.Net.Reactive
 {

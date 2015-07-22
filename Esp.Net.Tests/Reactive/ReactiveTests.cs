@@ -139,6 +139,18 @@ namespace Esp.Net.Reactive
         [Test]
         public void IncrementsObservationRegistrarOnObserve()
         {
+            var subject1 = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
+            subject1.Observe((m, e, c) => { });
+            _eventObservationRegistrar.Register[typeof(int)].ShouldBe(1);
+        }
+
+        [Test]
+        public void DecrementsObservationRegistrarOnObserve()
+        {
+            var subject1 = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
+            IDisposable disposable = subject1.Observe((m, e, c) => { });
+            disposable.Dispose();
+            _eventObservationRegistrar.Register[typeof(int)].ShouldBe(0);
         }
 
         private class StubEventObservationRegistrar : IEventObservationRegistrar

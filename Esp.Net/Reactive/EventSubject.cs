@@ -15,7 +15,7 @@
 #endregion
 using System;
 using System.Collections.Generic;
-using Esp.Net.Model;
+using Esp.Net.Disposables;
 
 namespace Esp.Net.Reactive
 {

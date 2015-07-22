@@ -3,7 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Esp.Net.Router;
+using Esp.Net.Plugins.Workflow;
 using Esp.Net.Stubs;
 using NUnit.Framework;
 using Shouldly;
@@ -31,7 +31,7 @@ namespace Esp.Net.Workflow
         public class InitialEvent { }
         public class AnAsyncEvent { }
 
-        private Router.Router _router;
+        private Router _router;
         private TestModel _model;
         private StubSubject<string> _stringSubject;
         private StubSubject<int> _intSubject;
@@ -42,7 +42,7 @@ namespace Esp.Net.Workflow
         public void SetUp()
         {
             _model = new TestModel();
-            _router = new Router.Router(ThreadGuard.Default);
+            _router = new Router(ThreadGuard.Default);
             _router.RegisterModel(_model.Id, _model);
             _stringSubject = new StubSubject<string>();
             _intSubject = new StubSubject<int>();
@@ -57,9 +57,9 @@ namespace Esp.Net.Workflow
                 .SelectMany(GetStringObservble, OnStringResultsReceived)
                 .Run(_model.Id, OnError, OnCompleted);    
             _router.PublishEvent(_model.Id, new InitialEvent());
-            _router.PublishEvent(_model.Id, "Foo");
-            _router.PublishEvent(_model.Id, "Bar");
-            _router.PublishEvent(_model.Id, "Baz");
+            _stringSubject.OnNext("Foo");
+            _stringSubject.OnNext("Bar");
+            _stringSubject.OnNext("Baz");
             _model.ReceivedStrings.SequenceEqual(new[] {"Foo", "Bar", "Baz"}).ShouldBe(true);
         }
 
@@ -76,13 +76,13 @@ namespace Esp.Net.Workflow
 
             _router.PublishEvent(_model.Id, new InitialEvent());
 
-            GetEventObserverCount(typeof(string)).ShouldBe(1);
-
+            GetEventObserverCount(typeof(AyncResultsEvent<string>)).ShouldBe(1);
+                
             _stringSubject.Observers.Count.ShouldBe(1);
             
             _stringSubject.OnCompleted();
 
-            GetEventObserverCount(typeof(string)).ShouldBe(0);
+            GetEventObserverCount(typeof(AyncResultsEvent<string>)).ShouldBe(0);
         }
 
         [Test]
@@ -101,24 +101,24 @@ namespace Esp.Net.Workflow
 
             _stringSubject.OnNext("Foo");
             _stringSubject.Observers.Count.ShouldBe(1);
-            GetEventObserverCount(typeof(string)).ShouldBe(1);
+            GetEventObserverCount(typeof(AyncResultsEvent<string>)).ShouldBe(1);
             _decimalSubject.Observers.Count.ShouldBe(1);
-            GetEventObserverCount(typeof(decimal)).ShouldBe(1);
+            GetEventObserverCount(typeof(AyncResultsEvent<decimal>)).ShouldBe(1);
 
             _stringSubject.OnNext("Bar");
             _stringSubject.Observers.Count.ShouldBe(1);
-            GetEventObserverCount(typeof(string)).ShouldBe(1);
+            GetEventObserverCount(typeof(AyncResultsEvent<string>)).ShouldBe(1);
             _decimalSubject.Observers.Count.ShouldBe(2);
-            GetEventObserverCount(typeof(decimal)).ShouldBe(2);
+            GetEventObserverCount(typeof(AyncResultsEvent<decimal>)).ShouldBe(2);
 
             _decimalSubject.OnNext(1);
             _model.ReceivedDecimals.SequenceEqual(new [] {1m, 1m}).ShouldBe(true);
 
             _stringSubject.OnCompleted();
-            GetEventObserverCount(typeof(string)).ShouldBe(0);
+            GetEventObserverCount(typeof(AyncResultsEvent<string>)).ShouldBe(0);
 
             // note that even though the prior step completed the next stays subscribed, this is in line with IObservabe<T>.SelectMany (from Rx).
-            GetEventObserverCount(typeof(decimal)).ShouldBe(2);
+            GetEventObserverCount(typeof(AyncResultsEvent<decimal>)).ShouldBe(2);
         }
 
         private IObservable<string> GetStringObservble(TestModel model, IWorkflowInstanceContext context)

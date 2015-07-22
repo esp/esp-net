@@ -2,8 +2,8 @@
 using System;
 using System.Collections.Generic;
 using Esp.Net.Model;
+using Esp.Net.Plugins.HeldEvents;
 using Esp.Net.Reactive;
-using Esp.Net.Router;
 using NUnit.Framework;
 using Shouldly;
 
@@ -13,7 +13,7 @@ namespace Esp.Net.HeldEvents
     public class HeldEventTests
     {
         private TestModel _model;
-        private Router.Router _router;
+        private Router _router;
         private List<FooEvent> _receivedFooEvents;
         private IDisposable _fooEventStreamDisposable;
         private List<BarEvent> _receivedBarEvents;
@@ -120,7 +120,7 @@ namespace Esp.Net.HeldEvents
         public void SetUp()
         {
             _model = new TestModel();
-            _router = new Router.Router(ThreadGuard.Default);
+            _router = new Router(ThreadGuard.Default);
             _router.RegisterModel(_model.Id, _model);
             _model.HoldAllEvents = true;
         }
@@ -246,8 +246,8 @@ namespace Esp.Net.HeldEvents
         public void CanHoldByBaseEvent()
         {
             List<BaseEvent> receivedBarEvents = new List<BaseEvent>();
-            IEventObservable<TestModel, BaseEvent, IEventContext> fooEventStream = _router.GetEventObservable(new HoldBaseEventsBasedOnModelStrategy<FooEvent, BaseEvent>());
-            IEventObservable<TestModel, BaseEvent, IEventContext> barEventStream = _router.GetEventObservable(new HoldBaseEventsBasedOnModelStrategy<BarEvent, BaseEvent>());
+            IEventObservable<TestModel, BaseEvent, IEventContext> fooEventStream = _router.GetEventObservable(_model.Id, new HoldBaseEventsBasedOnModelStrategy<FooEvent, BaseEvent>());
+            IEventObservable<TestModel, BaseEvent, IEventContext> barEventStream = _router.GetEventObservable(_model.Id, new HoldBaseEventsBasedOnModelStrategy<BarEvent, BaseEvent>());
             var stream = EventObservable.Concat(fooEventStream, barEventStream);
             stream.Observe((model, baseEvent, context) =>
             {

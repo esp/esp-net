@@ -17,7 +17,6 @@ using System;
 using System.Collections.Generic;
 using Esp.Net.Model;
 using Esp.Net.Reactive;
-using Esp.Net.Router;
 using NUnit.Framework;
 using Shouldly;
 
@@ -46,13 +45,13 @@ namespace Esp.Net
 
         private TestModel _model;
 
-        private Router.Router _router;
+        private Router _router;
 
         [SetUp]
         public void SetUp()
         {
             _model = new TestModel();
-            _router = new Router.Router(ThreadGuard.Default);
+            _router = new Router(ThreadGuard.Default);
             _router.RegisterModel(_model.Id, _model);
         }
 
@@ -316,20 +315,20 @@ namespace Esp.Net
             List<int> receivedEvents = new List<int>();
             var model = new TestModel();
             var modelUpdateCount = 0;
-            Router.Router router = null;
+            Router router = null;
             var preEventProcessor = new DelegeatePreEventProcessor(m =>
             {
-                router.PublishEvent(_model.Id, 1);
+                router.PublishEvent(model.Id, 1);
             });
-            router = new Router.Router(ThreadGuard.Default);
+            router = new Router(ThreadGuard.Default);
             router.RegisterModel(model.Id, model, preEventProcessor);
-            router.GetEventObservable<TestModel, int>(_model.Id).Observe((m, e, c) => {
+            router.GetEventObservable<TestModel, int>(model.Id).Observe((m, e, c) => {
                 receivedEvents.Add(e);
             });
-            router.GetModelObservable<TestModel>(_model.Id).Observe(model1 => {
+            router.GetModelObservable<TestModel>(model.Id).Observe(model1 => {
                 modelUpdateCount++;
             });
-            router.PublishEvent(_model.Id, 0);
+            router.PublishEvent(model.Id, 0);
             receivedEvents.ShouldBe(new[]{ 0, 1});
             modelUpdateCount.ShouldBe(1);
         }
@@ -341,27 +340,27 @@ namespace Esp.Net
             List<int> receivedEvents = new List<int>();
             var model = new TestModel();
             var modelUpdateCount = 0;
-            Router.Router router = null;
+            Router router = null;
             var postEventProcessor = new DelegeatePostEventProcessor(m =>
             {
                 if (m.AnInt < 1)
                 {
-                    router.PublishEvent(_model.Id, 1);
+                    router.PublishEvent(model.Id, 1);
                 }
             });
-            router = new Router.Router(ThreadGuard.Default);
+            router = new Router(ThreadGuard.Default);
             router.RegisterModel(model.Id, model, postEventProcessor);
-            router.GetEventObservable<TestModel, int>(_model.Id).Observe((m, e, c) => {
+            router.GetEventObservable<TestModel, int>(model.Id).Observe((m, e, c) => {
                 m.AnInt = e;
                 receivedEvents.Add(e);
             });
-            router.GetModelObservable<TestModel>(_model.Id).Observe(
+            router.GetModelObservable<TestModel>(model.Id).Observe(
                model1 =>
                {
                    modelUpdateCount++;
                }
             );
-            router.PublishEvent(_model.Id, 0);
+            router.PublishEvent(model.Id, 0);
             receivedEvents.ShouldBe(new[] { 0, 1 });
             modelUpdateCount.ShouldBe(1);
         }
@@ -377,13 +376,13 @@ namespace Esp.Net
             var receivedEvents = new List<int>();
             var model = new TestModel();
             int preProcessorCount = 0, postProcessorCount = 0, modelCount = 0;
-            Router.Router router = null;
+            Router router = null;
             var preEventProcessor = new DelegeatePreEventProcessor(m =>
             {
                 preProcessorCount++;
                 if (m.AnInt == 0)
                 {
-                    router.PublishEvent(_model.Id, 1);
+                    router.PublishEvent(model.Id, 1);
                 }
             });
             var postEventProcessor = new DelegeatePostEventProcessor(m =>
@@ -391,23 +390,23 @@ namespace Esp.Net
                 postProcessorCount++;
                 if (m.AnInt == 1)
                 {
-                    router.PublishEvent(_model.Id, 2);
+                    router.PublishEvent(model.Id, 2);
                 }
             });
-            router = new Router.Router(ThreadGuard.Default);
+            router = new Router(ThreadGuard.Default);
             router.RegisterModel(model.Id, model, preEventProcessor, postEventProcessor);
-            router.GetEventObservable<TestModel, int>(_model.Id).Observe((m, e, c) =>
+            router.GetEventObservable<TestModel, int>(model.Id).Observe((m, e, c) =>
             {
                 m.AnInt = e;
                 receivedEvents.Add(e);
             });
-            router.GetModelObservable<TestModel>(_model.Id).Observe(
+            router.GetModelObservable<TestModel>(model.Id).Observe(
                model1 =>
                {
                    modelCount++;
                }
             );
-            router.PublishEvent(_model.Id, 0);
+            router.PublishEvent(model.Id, 0);
             receivedEvents.ShouldBe(new[] { 0, 1, 2 });
             modelCount.ShouldBe(1);
             preProcessorCount.ShouldBe(2);
