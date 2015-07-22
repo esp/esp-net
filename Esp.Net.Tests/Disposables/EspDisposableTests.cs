@@ -1,4 +1,4 @@
-#region copyright
+﻿#region copyright
 // Copyright 2015 Keith Woods
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,26 +15,17 @@
 #endregion
 
 using System;
+using NUnit.Framework;
 
-namespace Esp.Net.Reactive
+namespace Esp.Net.Disposables
 {
-    public interface IModelObserver<in T>
+    [TestFixture]
+    public sealed class EspDisposableTests
     {
-        void OnNext(T item);
-    }
-
-    internal class ModelObserver<T> : IModelObserver<T>
-    {
-        private readonly Action<T> _onNext;
-
-        public ModelObserver(Action<T> onNext)
+        [Test]
+        public void ShouldThrowWithNullAction()
         {
-            _onNext = onNext;
-        }
-
-        public void OnNext(T item)
-        {
-            _onNext(item);
+            Assert.Throws<ArgumentNullException>(() => EspDisposable.Create(null));
         }
     }
 }

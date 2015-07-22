@@ -13,9 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #endregion
+
 using System;
 using System.Collections.Generic;
-using Esp.Net.Model;
 using Esp.Net.Reactive;
 using NUnit.Framework;
 using Shouldly;
