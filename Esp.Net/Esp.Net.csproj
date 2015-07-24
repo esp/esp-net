@@ -46,6 +46,7 @@
     </Compile>
     <Compile Include="IEventSubject.cs" />
     <Compile Include="IModelSubject.cs" />
+    <Compile Include="IPreEventProcessor.cs" />
     <Compile Include="IRouter.cs" />
     <Compile Include="IThreadGuard.cs" />
     <Compile Include="ModelRouter\IEventPublisher.cs" />
@@ -62,7 +63,7 @@
     <Compile Include="Router.Status.cs" />
     <Compile Include="Plugins\Workflow\AyncResultsEvent.cs" />
     <Compile Include="EventContext.cs" />
-    <Compile Include="EventProcessors.cs" />
+    <Compile Include="IPostEventProcessor.cs" />
     <Compile Include="Utils\Guard.cs" />
     <Compile Include="Plugins\HeldEvents\HeldEventAction.cs" />
     <Compile Include="Plugins\HeldEvents\HeldEventActionEvent.cs" />

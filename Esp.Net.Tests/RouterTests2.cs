@@ -1,86 +1,125 @@
-﻿using NUnit.Framework;
+﻿using System;
+using System.Collections.Generic;
+using NUnit.Framework;
 
 namespace Esp.Net
 {
     [TestFixture]
     public class RouterTests2
     {
-        public class RegisterModel
+        private Router _router;
+        private StubThreadGuard _threadGuard;
+
+        private TestModel _model1;
+        private StubModelProcessor _model1PreEventProcessor;
+        private StubModelProcessor _model1PostEventProcessor;
+        
+        private TestModel _model2;
+        private StubModelProcessor _model2PreEventProcessor;
+        private StubModelProcessor _model2PostEventProcessor;
+        
+        [SetUp]
+        public void SetUp()
         {
-            [Test, Ignore]
-            public void ThrowsIfModelIdNull()
+            _threadGuard = new StubThreadGuard();
+            _router = new Router(_threadGuard);
+
+            _model1 = new TestModel();
+            _model1PreEventProcessor = new StubModelProcessor();
+            _model1PostEventProcessor = new StubModelProcessor();
+            _router.RegisterModel(_model1.Id, _model1, _model1PreEventProcessor, _model1PostEventProcessor);
+
+            _model2 = new TestModel();
+            _model2PreEventProcessor = new StubModelProcessor();
+            _model2PostEventProcessor = new StubModelProcessor();
+            _router.RegisterModel(_model2.Id, _model2, _model2PreEventProcessor, _model2PostEventProcessor);
+        }
+
+        public class Ctor
+        {
+            [Test]
+            public void ThrowsIfThreadGuardNull()
             {
+                Assert.Throws<ArgumentNullException>(() => new Router(null));
+            }
+        }
+
+        public class RegisterModel : RouterTests2
+        {
+            [Test]
+            public void ThrowsIfModelIdGuidEmpty()
+            {
+                Assert.Throws<ArgumentException>(() => _router.RegisterModel(Guid.Empty, new object()));
             }
 
-            [Test, Ignore]
+            [Test]
             public void ThrowsIfPreEventProcessorNull()
             {
+                Assert.Throws<ArgumentNullException>(() => _router.RegisterModel(Guid.NewGuid(), new object(), (IPreEventProcessor<object>)null));
             }
 
-            [Test, Ignore]
+            [Test]
             public void ThrowsIfPostEventProcessorNull()
             {
+                Assert.Throws<ArgumentNullException>(() => _router.RegisterModel(Guid.NewGuid(), new object(), (IPostEventProcessor<object>)null));
             }
 
-            [Test, Ignore]
-            public void ThrowsIfPreAndPostEventProcessorNull()
-            {
-            }
-
-            [Test, Ignore]
-            public void ThrowsIfModelAlreadyRegistered()
-            {
-            }
-
-            [Test, Ignore]
+            [Test]
             public void ThrowsIfModelNull()
             {
+                Assert.Throws<ArgumentNullException>(() => _router.RegisterModel(Guid.NewGuid(), (object)null));
+            }
+
+            [Test]
+            public void ThrowsIfModelAlreadyRegistered()
+            {
+                Assert.Throws<ArgumentException>(() => _router.RegisterModel(_model1.Id, new TestModel()));
             }
         }
 
         public class RemoveModel
         {
-            [Test, Ignore]
+            [Test]
             public void EventObserversCompleteOnRemoval()
             {
             }
 
-            [Test, Ignore]
+            [Test]
             public void ModelObserversCompleteOnRemoval()
             {
             }
 
-            [Test, Ignore]
+            [Test]
             public void QueuedEventsAreIgnoredOnRemoval()
             {
             }
 
-            [Test, Ignore]
+            [Test]
             public void RemovalByAPreProcessorEndsEventWorkflow()
             {
             }
 
-            [Test, Ignore]
+            [Test]
             public void RemovalAtPreviewStageEndsEventWorkflow()
             {
             }
 
-            [Test, Ignore]
+            [Test]
             public void RemovalAtNormalStageEndsEventWorkflow()
             {
             }
 
-            [Test, Ignore]
+            [Test]
             public void RemovalAtCommittedStageEndsEventWorkflow()
             {
             }
 
-            [Test, Ignore]
+            [Test]
             public void RemovalByAPostProcessorEndsEventWorkflow()
             {
             }
 
-            [Test, Ignore]
+            [Test]
             public void RemovalByAModelObserverEndsEventWorkflow()
             {
             }
@@ -88,66 +127,66 @@ namespace Esp.Net
 
         public class EventWorkflow
         {
-            [Test, Ignore]
+            [Test]
             public void PreProcessorInvokedForFirstEvent()
             {
             }
 
-            [Test, Ignore]
+            [Test]
             public void PreviewObservationStageObserversRecievEvent()
             {
                 // note: multiple observers 
             }
 
-            [Test, Ignore]
+            [Test]
             public void NormalObservationStageObserversRecieveEvent()
             {
             }
 
-            [Test, Ignore]
+            [Test]
             public void CommittedObservationStageObserversRecieveEvent()
             {
             }
 
-            [Test, Ignore]
+            [Test]
             public void PostProcessorInvokedAfterAllEventsPurged()
             {
 
             }
 
-            [Test, Ignore]
+            [Test]
             public void EventSentToPreProcessorThenEventProcessorThenPostProcessors()
             {
             }
 
-            [Test, Ignore]
+            [Test]
             public void EventWorkflowOnlyInvokedForTargetModel()
             {
             }
 
             public class SubsequentEvents
             {
-                [Test, Ignore]
+                [Test]
                 public void EventsPublishedByPreProcessorGetProcessedFromBackingQueue()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void EventsPublishedByPreviewObservationStageObserversGetProcessedFromBackingQueue()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void EventsPublishedByNormalObservationStageObserversGetProcessedFromBackingQueue()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void EventsPublishedByCommittedObservationStageObserversGetProcessedFromBackingQueue()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void EventsPublishedByPostProcessorGetProcessedFromBackingQueue()
                 {
                 }
@@ -155,27 +194,27 @@ namespace Esp.Net
 
             public class ExecuteEvent
             {
-                [Test, Ignore]
+                [Test]
                 public void OnlyAllowsExecuteDuringEventWorkflowStages()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void ThrowsIfExecuteHandlerRaisesAnotherEvent()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void ImmediatelyPublishesTheExecutedEventToPreviewObservationStageObservers()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void ImmediatelyPublishesTheExecutedEventToNormalObservationStageObservers()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void ImmediatelyPublishesTheExecutedEventToCommittedObservationStageObservers()
                 {
                 }
@@ -183,19 +222,19 @@ namespace Esp.Net
 
             public class Broadcast
             {
-                [Test, Ignore]
+                [Test]
                 public void DeliversEventToAllModels()
                 { }
             }
 
             public class ModelChangedEvent
             {
-                [Test, Ignore]
+                [Test]
                 public void ThrowsIfEventProcessorSubscribesToOwnModelChangedEvent()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void WhenEventProcessingWorkflowFinishedModelChangedEventIsRaised()
                 {
                 }
@@ -203,17 +242,17 @@ namespace Esp.Net
 
             public class EventObservationDisposal
             {
-                [Test, Ignore]
+                [Test]
                 public void DisposedPreviewObservationStageObserversDontRecievEvent()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void DisposedNormalObservationStageObserversDontRecievEvent()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void DisposedCommittedObservationStageObserversDontRecievEvent()
                 {
                 }
@@ -221,30 +260,30 @@ namespace Esp.Net
 
             public class ErrorFlows
             {
-                [Test, Ignore]
+                [Test]
                 public void CancelingTwiceAtPreviewObservationStageThrows()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void CancelingAtNormalObservationStageThrows()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void CancelingAtCommittedObservationStageThrows()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void CommittingAtPreviewObservationStageThrows()
                 { }
 
-                [Test, Ignore]
+                [Test]
                 public void CommittingAtCommittedObservationStageThrows()
                 { }
 
-                [Test, Ignore]
+                [Test]
                 public void CommittingTwiceAtNormalObservationStageThrows()
                 { }
             }
@@ -256,29 +295,29 @@ namespace Esp.Net
 
         public class ModelObservation
         {
-            [Test, Ignore]
+            [Test]
             public void ThrowsIfModelIdGuidEmpty()
             {
             }
 
-            [Test, Ignore]
+            [Test]
             public void ObserversReceiveModelOnEventWorkflowCompleted()
             {
                 
             }
 
-            [Test, Ignore]
+            [Test]
             public void DisposedObserversReceiveDontModelOnEventWorkflowCompleted()
             {
 
             }
 
-            [Test, Ignore]
+            [Test]
             public void MutipleSubsequentEventsOnlyYield1ModelUpdate()
             {
             }
 
-            [Test, Ignore]
+            [Test]
             public void EventsPublishedDuringModelDispatchGetProcessedFromBackingQueue()
             {
 
@@ -286,7 +325,7 @@ namespace Esp.Net
 
             public class ModelCloning
             {
-                [Test, Ignore]
+                [Test]
                 public void DispatchesAModelCloneIfTheModelImplementsIClonable()
                 {
                 }
@@ -297,69 +336,145 @@ namespace Esp.Net
         {
         }
 
+        public class ThreadGuard
+        {
+            [Test]
+            public void ShouldThrowIfRegisterModelCalledOnInvalidThread()
+            {
+                // all overloads
+            }
+
+            [Test]
+            public void ShouldThrowIfRemoveModelCalledOnInvalidThread()
+            {
+            }
+
+            [Test]
+            public void ShouldThrowIfPublishEventCalledOnInvalidThread()
+            {
+            }
+
+            [Test]
+            public void ShouldThrowIfGetModelObservableCalledOnInvalidThread()
+            {
+            }
+
+            [Test]
+            public void ShouldThrowIfGetEventObservableCalledOnInvalidThread()
+            {
+                // all overloads
+            }
+        }
+
         public class RouterHalting
         {
-            [Test, Ignore]
+            [Test]
             public void ShouldHaltAndRethrowIfAPreProcessorErrors()
             {
             }
 
-            [Test, Ignore]
+            [Test]
             public void ShouldHaltAndRethrowIfAnEventProcessorErrors()
             {
             }
 
-            [Test, Ignore]
+            [Test]
             public void ShouldHaltAndRethrowIfAnPostProcessorErrors()
             {
             }
 
-            [Test, Ignore]
+            [Test]
             public void ShouldHaltAndRethrowIfAModelObserverErrors()
             {
             }
 
             public class WhenHalted
             {
-                [Test, Ignore]
+                [Test]
                 public void ShouldThrowOnRegisterModel()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void ShouldThrowOnCreateModelRouter()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void ShouldThrowOnPublish()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void ShouldThrowOnGetModelObservable()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void ShouldThrowOnGetEventObservable()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void ShouldThrowOnPublishEvent()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void ShouldThrowOnExecuteEvent()
                 {
                 }
 
-                [Test, Ignore]
+                [Test]
                 public void ShouldThrowOnBroadcastEvent()
                 {
                 }
+            }
+        }
+
+        public class TestModel
+        {
+            public TestModel()
+            {
+                Id = Guid.NewGuid();
+            }
+            public Guid Id { get; private set; }
+            public int AnInt { get; set; }
+            public string AString { get; set; }
+            public decimal ADecimal { get; set; }
+        }
+
+        public class BaseEvent { }
+        public class Event1 : BaseEvent { }
+        public class Event2 : BaseEvent { }
+        public class Event3 : BaseEvent { }
+        public class EventWithoutBaseType { }
+
+        public class StubModelProcessor : IPreEventProcessor<TestModel>, IPostEventProcessor<TestModel>
+        {
+            private readonly List<Action<TestModel>> _actions = new List<Action<TestModel>>();
+
+            public void Process(TestModel model)
+            {
+                foreach (Action<TestModel> action in _actions)
+                {
+                    action(model);
+                }
+            }
+
+            public void RegisterAction(Action<TestModel> action)
+            {
+                _actions.Add(action);
+            }
+        }
+
+        public class StubThreadGuard : IThreadGuard
+        {
+            public bool HasAccess { get; set; }
+
+            public bool CheckAccess()
+            {
+                return HasAccess;
             }
         }
     }

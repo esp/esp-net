@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using Esp.Net.ModelRouter;
 using Esp.Net.Reactive;
+using Esp.Net.Utils;
 
 namespace Esp.Net
 {
@@ -30,20 +31,13 @@ namespace Esp.Net
 
         public Router(IThreadGuard threadGuard)
         {
+            Guard.Requires<ArgumentNullException>(threadGuard != null, "threadGuard can not be null");
             _routerGuard = new RouterGuard(_state, threadGuard);
         }
 
         public EventObservationRegistrar EventObservationRegistrar
         {
             get { return _eventObservationRegistrar; }
-        }
-
-        public void PublishEvent<TEvent>(Guid modelId, TEvent @event)
-        {
-            _routerGuard.EnsureValid();
-            var modelEntry = _modelsById[modelId];
-            modelEntry.Enqueue(@event);
-            PurgeEventQueues();
         }
 
         public void RegisterModel<TModel>(Guid modelId, TModel model)
@@ -53,17 +47,22 @@ namespace Esp.Net
 
         public void RegisterModel<TModel>(Guid modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor)
         {
+            Guard.Requires<ArgumentNullException>(preEventProcessor != null, "preEventProcessor can not be null");
             RegisterModel(modelId, model, preEventProcessor, null);
         }
 
         public void RegisterModel<TModel>(Guid modelId, TModel model, IPostEventProcessor<TModel> postEventProcessor)
         {
+            Guard.Requires<ArgumentNullException>(postEventProcessor != null, "postEventProcessor can not be null");
             RegisterModel(modelId, model, null, postEventProcessor);
         }
 
         public void RegisterModel<TModel>(Guid modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor, IPostEventProcessor<TModel> postEventProcessor)
         {
+            Guard.Requires<ArgumentException>(modelId != Guid.Empty, "modelId can not be Guid.Empty");
+            Guard.Requires<ArgumentNullException>(model != null, "model can not be null");
             _routerGuard.EnsureValid();
+            Guard.Requires<ArgumentException>(!_modelsById.ContainsKey(modelId), "modelId {0} already registered", modelId);
             var entry = new ModelEntry<TModel>(
                 modelId, 
                 model, 
@@ -78,6 +77,14 @@ namespace Esp.Net
         public void RemoveModel(Guid modelId)
         {
             throw new NotImplementedException();
+        }
+
+        public void PublishEvent<TEvent>(Guid modelId, TEvent @event)
+        {
+            _routerGuard.EnsureValid();
+            var modelEntry = _modelsById[modelId];
+            modelEntry.Enqueue(@event);
+            PurgeEventQueues();
         }
 
         public IModelObservable<TModel> GetModelObservable<TModel>(Guid modelId)
