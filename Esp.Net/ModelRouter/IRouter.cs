@@ -14,15 +14,9 @@
 // limitations under the License.
 #endregion
 
-
-using System;
-
-#if ESP_EXPERIMENTAL
-namespace Esp.Net
+namespace Esp.Net.ModelRouter
 {
-    public interface IIdentifiableEvent
+    public interface IRouter<out TModel> : IModelSubject<TModel>, IEventSubject<TModel>, IEventPublisher
     {
-        Guid Id { get; }
     }
 }
-#endif

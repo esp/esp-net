@@ -44,10 +44,18 @@
     <Compile Include="..\AssemblyInfoCommon.cs">
       <Link>Properties\AssemblyInfoCommon.cs</Link>
     </Compile>
-    <Compile Include="Router.ModelRouter.cs" />
+    <Compile Include="IEventSubject.cs" />
+    <Compile Include="IModelSubject.cs" />
+    <Compile Include="IRouter.cs" />
+    <Compile Include="IThreadGuard.cs" />
+    <Compile Include="ModelRouter\IEventPublisher.cs" />
+    <Compile Include="ModelRouter\IEventSubject.cs" />
+    <Compile Include="ModelRouter\IModelSubject.cs" />
+    <Compile Include="ModelRouter\IRouter.cs" />
+    <Compile Include="ModelRouter\ModelRouter.cs" />
     <Compile Include="Reactive\IEventObservationRegistrar.cs" />
     <Compile Include="EventObservationRegistrar.cs" />
-    <Compile Include="API.cs" />
+    <Compile Include="IEventPublisher.cs" />
     <Compile Include="Router.ModelEntry.cs" />
     <Compile Include="Router.Guard.cs" />
     <Compile Include="Router.State.cs" />

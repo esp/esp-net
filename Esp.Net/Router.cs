@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using Esp.Net.ModelRouter;
 using Esp.Net.Reactive;
 
 namespace Esp.Net
@@ -72,6 +73,11 @@ namespace Esp.Net
                 _eventObservationRegistrar.CreateForModel(modelId)
             );
             _modelsById.Add(modelId, entry);
+        }
+
+        public void RemoveModel(Guid modelId)
+        {
+            throw new NotImplementedException();
         }
 
         public IModelObservable<TModel> GetModelObservable<TModel>(Guid modelId)

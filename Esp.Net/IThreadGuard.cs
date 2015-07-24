@@ -14,15 +14,10 @@
 // limitations under the License.
 #endregion
 
-
-using System;
-
-#if ESP_EXPERIMENTAL
 namespace Esp.Net
 {
-    public interface IIdentifiableEvent
+    public interface IThreadGuard
     {
-        Guid Id { get; }
+        bool CheckAccess();
     }
 }
-#endif

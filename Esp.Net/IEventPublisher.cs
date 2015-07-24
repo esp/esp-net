@@ -14,15 +14,12 @@
 // limitations under the License.
 #endregion
 
-
 using System;
 
-#if ESP_EXPERIMENTAL
 namespace Esp.Net
 {
-    public interface IIdentifiableEvent
+    public interface IEventPublisher
     {
-        Guid Id { get; }
+        void PublishEvent<TEvent>(Guid modelId, TEvent @event);
     }
 }
-#endif

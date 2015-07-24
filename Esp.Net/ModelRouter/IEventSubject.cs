@@ -14,15 +14,15 @@
 // limitations under the License.
 #endregion
 
-
 using System;
+using Esp.Net.Reactive;
 
-#if ESP_EXPERIMENTAL
-namespace Esp.Net
+namespace Esp.Net.ModelRouter
 {
-    public interface IIdentifiableEvent
+    public interface IEventSubject<out TModel>
     {
-        Guid Id { get; }
+        IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal);
+        IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TSubEventType, TBaseEvent>(ObservationStage observationStage = ObservationStage.Normal) where TSubEventType : TBaseEvent;
+        IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal);
     }
 }
-#endif

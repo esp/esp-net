@@ -14,15 +14,13 @@
 // limitations under the License.
 #endregion
 
-
 using System;
+using Esp.Net.Reactive;
 
-#if ESP_EXPERIMENTAL
 namespace Esp.Net
 {
-    public interface IIdentifiableEvent
+    public interface IModelSubject
     {
-        Guid Id { get; }
+        IModelObservable<TModel> GetModelObservable<TModel>(Guid modelId);
     }
 }
-#endif

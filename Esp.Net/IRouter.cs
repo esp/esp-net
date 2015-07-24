@@ -14,15 +14,18 @@
 // limitations under the License.
 #endregion
 
-
 using System;
+using Esp.Net.ModelRouter;
 
-#if ESP_EXPERIMENTAL
 namespace Esp.Net
 {
-    public interface IIdentifiableEvent
+    public interface IRouter : IModelSubject, IEventSubject, IEventPublisher
     {
-        Guid Id { get; }
+        void RegisterModel<TModel>(Guid modelId, TModel model);
+        void RegisterModel<TModel>(Guid modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor);
+        void RegisterModel<TModel>(Guid modelId, TModel model, IPostEventProcessor<TModel> postEventProcessor);
+        void RegisterModel<TModel>(Guid modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor, IPostEventProcessor<TModel> postEventProcessor);
+        void RemoveModel(Guid modelId);
+        IRouter<TModel> CreateModelRouter<TModel>(Guid modelId);
     }
 }
-#endif
