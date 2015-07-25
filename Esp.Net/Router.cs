@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using Esp.Net.Meta;
 using Esp.Net.ModelRouter;
 using Esp.Net.Reactive;
 using Esp.Net.Utils;
@@ -27,7 +28,7 @@ namespace Esp.Net
         private readonly Dictionary<Guid, IModelEntry> _modelsById = new Dictionary<Guid, IModelEntry>();
         private readonly State _state = new State();
         private readonly RouterGuard _routerGuard;
-        private readonly EventObservationRegistrar _eventObservationRegistrar = new EventObservationRegistrar();
+        private readonly ModelsEventsObservations _modelsEventsObservations = new ModelsEventsObservations();
 
         public Router(IThreadGuard threadGuard)
         {
@@ -35,9 +36,9 @@ namespace Esp.Net
             _routerGuard = new RouterGuard(_state, threadGuard);
         }
 
-        public EventObservationRegistrar EventObservationRegistrar
+        public ModelsEventsObservations ModelsEventsObservations
         {
-            get { return _eventObservationRegistrar; }
+            get { return _modelsEventsObservations; }
         }
 
         public void RegisterModel<TModel>(Guid modelId, TModel model)
@@ -69,7 +70,7 @@ namespace Esp.Net
                 preEventProcessor, 
                 postEventProcessor, 
                 _routerGuard,
-                _eventObservationRegistrar.CreateForModel(modelId)
+                _modelsEventsObservations.CreateForModel(modelId)
             );
             _modelsById.Add(modelId, entry);
         }

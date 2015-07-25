@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using Esp.Net.Disposables;
+using Esp.Net.Meta;
 
 namespace Esp.Net.Reactive
 {

@@ -49,13 +49,15 @@
     <Compile Include="IPreEventProcessor.cs" />
     <Compile Include="IRouter.cs" />
     <Compile Include="IThreadGuard.cs" />
+    <Compile Include="Meta\EventObservations.cs" />
+    <Compile Include="Meta\ModelEventObservations.cs" />
     <Compile Include="ModelRouter\IEventPublisher.cs" />
     <Compile Include="ModelRouter\IEventSubject.cs" />
     <Compile Include="ModelRouter\IModelSubject.cs" />
     <Compile Include="ModelRouter\IRouter.cs" />
     <Compile Include="ModelRouter\ModelRouter.cs" />
-    <Compile Include="Reactive\IEventObservationRegistrar.cs" />
-    <Compile Include="EventObservationRegistrar.cs" />
+    <Compile Include="Meta\IEventObservationRegistrar.cs" />
+    <Compile Include="Meta\ModelsEventsObservations.cs" />
     <Compile Include="IEventPublisher.cs" />
     <Compile Include="Router.ModelEntry.cs" />
     <Compile Include="Router.Guard.cs" />

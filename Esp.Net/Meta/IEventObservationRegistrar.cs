@@ -14,7 +14,7 @@
 // limitations under the License.
 #endregion
 
-namespace Esp.Net.Reactive
+namespace Esp.Net.Meta
 {
     internal interface IEventObservationRegistrar
     {
