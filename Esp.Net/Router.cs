@@ -28,17 +28,21 @@ namespace Esp.Net
         private readonly Dictionary<Guid, IModelEntry> _modelsById = new Dictionary<Guid, IModelEntry>();
         private readonly State _state = new State();
         private readonly RouterGuard _routerGuard;
-        private readonly ModelsEventsObservations _modelsEventsObservations = new ModelsEventsObservations();
+        private readonly ModelsEventsObservations _modelsEventsObservations;
 
         public Router(IThreadGuard threadGuard)
         {
             Guard.Requires<ArgumentNullException>(threadGuard != null, "threadGuard can not be null");
             _routerGuard = new RouterGuard(_state, threadGuard);
+            _modelsEventsObservations = new ModelsEventsObservations(threadGuard);
         }
 
-        public ModelsEventsObservations ModelsEventsObservations
+        public IEventsObservationRegistrar EventsObservationRegistrar
         {
-            get { return _modelsEventsObservations; }
+            get
+            {
+                return _modelsEventsObservations;
+            }
         }
 
         public void RegisterModel<TModel>(Guid modelId, TModel model)

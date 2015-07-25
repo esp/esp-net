@@ -9,7 +9,14 @@ namespace Esp.Net.Meta
             EventType = eventType;
         }
 
+        public EventObservations(Type eventType, int numberOfObservers)
+        {
+            EventType = eventType;
+            NumberOfObservers = numberOfObservers;
+        }
+
         public Type EventType { get; private set; }
-        public int NumberOfObservers { get; set; }
+
+        public int NumberOfObservers { get; internal set; }
     }
 }

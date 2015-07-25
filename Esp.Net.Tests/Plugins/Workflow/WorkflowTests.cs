@@ -178,7 +178,7 @@ namespace Esp.Net.Plugins.Workflow
         private int GetEventObserverCount(Type eventType)
         {
             return _router
-                .ModelsEventsObservations
+                .EventsObservationRegistrar
                 .GetEventObservationCount(_model.Id, eventType);
         }
     }
