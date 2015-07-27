@@ -25,6 +25,7 @@ namespace Esp.Net.Reactive
     {
         private readonly IEventObservationRegistrar _observationRegistrar;
         private readonly List<IEventObserver<TModel, TEvent, TContext>> _observers = new List<IEventObserver<TModel, TEvent, TContext>>();
+        private bool _hasCompleted = false;
 
         public EventSubject(IEventObservationRegistrar observationRegistrar)
         {
@@ -36,16 +37,21 @@ namespace Esp.Net.Reactive
             var observers = _observers.ToArray();
             foreach(var observer in observers) 
 			{
+                if (_hasCompleted) break;
                 observer.OnNext(model, @event, context);
 			}
         }
 
         public void OnCompleted()
         {
-            var observers = _observers.ToArray();
-            foreach (var observer in observers)
+            if (!_hasCompleted)
             {
-                observer.OnCompleted();
+                _hasCompleted = true;
+                var observers = _observers.ToArray();
+                foreach (var observer in observers)
+                {
+                    observer.OnCompleted();
+                }
             }
         }
 

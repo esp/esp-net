@@ -155,7 +155,7 @@ namespace Esp.Net
                                     modelEntry.RunPostProcessor();
                                 }
                             }
-                            if (!changedModels.ContainsKey(modelEntry.Id) && !modelEntry.IsRemoved)
+                            if (!changedModels.ContainsKey(modelEntry.Id))
                                 changedModels.Add(modelEntry.Id, modelEntry);
                             modelEntry = GetNextModelEntryWithEvents();
                         }

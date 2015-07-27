@@ -162,7 +162,7 @@ namespace Esp.Net
             [Test]
             public void RemovalAtPreviewStageEndsEventWorkflow()
             {
-                _router.PublishEvent(_model1.Id, new Event1(){ ShouldRemoveAtPreviewStage = true });
+                _router.PublishEvent(_model1.Id, new Event1(){ ShouldRemove = true, RemoveAtAtStage = ObservationStage.Preview});
                 _model1EventProcessor.Event1Details.PreviewStage.ReceivedEvents.Count.ShouldBe(1);
                 _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(0);
                 _model1EventProcessor.Event1Details.CommittedStage.ReceivedEvents.Count.ShouldBe(0);
@@ -172,21 +172,42 @@ namespace Esp.Net
             [Test]
             public void RemovalAtNormalStageEndsEventWorkflow()
             {
+                _router.PublishEvent(_model1.Id, new Event1() { ShouldRemove = true, RemoveAtAtStage = ObservationStage.Normal, ShouldCommit = true });
+                _model1EventProcessor.Event1Details.PreviewStage.ReceivedEvents.Count.ShouldBe(1);
+                _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(1);
+                _model1EventProcessor.Event1Details.CommittedStage.ReceivedEvents.Count.ShouldBe(0);
+                _model1Controller.ReceivedModels.Count.ShouldBe(0);
             }
 
             [Test]
             public void RemovalAtCommittedStageEndsEventWorkflow()
             {
+                _router.PublishEvent(_model1.Id, new Event1() { ShouldRemove = true, RemoveAtAtStage = ObservationStage.Committed, ShouldCommit = true });
+                _model1EventProcessor.Event1Details.CommittedStage.ReceivedEvents.Count.ShouldBe(1);
+                _model1Controller.ReceivedModels.Count.ShouldBe(0);
             }
 
             [Test]
             public void RemovalByAPostProcessorEndsEventWorkflow()
             {
+                _model1PostEventProcessor.RegisterAction(model =>
+                {
+                    _router.RemoveModel(_model1.Id);
+                });
+                _router.PublishEvent(_model1.Id, new Event1());
+                _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(1);
+                _model1Controller.ReceivedModels.Count.ShouldBe(0);
             }
 
             [Test]
             public void RemovalByAModelObserverEndsEventWorkflow()
             {
+                var receivedModelCount = 0;
+                _router.GetModelObservable<TestModel>(_model1.Id).Observe(model => receivedModelCount++);
+                _router.PublishEvent(_model1.Id, new Event1());
+                _router.PublishEvent(_model1.Id, new Event1() { ShouldRemoveOnModelObservation = true });
+                _model1Controller.ReceivedModels.Count.ShouldBe(2);
+                receivedModelCount.ShouldBe(1);
             }
         }
 
@@ -504,15 +525,18 @@ namespace Esp.Net
                 Id = Guid.NewGuid();
             }
             public Guid Id { get; private set; }
+            public bool ControllerShouldRemove { get; set; }
         }
 
         public class BaseEvent
         {
             public bool ShouldCancel { get; set; }
             public bool ShouldCommit { get; set; }
-            public bool ShouldRemoveAtPreviewStage { get; set; }
-            public bool ShouldRemoveAtNormalStage { get; set; }
-            public bool ShouldRemoveAtCommittedStage { get; set; }
+            public bool ShouldRemove { get; set; }
+            public bool ShouldRemoveOnModelObservation { get; set; }
+            public ObservationStage CancelAtStage { get; set; }
+            public ObservationStage RemoveAtAtStage { get; set; }
+            public ObservationStage CommitAtAtStage { get; set; }
         }
 
         public class Event1 : BaseEvent { }
@@ -576,25 +600,22 @@ namespace Esp.Net
                         (model, @event, context) =>
                         {
                             details.ReceivedEvents.Add(@event);
-                            var shouldRemove = 
-                                @event.ShouldRemoveAtPreviewStage && stage == ObservationStage.Preview ||
-                                @event.ShouldRemoveAtNormalStage && stage == ObservationStage.Normal ||
-                                @event.ShouldRemoveAtCommittedStage && stage == ObservationStage.Committed;
+                            var shouldCancel = @event.ShouldCancel && stage == @event.CancelAtStage;
+                            if (shouldCancel)
+                            {
+                                context.Cancel();
+                            }
+                            var shouldCommit = @event.ShouldCommit && stage == @event.CommitAtAtStage;
+                            if (shouldCommit)
+                            {
+                                context.Commit();
+                            }
+                            var shouldRemove = @event.ShouldRemove && stage == @event.RemoveAtAtStage;
                             if (shouldRemove)
                             {
                                 _router.RemoveModel(_modelId);
                             }
-                            else
-                            {
-                                if (@event.ShouldCancel)
-                                {
-                                    context.Cancel();
-                                }
-                                if (@event.ShouldCommit)
-                                {
-                                    context.Commit();
-                                }
-                            }
+                            model.ControllerShouldRemove = @event.ShouldRemoveOnModelObservation;
                         },
                         () =>
                         {
@@ -637,6 +658,8 @@ namespace Esp.Net
                         model =>
                         {
                             ReceivedModels.Add(model);
+                            if (model.ControllerShouldRemove)
+                               router.RemoveModel(modelId);
                         },
                         () =>
                         {

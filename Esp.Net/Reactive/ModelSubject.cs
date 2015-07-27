@@ -23,22 +23,28 @@ namespace Esp.Net.Reactive
     internal class ModelSubject<T> : IModelObservable<T>, IModelObserver<T>
     {
         readonly List<IModelObserver<T>> _observers = new List<IModelObserver<T>>();
+        private bool _hasCompleted = false;
 
         public void OnNext(T item)
         {
             var observers = _observers.ToArray();
             foreach(var observer in observers) 
 			{
+                if (_hasCompleted) break;
 				observer.OnNext(item);
 			}
         }
 
         public void OnCompleted()
         {
-            var observers = _observers.ToArray();
-            foreach (var observer in observers)
+            if (!_hasCompleted)
             {
-                observer.OnCompleted();
+                _hasCompleted = true;
+                var observers = _observers.ToArray();
+                foreach (var observer in observers)
+                {
+                    observer.OnCompleted();
+                }
             }
         }
 
