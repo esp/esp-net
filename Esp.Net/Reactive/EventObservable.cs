@@ -25,7 +25,11 @@ namespace Esp.Net.Reactive
     public interface IEventObservable<out TModel, out TEvent, out TContext>
     {
         IDisposable Observe(ObserveAction<TModel, TEvent> onNext);
+        IDisposable Observe(ObserveAction<TModel, TEvent> onNext, Action onCompleted);
+
         IDisposable Observe(ObserveAction<TModel, TEvent, TContext> onNext);
+        IDisposable Observe(ObserveAction<TModel, TEvent, TContext> onNext, Action onCompleted);
+        
         IDisposable Observe(IEventObserver<TModel, TEvent, TContext> observer);
     }
 
@@ -125,9 +129,21 @@ namespace Esp.Net.Reactive
             return Observe(streamObserver);
         }
 
+        public IDisposable Observe(ObserveAction<TModel, TEvent> onNext, Action onCompleted)
+        {
+            var streamObserver = new EventObserver<TModel, TEvent, TContext>(onNext, onCompleted);
+            return Observe(streamObserver);
+        }
+
         public IDisposable Observe(ObserveAction<TModel, TEvent, TContext> onNext)
         {
             var streamObserver = new EventObserver<TModel, TEvent, TContext>(onNext);
+            return Observe(streamObserver);
+        }
+
+        public IDisposable Observe(ObserveAction<TModel, TEvent, TContext> onNext, Action onCompleted)
+        {
+            var streamObserver = new EventObserver<TModel, TEvent, TContext>(onNext, onCompleted);
             return Observe(streamObserver);
         }
 

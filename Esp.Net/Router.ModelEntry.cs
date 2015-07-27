@@ -29,11 +29,13 @@ namespace Esp.Net
         {
             Guid Id { get; }
             bool HadEvents { get; }
+            bool IsRemoved { get; }
             void Enqueue<TEvent>(TEvent @event);
             void PurgeEventQueue();
             void RunPreProcessor();
             void RunPostProcessor();
             void DispatchModel();
+            void OnRemoved();
         }
 
         private interface IModelEntry<out TModel> : IModelEntry
@@ -75,6 +77,8 @@ namespace Esp.Net
             public Guid Id { get; private set; }
 
             public bool HadEvents { get { return _eventDispatchQueue.Count > 0; } }
+            
+            public bool IsRemoved { get; private set; }
 
             public void Enqueue<TEvent>(TEvent @event)
             {
@@ -109,6 +113,17 @@ namespace Esp.Net
                     ? _model
                     : cloneable.Clone();
                 _modelUpdateSubject.OnNext(modelToDispatch);
+            }
+
+            public void OnRemoved()
+            {
+                IsRemoved = true;
+                foreach (dynamic eventSubjects in _eventSubjects.Values)
+                {
+                    eventSubjects.PreviewSubject.OnCompleted();
+                    eventSubjects.NormalSubject.OnCompleted();
+                    eventSubjects.CommittedSubject.OnCompleted();
+                }
             }
 
             public IModelObservable<TModel> GetModelObservable()

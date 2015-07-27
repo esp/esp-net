@@ -21,7 +21,7 @@ using Esp.Net.ModelRouter;
 using Esp.Net.Reactive;
 using Esp.Net.Utils;
 
-namespace Esp.Net
+namespace Esp.Net   
 {
     public partial class Router : IRouter
     {
@@ -81,7 +81,11 @@ namespace Esp.Net
 
         public void RemoveModel(Guid modelId)
         {
-            throw new NotImplementedException();
+            //_routerGuard.EnsureValid();
+            IModelEntry modelEntry;
+            if (!_modelsById.TryGetValue(modelId, out modelEntry)) throw new ArgumentException(string.Format("Model with id {0} not registered", modelId));
+            _modelsById.Remove(modelId);
+            modelEntry.OnRemoved();
         }
 
         public void PublishEvent<TEvent>(Guid modelId, TEvent @event)

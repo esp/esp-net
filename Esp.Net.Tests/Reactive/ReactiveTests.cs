@@ -100,6 +100,12 @@ namespace Esp.Net.Reactive
         }
 
         [Test]
+        public void WhereChainsOnCompletedToSource()
+        {
+            Assert.Inconclusive();
+        }
+
+        [Test]
         public void CanConcatEventStreams()
         {
             var subject1 = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
@@ -134,6 +140,12 @@ namespace Esp.Net.Reactive
             var disposable = mockIEventObservable.Take(3).Observe((m, e, c) => { });
             disposable.Dispose();
             Assert.IsTrue(mockIEventObservable.IsDisposed);
+        }
+
+        [Test]
+        public void TakeChainsOnCompletedToSource()
+        {
+            Assert.Inconclusive();
         }
 
         [Test]

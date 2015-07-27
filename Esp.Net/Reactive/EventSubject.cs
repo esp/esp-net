@@ -40,15 +40,36 @@ namespace Esp.Net.Reactive
 			}
         }
 
+        public void OnCompleted()
+        {
+            var observers = _observers.ToArray();
+            foreach (var observer in observers)
+            {
+                observer.OnCompleted();
+            }
+        }
+
         public IDisposable Observe(ObserveAction<TModel, TEvent> onNext)
         {
             var observer = new EventObserver<TModel, TEvent, TContext>(onNext);
             return Observe(observer);
         }
 
+        public IDisposable Observe(ObserveAction<TModel, TEvent> onNext, Action onCompleted)
+        {
+            var observer = new EventObserver<TModel, TEvent, TContext>(onNext, onCompleted);
+            return Observe(observer);
+        }
+
         public IDisposable Observe(ObserveAction<TModel, TEvent, TContext> onNext)
         {
             var observer = new EventObserver<TModel, TEvent, TContext>(onNext);
+            return Observe(observer);
+        }
+
+        public IDisposable Observe(ObserveAction<TModel, TEvent, TContext> onNext, Action onCompleted)
+        {
+            var observer = new EventObserver<TModel, TEvent, TContext>(onNext, onCompleted);
             return Observe(observer);
         }
 

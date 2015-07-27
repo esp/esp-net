@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NUnit.Framework;
+using Shouldly;
 
 namespace Esp.Net
 {
@@ -13,10 +14,12 @@ namespace Esp.Net
         private TestModel _model1;
         private StubModelProcessor _model1PreEventProcessor;
         private StubModelProcessor _model1PostEventProcessor;
-        
+        private TestModelEventProcessor _model1EventProcessor;
+
         private TestModel _model2;
         private StubModelProcessor _model2PreEventProcessor;
         private StubModelProcessor _model2PostEventProcessor;
+        private TestModelEventProcessor _model2EventProcessor;
         
         [SetUp]
         public void SetUp()
@@ -28,11 +31,13 @@ namespace Esp.Net
             _model1PreEventProcessor = new StubModelProcessor();
             _model1PostEventProcessor = new StubModelProcessor();
             _router.RegisterModel(_model1.Id, _model1, _model1PreEventProcessor, _model1PostEventProcessor);
+            _model1EventProcessor = new TestModelEventProcessor(_model1.Id, _router);
 
             _model2 = new TestModel();
             _model2PreEventProcessor = new StubModelProcessor();
             _model2PostEventProcessor = new StubModelProcessor();
             _router.RegisterModel(_model2.Id, _model2, _model2PreEventProcessor, _model2PostEventProcessor);
+            _model2EventProcessor = new TestModelEventProcessor(_model2.Id, _router);
         }
 
         public class Ctor
@@ -77,11 +82,35 @@ namespace Esp.Net
             }
         }
 
-        public class RemoveModel
+        public class RemoveModel : RouterTests2
         {
             [Test]
             public void EventObserversCompleteOnRemoval()
             {
+                _router.RemoveModel(_model1.Id);
+                
+                _model1EventProcessor.Event1Details.PreviewStage.StreamCompletedCount.ShouldBe(1);
+                _model1EventProcessor.Event1Details.NormalStage.StreamCompletedCount.ShouldBe(1);
+                _model1EventProcessor.Event1Details.CommittedStage.StreamCompletedCount.ShouldBe(1);
+                _model1EventProcessor.Event2Details.PreviewStage.StreamCompletedCount.ShouldBe(1);
+                _model1EventProcessor.Event2Details.NormalStage.StreamCompletedCount.ShouldBe(1);
+                _model1EventProcessor.Event2Details.CommittedStage.StreamCompletedCount.ShouldBe(1);
+                      
+                _model2EventProcessor.Event1Details.PreviewStage.StreamCompletedCount.ShouldBe(0);
+                _model2EventProcessor.Event1Details.NormalStage.StreamCompletedCount.ShouldBe(0);
+                _model2EventProcessor.Event1Details.CommittedStage.StreamCompletedCount.ShouldBe(0);
+                _model2EventProcessor.Event2Details.PreviewStage.StreamCompletedCount.ShouldBe(0);
+                _model2EventProcessor.Event2Details.NormalStage.StreamCompletedCount.ShouldBe(0);
+                _model2EventProcessor.Event2Details.CommittedStage.StreamCompletedCount.ShouldBe(0);
+
+                _router.RemoveModel(_model2.Id);
+
+                _model2EventProcessor.Event1Details.PreviewStage.StreamCompletedCount.ShouldBe(1);
+                _model2EventProcessor.Event1Details.NormalStage.StreamCompletedCount.ShouldBe(1);
+                _model2EventProcessor.Event1Details.CommittedStage.StreamCompletedCount.ShouldBe(1);
+                _model2EventProcessor.Event2Details.PreviewStage.StreamCompletedCount.ShouldBe(1);
+                _model2EventProcessor.Event2Details.NormalStage.StreamCompletedCount.ShouldBe(1);
+                _model2EventProcessor.Event2Details.CommittedStage.StreamCompletedCount.ShouldBe(1);
             }
 
             [Test]
@@ -439,16 +468,17 @@ namespace Esp.Net
                 Id = Guid.NewGuid();
             }
             public Guid Id { get; private set; }
-            public int AnInt { get; set; }
-            public string AString { get; set; }
-            public decimal ADecimal { get; set; }
         }
 
-        public class BaseEvent { }
+        public class BaseEvent
+        {
+            public bool ShouldCancel { get; set; }
+            public bool ShouldCommit { get; set; }
+        }
+
         public class Event1 : BaseEvent { }
         public class Event2 : BaseEvent { }
         public class Event3 : BaseEvent { }
-        public class EventWithoutBaseType { }
 
         public class StubModelProcessor : IPreEventProcessor<TestModel>, IPostEventProcessor<TestModel>
         {
@@ -468,8 +498,91 @@ namespace Esp.Net
             }
         }
 
+        public class TestModelEventProcessor
+        {
+            private readonly Guid _modelId;
+            private readonly IRouter _router;
+
+            public TestModelEventProcessor(Guid modelId, IRouter router)
+            {
+                _modelId = modelId;
+                _router = router;
+                
+                Event1Details = ObserveEvent<Event1>();
+                Event2Details = ObserveEvent<Event2>();
+                Event3Details = ObserveEvent<Event3>();
+            }
+            
+            public EventObservationDetails<Event1> Event1Details { get; private set; }
+            public EventObservationDetails<Event2> Event2Details { get; private set; }
+            public EventObservationDetails<Event3> Event3Details { get; private set; }
+
+            private EventObservationDetails<TEvent> ObserveEvent<TEvent>() where TEvent : BaseEvent
+            {
+                var observationDetails = new EventObservationDetails<TEvent>
+                {
+                    PreviewStage = WireUpObservationStage<TEvent>(ObservationStage.Preview),
+                    NormalStage = WireUpObservationStage<TEvent>(ObservationStage.Normal),
+                    CommittedStage = WireUpObservationStage<TEvent>(ObservationStage.Committed)
+                };
+                return observationDetails;
+            }
+
+            private ObservationStageDetails<TEvent> WireUpObservationStage<TEvent>(ObservationStage stage) where TEvent : BaseEvent
+            {
+                var details = new ObservationStageDetails<TEvent>(stage);
+                details.ObservationDisposable = _router
+                    .GetEventObservable<TestModel, TEvent>(_modelId, details.Stage)
+                    .Observe(
+                        (model, @event, context) =>
+                        {
+                            details.ReceivedEvents.Add(@event);
+                            if (@event.ShouldCancel)
+                            {
+                                context.Cancel();
+                            }
+                            if (@event.ShouldCommit)
+                            {
+                                context.Commit();
+                            }
+                        },
+                        () =>
+                        {
+                            details.StreamCompletedCount++;
+                        }
+                    );
+                return details;
+            }
+
+            public class EventObservationDetails<TEvent>
+            {
+                public ObservationStageDetails<TEvent> PreviewStage { get; set; }
+                public ObservationStageDetails<TEvent> NormalStage { get; set; }
+                public ObservationStageDetails<TEvent> CommittedStage { get; set; }
+            }
+
+            public class ObservationStageDetails<TEvent>
+            {
+                public ObservationStageDetails(ObservationStage stage)
+                {
+                    Stage = stage;
+                    ReceivedEvents = new List<TEvent>();
+                }
+
+                public ObservationStage Stage { get; private set; }
+                public List<TEvent> ReceivedEvents { get; private set; }
+                public IDisposable ObservationDisposable { get; set; }
+                public int StreamCompletedCount { get; set; }
+            }
+        }
+
         public class StubThreadGuard : IThreadGuard
         {
+            public StubThreadGuard()
+            {
+                HasAccess = true;
+            }
+
             public bool HasAccess { get; set; }
 
             public bool CheckAccess()

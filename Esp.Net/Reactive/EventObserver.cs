@@ -14,30 +14,50 @@
 // limitations under the License.
 #endregion
 
+using System;
+
 namespace Esp.Net.Reactive
 {
     public interface IEventObserver<in TModel, in TEvent, in TContext>
     {
         void OnNext(TModel model, TEvent @event, TContext context);
+        void OnCompleted();
     }
 
     internal class EventObserver<TModel, TEvent, TContext> : IEventObserver<TModel, TEvent, TContext>
     {
+        private readonly Action _onCompleted;
         private readonly ObserveAction<TModel, TEvent, TContext> _onNext;
 
         public EventObserver(ObserveAction<TModel, TEvent> onNext)
+            : this(onNext, null)
         {
-            _onNext = (m, e, c) => onNext(m, e);
+        }
+
+        public EventObserver(ObserveAction<TModel, TEvent> onNext, Action onCompleted)
+            : this((m, e, c) => onNext(m, e), onCompleted)
+        {
         }
 
         public EventObserver(ObserveAction<TModel, TEvent, TContext> onNext)
+            : this(onNext, null)
+        {
+        }
+
+        public EventObserver(ObserveAction<TModel, TEvent, TContext> onNext, Action onCompleted)
         {
             _onNext = onNext;
+            _onCompleted = onCompleted;
         }
 
         public void OnNext(TModel model, TEvent @event, TContext context)
         {
             _onNext(model, @event, context);
+        }
+
+        public void OnCompleted()
+        {
+            if (_onCompleted != null) _onCompleted();
         }
     }
 }
