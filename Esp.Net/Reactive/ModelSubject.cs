@@ -33,9 +33,24 @@ namespace Esp.Net.Reactive
 			}
         }
 
+        public void OnCompleted()
+        {
+            var observers = _observers.ToArray();
+            foreach (var observer in observers)
+            {
+                observer.OnCompleted();
+            }
+        }
+
         public IDisposable Observe(Action<T> onNext)
         {
             var observer = new ModelObserver<T>(onNext);
+            return Observe(observer);
+        }
+
+        public IDisposable Observe(Action<T> onNext, Action onCompleted)
+        {
+            var observer = new ModelObserver<T>(onNext, onCompleted);
             return Observe(observer);
         }
 

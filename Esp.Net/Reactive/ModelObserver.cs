@@ -21,20 +21,33 @@ namespace Esp.Net.Reactive
     public interface IModelObserver<in T>
     {
         void OnNext(T item);
+        void OnCompleted();
     }
 
     internal class ModelObserver<T> : IModelObserver<T>
     {
         private readonly Action<T> _onNext;
+        private readonly Action _onCompleted;
 
         public ModelObserver(Action<T> onNext)
+            : this(onNext, null)
+        {
+        }
+
+        public ModelObserver(Action<T> onNext, Action onCompleted)
         {
             _onNext = onNext;
+            _onCompleted = onCompleted;
         }
 
         public void OnNext(T item)
         {
             _onNext(item);
+        }
+
+        public void OnCompleted()
+        {
+            if (_onCompleted != null) _onCompleted();
         }
     }
 }

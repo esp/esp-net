@@ -124,6 +124,7 @@ namespace Esp.Net
                     eventSubjects.NormalSubject.OnCompleted();
                     eventSubjects.CommittedSubject.OnCompleted();
                 }
+                _modelUpdateSubject.OnCompleted();
             }
 
             public IModelObservable<TModel> GetModelObservable()
@@ -218,10 +219,10 @@ namespace Esp.Net
                     {
                         var eventContext = new EventContext();
                         eventSubjects.PreviewSubject.OnNext(_model, @event, eventContext);
-                        if (!eventContext.IsCanceled)
+                        if (!eventContext.IsCanceled && !IsRemoved)
                         {
                             eventSubjects.NormalSubject.OnNext(_model, @event, eventContext);
-                            if (eventContext.IsCommitted)
+                            if (eventContext.IsCommitted && !IsRemoved)
                             {
                                 eventSubjects.CommittedSubject.OnNext(_model, @event, eventContext);
                             }

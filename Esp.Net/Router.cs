@@ -140,22 +140,30 @@ namespace Esp.Net
 
                     while (modelEntry != null)
                     {
-                        var changedModels = new HashSet<Guid>();
+                        var changedModels = new Dictionary<Guid, IModelEntry>();
                         while (modelEntry != null)
                         {
                             _state.MoveToPreProcessing();
                             modelEntry.RunPreProcessor();
-                            _state.MoveToEventDispatch();
-                            modelEntry.PurgeEventQueue();
-                            if(!changedModels.Contains(modelEntry.Id)) changedModels.Add(modelEntry.Id);
-                            _state.MoveToPostProcessing();
-                            modelEntry.RunPostProcessor();
+                            if (!modelEntry.IsRemoved)
+                            {
+                                _state.MoveToEventDispatch();
+                                modelEntry.PurgeEventQueue();
+                                if (!modelEntry.IsRemoved)
+                                {
+                                    _state.MoveToPostProcessing();
+                                    modelEntry.RunPostProcessor();
+                                }
+                            }
+                            if (!changedModels.ContainsKey(modelEntry.Id) && !modelEntry.IsRemoved)
+                                changedModels.Add(modelEntry.Id, modelEntry);
                             modelEntry = GetNextModelEntryWithEvents();
                         }
                         _state.MoveToDispatchModelUpdates();
-                        foreach (Guid id in changedModels)
+                        foreach (IModelEntry changedModelEntry in changedModels.Values)
                         {
-                            _modelsById[id].DispatchModel();
+                            if (!changedModelEntry.IsRemoved)
+                                changedModelEntry.DispatchModel();
                         }
                         modelEntry = GetNextModelEntryWithEvents();
                     }

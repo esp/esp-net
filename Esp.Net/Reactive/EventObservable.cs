@@ -80,7 +80,8 @@ namespace Esp.Net.Reactive
                             {
                                 o.OnNext(m, e, c);
                             }
-                        }
+                        },
+                        o.OnCompleted
                     );
                     return disposable;
                 }
@@ -106,7 +107,8 @@ namespace Esp.Net.Reactive
                             {
                                 disposable.Dispose();
                             }
-                        }
+                        },
+                        o.OnCompleted
                     );
                     return disposable;
                 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Esp.Net.Reactive;
 using NUnit.Framework;
 using Shouldly;
 
@@ -15,11 +16,13 @@ namespace Esp.Net
         private StubModelProcessor _model1PreEventProcessor;
         private StubModelProcessor _model1PostEventProcessor;
         private TestModelEventProcessor _model1EventProcessor;
+        private TestController _model1Controller;
 
         private TestModel _model2;
         private StubModelProcessor _model2PreEventProcessor;
         private StubModelProcessor _model2PostEventProcessor;
         private TestModelEventProcessor _model2EventProcessor;
+        private TestController _model2Controller;
         
         [SetUp]
         public void SetUp()
@@ -31,13 +34,15 @@ namespace Esp.Net
             _model1PreEventProcessor = new StubModelProcessor();
             _model1PostEventProcessor = new StubModelProcessor();
             _router.RegisterModel(_model1.Id, _model1, _model1PreEventProcessor, _model1PostEventProcessor);
-            _model1EventProcessor = new TestModelEventProcessor(_model1.Id, _router);
+            _model1EventProcessor = new TestModelEventProcessor(_router, _model1.Id);
+            _model1Controller = new TestController(_router, _model1.Id);
 
             _model2 = new TestModel();
             _model2PreEventProcessor = new StubModelProcessor();
             _model2PostEventProcessor = new StubModelProcessor();
             _router.RegisterModel(_model2.Id, _model2, _model2PreEventProcessor, _model2PostEventProcessor);
-            _model2EventProcessor = new TestModelEventProcessor(_model2.Id, _router);
+            _model2EventProcessor = new TestModelEventProcessor(_router, _model2.Id);
+            _model2Controller = new TestController(_router, _model2.Id);
         }
 
         public class Ctor
@@ -116,21 +121,52 @@ namespace Esp.Net
             [Test]
             public void ModelObserversCompleteOnRemoval()
             {
+                _router.RemoveModel(_model1.Id);
+                _model1Controller.StreamCompletedCount.ShouldBe(1);
+                _model2Controller.StreamCompletedCount.ShouldBe(0);
+
+                _router.RemoveModel(_model2.Id);
+                _model2Controller.StreamCompletedCount.ShouldBe(1);
             }
 
             [Test]
             public void QueuedEventsAreIgnoredOnRemoval()
             {
+                _router
+                    .GetEventObservable<TestModel, int>(_model1.Id)
+                    .Observe(
+                        (model, @event) =>
+                        {
+                            _router.PublishEvent(_model1.Id, new Event1());
+                            _router.RemoveModel(_model1.Id);
+                        }
+                    );
+                _router.PublishEvent(_model1.Id, 1);
+                _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(0);
             }
 
             [Test]
             public void RemovalByAPreProcessorEndsEventWorkflow()
             {
+                _model1PreEventProcessor.RegisterAction(model =>
+                {
+                    _router.RemoveModel(_model1.Id);
+                });
+                _router.PublishEvent(_model1.Id, new Event1());
+                _model1EventProcessor.Event1Details.PreviewStage.ReceivedEvents.Count.ShouldBe(0);
+                _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(0);
+                _model1EventProcessor.Event1Details.CommittedStage.ReceivedEvents.Count.ShouldBe(0);
+                _model1Controller.ReceivedModels.Count.ShouldBe(0);
             }
 
             [Test]
             public void RemovalAtPreviewStageEndsEventWorkflow()
             {
+                _router.PublishEvent(_model1.Id, new Event1(){ ShouldRemoveAtPreviewStage = true });
+                _model1EventProcessor.Event1Details.PreviewStage.ReceivedEvents.Count.ShouldBe(1);
+                _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(0);
+                _model1EventProcessor.Event1Details.CommittedStage.ReceivedEvents.Count.ShouldBe(0);
+                _model1Controller.ReceivedModels.Count.ShouldBe(0);
             }
 
             [Test]
@@ -474,6 +510,9 @@ namespace Esp.Net
         {
             public bool ShouldCancel { get; set; }
             public bool ShouldCommit { get; set; }
+            public bool ShouldRemoveAtPreviewStage { get; set; }
+            public bool ShouldRemoveAtNormalStage { get; set; }
+            public bool ShouldRemoveAtCommittedStage { get; set; }
         }
 
         public class Event1 : BaseEvent { }
@@ -503,7 +542,7 @@ namespace Esp.Net
             private readonly Guid _modelId;
             private readonly IRouter _router;
 
-            public TestModelEventProcessor(Guid modelId, IRouter router)
+            public TestModelEventProcessor(IRouter router, Guid modelId)
             {
                 _modelId = modelId;
                 _router = router;
@@ -537,13 +576,24 @@ namespace Esp.Net
                         (model, @event, context) =>
                         {
                             details.ReceivedEvents.Add(@event);
-                            if (@event.ShouldCancel)
+                            var shouldRemove = 
+                                @event.ShouldRemoveAtPreviewStage && stage == ObservationStage.Preview ||
+                                @event.ShouldRemoveAtNormalStage && stage == ObservationStage.Normal ||
+                                @event.ShouldRemoveAtCommittedStage && stage == ObservationStage.Committed;
+                            if (shouldRemove)
                             {
-                                context.Cancel();
+                                _router.RemoveModel(_modelId);
                             }
-                            if (@event.ShouldCommit)
+                            else
                             {
-                                context.Commit();
+                                if (@event.ShouldCancel)
+                                {
+                                    context.Cancel();
+                                }
+                                if (@event.ShouldCommit)
+                                {
+                                    context.Commit();
+                                }
                             }
                         },
                         () =>
@@ -574,6 +624,32 @@ namespace Esp.Net
                 public IDisposable ObservationDisposable { get; set; }
                 public int StreamCompletedCount { get; set; }
             }
+        }
+
+        public class TestController
+        {
+            public TestController(IRouter router, Guid modelId)
+            {
+                ReceivedModels = new List<TestModel>();
+                ModelObservationDisposable = router
+                    .GetModelObservable<TestModel>(modelId)
+                    .Observe(
+                        model =>
+                        {
+                            ReceivedModels.Add(model);
+                        },
+                        () =>
+                        {
+                            StreamCompletedCount++;
+                        }
+                    );
+            }
+
+            public IDisposable ModelObservationDisposable { get; private set; }
+
+            public List<TestModel> ReceivedModels { get; private set; }
+          
+            public int StreamCompletedCount { get; private set; }
         }
 
         public class StubThreadGuard : IThreadGuard
