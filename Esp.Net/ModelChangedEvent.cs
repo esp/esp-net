@@ -2,24 +2,16 @@
 
 namespace Esp.Net
 {
-    public abstract class ModelChangedEvent
+    public class ModelChangedEvent<TModel>
     {
-        protected ModelChangedEvent(Guid modelId)
+        public ModelChangedEvent(Guid modelId, TModel model)
         {
+            Model = model;
             ModelId = modelId;
         }
 
-        public Guid ModelId { get; private set; }
-
-    }
-
-    public class ModelChangedEvent<TModel> : ModelChangedEvent
-    {
-        public ModelChangedEvent(Guid modelId, TModel model) : base(modelId)
-        {
-            Model = model;
-        }
-
         public TModel Model { get; private set; }
+
+        public Guid ModelId { get; private set; }
     }
 }

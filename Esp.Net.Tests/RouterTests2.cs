@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reflection;
 using Esp.Net.Reactive;
 using NUnit.Framework;
 using Shouldly;
@@ -429,6 +430,19 @@ namespace Esp.Net
                 [Test]
                 public void DeliversEventToAllModels()
                 { }
+
+                [Test]
+                public void CanBroadcastUsingObjectOverload()
+                {
+                }
+            }
+
+            public class EventPublication : RouterTests2
+            {
+                [Test]
+                public void CanPublishUsingObjectOverload()
+                {
+                }
             }
 
             public class ModelChangedEvent : RouterTests2
@@ -448,12 +462,12 @@ namespace Esp.Net
                 }
 
                 [Test]
-                public void ObservingAModelChangedEventForTheSameModelHasARuntimeException()
+                public void ObservingTheSameModelTypesChangedEventThrows()
                 {
-                    _router.GetEventObservable<TestModel, ModelChangedEvent<TestModel>>(_model3.Id).Observe((m, e) =>
+                    _router.GetEventObservable<TestModel, ModelChangedEvent<TestModel>>(_model2.Id).Observe((m, e) =>
                     {
                     });
-                    _router.PublishEvent(_model1.Id, new Event1());
+                    Assert.Throws<NotSupportedException>(() => _router.PublishEvent(_model1.Id, new Event1()));
                 }
             }
 
@@ -581,6 +595,12 @@ namespace Esp.Net
             public void ShouldThrowIfPublishEventCalledOnInvalidThread()
             {
             }
+
+            [Test]
+            public void ShouldThrowIfBroadcastEventCalledOnInvalidThread()
+            {
+            }
+
 
             [Test]
             public void ShouldThrowIfGetModelObservableCalledOnInvalidThread()

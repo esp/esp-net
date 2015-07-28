@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Esp.Net.Meta;
 using Esp.Net.ModelRouter;
 using Esp.Net.Reactive;
@@ -29,6 +30,8 @@ namespace Esp.Net
         private readonly State _state = new State();
         private readonly RouterGuard _routerGuard;
         private readonly ModelsEventsObservations _modelsEventsObservations;
+        private static readonly MethodInfo PublishEventMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router), "PublishEvent", 1, 2);
+        private static readonly MethodInfo BroadcastEventMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router), "BroadcastEvent", 1, 1);
 
         public Router(IThreadGuard threadGuard)
         {
@@ -89,6 +92,21 @@ namespace Esp.Net
             modelEntry.OnRemoved();
         }
 
+        public void PublishEvent<TEvent>(Guid modelId, TEvent @event)
+        {
+            _routerGuard.EnsureValid();
+            var modelEntry = _modelsById[modelId];
+            modelEntry.TryEnqueue(@event);
+            PurgeEventQueues();
+        }
+
+        public void PublishEvent(Guid modelId, object @event)
+        {
+            _routerGuard.EnsureValid();
+            var publishEventMethod = PublishEventMethodInfo.MakeGenericMethod(@event.GetType());
+            publishEventMethod.Invoke(this, new object[] { modelId, @event });
+        }
+
         public void BroadcastEvent<TEvent>(TEvent @event)
         {
             _routerGuard.EnsureValid();
@@ -99,12 +117,11 @@ namespace Esp.Net
             PurgeEventQueues();
         }
 
-        public void PublishEvent<TEvent>(Guid modelId, TEvent @event)
+        public void BroadcastEvent(object @event)
         {
             _routerGuard.EnsureValid();
-            var modelEntry = _modelsById[modelId];
-            modelEntry.TryEnqueue(@event);
-            PurgeEventQueues();
+            var publishEventMethod = BroadcastEventMethodInfo.MakeGenericMethod(@event.GetType());
+            publishEventMethod.Invoke(this, new object[] { @event });
         }
 
         public IModelObservable<TModel> GetModelObservable<TModel>(Guid modelId)
@@ -164,7 +181,7 @@ namespace Esp.Net
                                     modelEntry.RunPostProcessor();
                                 }
                             }
-                            modelEntry.PublishModelChangedEvent();
+                            modelEntry.BroadcastModelChangedEvent();
                             if (!changedModels.ContainsKey(modelEntry.Id))
                                 changedModels.Add(modelEntry.Id, modelEntry);
                             modelEntry = GetNextModelEntryWithEvents();
@@ -220,6 +237,9 @@ namespace Esp.Net
             return result;
         }
 
+        // Having this type and IModelChangedEventPublisher is a bit of a 'roundabout' way of 
+        // publishing model changed events. However it removes the need to use reflection to 
+        // infer the closed ModelChangedEvent<TModel> type so is a bit more efficient.
         private class ModelChangedEventPublisher : IModelChangedEventPublisher
         {
             private readonly Router _parent;
@@ -233,7 +253,7 @@ namespace Esp.Net
             {
                 foreach (IModelEntry modelEntry in _parent._modelsById.Values)
                 {
-                    if (modelEntry.Id != @event.ModelId) modelEntry.TryEnqueueModelChangedEvent(@event);
+                    if (modelEntry.Id != @event.ModelId) modelEntry.TryEnqueue(@event);
                 }
             }
         }

@@ -31,13 +31,12 @@ namespace Esp.Net
             bool HadEvents { get; }
             bool IsRemoved { get; }
             void TryEnqueue<TEvent>(TEvent @event);
-            void TryEnqueueModelChangedEvent<TChangedModel>(ModelChangedEvent<TChangedModel> @event);
             void PurgeEventQueue();
             void RunPreProcessor();
             void RunPostProcessor();
             void DispatchModel();
             void OnRemoved();
-            void PublishModelChangedEvent();
+            void BroadcastModelChangedEvent();
         }
 
         private interface IModelEntry<out TModel> : IModelEntry
@@ -93,14 +92,12 @@ namespace Esp.Net
             public void TryEnqueue<TEvent>(TEvent @event)
             {
                 if (!_eventSubjects.ContainsKey(typeof (TEvent))) return;
+                if (typeof (ModelChangedEvent<TModel>).IsAssignableFrom(typeof (TEvent)))
+                {
+                    var message = string.Format("The event stream observing event ModelChangedEvent<{0}> against model of type [{0}] is unsupported. Observing a ModelChangedEvent<T> where T is the same as the target models type is not supported.", typeof(TModel).Name);
+                    throw new NotSupportedException(message);
+                }
                 _eventDispatchQueue.Enqueue(ProcessEvent(@event));
-            }
-
-            public void TryEnqueueModelChangedEvent<TChangedModel>(ModelChangedEvent<TChangedModel> @event)
-            {
-                // Publishing model change events to an event entry of the same model type is not supported. 
-                if(typeof(TModel).IsAssignableFrom(typeof(TChangedModel)))return;
-                TryEnqueue(@event);
             }
 
             public void PurgeEventQueue()
@@ -145,7 +142,7 @@ namespace Esp.Net
                 _modelUpdateSubject.OnCompleted();
             }
 
-            public void PublishModelChangedEvent()
+            public void BroadcastModelChangedEvent()
             {
                 var modelChangedEvent = new ModelChangedEvent<TModel>(Id, _model);
                 _modelChangedEventPublisher.BroadcastEvent(modelChangedEvent);
