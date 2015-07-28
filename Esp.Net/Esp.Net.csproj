@@ -52,6 +52,7 @@
     <Compile Include="Meta\EventObservations.cs" />
     <Compile Include="Meta\IEventsObservationRegistrar.cs" />
     <Compile Include="Meta\ModelEventObservations.cs" />
+    <Compile Include="ModelChangedEvent.cs" />
     <Compile Include="ModelRouter\IEventPublisher.cs" />
     <Compile Include="ModelRouter\IEventSubject.cs" />
     <Compile Include="ModelRouter\IModelSubject.cs" />

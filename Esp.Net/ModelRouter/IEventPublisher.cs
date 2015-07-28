@@ -18,6 +18,7 @@ namespace Esp.Net.ModelRouter
 {
     public interface IEventPublisher
     {
+        void BroadcastEvent<TEvent>(TEvent @event);
         void PublishEvent<TEvent>(TEvent @event);
     }
 }

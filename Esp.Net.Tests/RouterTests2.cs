@@ -166,7 +166,7 @@ namespace Esp.Net
             [Test]
             public void RemovalAtPreviewStageEndsEventWorkflow()
             {
-                _router.PublishEvent(_model1.Id, new Event1() { ShouldRemove = true, RemoveAtStage = ObservationStage.Preview, TargetEventProcesserId = EventProcessor1Id });
+                _router.PublishEvent(_model1.Id, new Event1() { ShouldRemove = true, RemoveAtStage = ObservationStage.Preview, RemoveAtEventProcesserId = EventProcessor1Id });
                 _model1EventProcessor.Event1Details.PreviewStage.ReceivedEvents.Count.ShouldBe(1);
                 _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(0);
                 _model1EventProcessor.Event1Details.CommittedStage.ReceivedEvents.Count.ShouldBe(0);
@@ -176,7 +176,7 @@ namespace Esp.Net
             [Test]
             public void RemovalAtNormalStageEndsEventWorkflow()
             {
-                _router.PublishEvent(_model1.Id, new Event1() { ShouldRemove = true, RemoveAtStage = ObservationStage.Normal, ShouldCommit = true, TargetEventProcesserId = EventProcessor1Id });
+                _router.PublishEvent(_model1.Id, new Event1() { ShouldRemove = true, RemoveAtStage = ObservationStage.Normal, ShouldCommit = true, RemoveAtEventProcesserId = EventProcessor1Id });
                 _model1EventProcessor.Event1Details.PreviewStage.ReceivedEvents.Count.ShouldBe(1);
                 _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(1);
                 _model1EventProcessor.Event1Details.CommittedStage.ReceivedEvents.Count.ShouldBe(0);
@@ -186,7 +186,7 @@ namespace Esp.Net
             [Test]
             public void RemovalAtCommittedStageEndsEventWorkflow()
             {
-                _router.PublishEvent(_model1.Id, new Event1() { ShouldRemove = true, RemoveAtStage = ObservationStage.Committed, ShouldCommit = true, TargetEventProcesserId = EventProcessor1Id });
+                _router.PublishEvent(_model1.Id, new Event1() { ShouldRemove = true, RemoveAtStage = ObservationStage.Committed, ShouldCommit = true, RemoveAtEventProcesserId = EventProcessor1Id });
                 _model1EventProcessor.Event1Details.CommittedStage.ReceivedEvents.Count.ShouldBe(1);
                 _model1Controller.ReceivedModels.Count.ShouldBe(0);
             }
@@ -244,7 +244,7 @@ namespace Esp.Net
             [Test]
             public void CommittedObservationStageObserversRecieveEvent()
             {
-                _router.PublishEvent(_model1.Id, new Event1 { ShouldCommit = true, TargetEventProcesserId = EventProcessor1Id });
+                _router.PublishEvent(_model1.Id, new Event1 { ShouldCommit = true, CommitAtEventProcesserId = EventProcessor1Id });
                 _model1EventProcessor.Event1Details.CommittedStage.ReceivedEvents.Count.ShouldBe(1);
                 _model1EventProcessor2.Event1Details.CommittedStage.ReceivedEvents.Count.ShouldBe(1);
             }
@@ -266,7 +266,7 @@ namespace Esp.Net
                 _model1EventProcessor.Event1Details.NormalStage.RegisterAction((m, e) => order.Add(3));
                 _model1EventProcessor.Event1Details.CommittedStage.RegisterAction((m, e) => order.Add(4));
                 _model1PostEventProcessor.RegisterAction(model => order.Add(5));
-                _router.PublishEvent(_model1.Id, new Event1 { ShouldCommit = true, CommitAtStage = ObservationStage.Normal, TargetEventProcesserId = EventProcessor2Id});
+                _router.PublishEvent(_model1.Id, new Event1 { ShouldCommit = true, CommitAtStage = ObservationStage.Normal, CommitAtEventProcesserId = EventProcessor2Id});
                 order.ShouldBe(new [] {1, 2, 3, 4, 5});
             }
 
@@ -274,11 +274,20 @@ namespace Esp.Net
             public void EventWorkflowOnlyInvokedForTargetModel()
             {
                 _router.PublishEvent(_model1.Id, new Event1());
+                _model1PreEventProcessor.InvocationCount.ShouldBe(1);
+                _model2PreEventProcessor.InvocationCount.ShouldBe(0);
                 _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(1);
                 _model2EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(0);
+                _model1PostEventProcessor.InvocationCount.ShouldBe(1);
+                _model2PostEventProcessor.InvocationCount.ShouldBe(0);
+                
                 _router.PublishEvent(_model2.Id, new Event1());
+                _model1PreEventProcessor.InvocationCount.ShouldBe(1);
+                _model2PreEventProcessor.InvocationCount.ShouldBe(1);
                 _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(1);
                 _model2EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(1);
+                _model1PostEventProcessor.InvocationCount.ShouldBe(1);
+                _model2PostEventProcessor.InvocationCount.ShouldBe(1);
             }
 
             public class SubsequentEvents : RouterTests2
@@ -305,30 +314,65 @@ namespace Esp.Net
                 [Test]
                 public void EventsPublishedByNormalObservationStageObserversGetProcessedFromBackingQueue()
                 {
-//                    _router
-//                        .GetEventObservable<TestModel, Event1>(_model1.Id)
-//                        .Where((m, e, c) => e.Payload != "B")
-//                        .Observe((m, e, c) => _router.PublishEvent(_model1.Id, new Event1("B")));
-//                    _router
-//                        .GetEventObservable<TestModel, Event1>(_model1.Id, ObservationStage.Committed)
-//                        .Observe((m, e, c) =>
-//                        {
-//                            // at this point B should be published but not processed, 
-//                            // this hadler should first as we finish dispatching to handlers for the initial event 'A'
-//                            AssertReceivedEventPayloadsAreInOrder("A");
-//                        });
-//                    _router.PublishEvent(_model1.Id, new Event1("A") { ShouldCommit = true, CommitAtStage = ObservationStage.Normal, TargetEventProcesserId = EventProcessor1Id });
-//                    AssertReceivedEventPayloadsAreInOrder("A", "B");
+                    _model1EventProcessor.Event1Details.PreviewStage.RegisterAction((m, e) =>
+                    {
+                        if (e.Payload != "B") _router.PublishEvent(_model1.Id, new Event1("B"));
+                    });
+                    _model1EventProcessor.Event1Details.CommittedStage.RegisterAction((m, e) =>
+                    {
+                        // at this point B should be published but not processed, 
+                        // this hadler should first as we finish dispatching to handlers for the initial event 'A'
+                        AssertReceivedEventPayloadsAreInOrder("A");
+                    });
+                    _router.PublishEvent(_model1.Id, new Event1("A") { ShouldCommit = true, CommitAtStage = ObservationStage.Normal, CommitAtEventProcesserId = EventProcessor1Id });
+                    AssertReceivedEventPayloadsAreInOrder("A", "B");
                 }
 
                 [Test]
                 public void EventsPublishedByCommittedObservationStageObserversGetProcessedFromBackingQueue()
                 {
+                    bool hasPublishedB = false;
+                    var passed = false;
+                    _model1EventProcessor.Event1Details.CommittedStage.RegisterAction((m, e) =>
+                    {
+                        if (!hasPublishedB)
+                        {
+                            hasPublishedB = true;
+                            _router.PublishEvent(_model1.Id, new Event1("B"));
+                        }
+                    });
+                    _model1EventProcessor2.Event1Details.CommittedStage.RegisterAction((m, e) =>
+                    {
+                        // We need to check that all the handlers for event A run before 
+                        // event B is processed.
+                        passed =
+                            hasPublishedB &&
+                            _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count == 1 &&
+                            _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents[0].Payload == "A" &&
+                            _model1EventProcessor2.Event1Details.NormalStage.ReceivedEvents.Count == 1 &&
+                            _model1EventProcessor2.Event1Details.NormalStage.ReceivedEvents[0].Payload == "A";
+                    });
+                    _router.PublishEvent(_model1.Id, new Event1("A") { ShouldCommit = true, CommitAtStage = ObservationStage.Normal, CommitAtEventProcesserId = EventProcessor1Id });
+                    passed.ShouldBe(true);
                 }
 
                 [Test]
-                public void EventsPublishedByPostProcessorGetProcessedFromBackingQueue()
+                public void EventsPublishedByPostProcessorGetProcessedInANewEventLoop()
                 {
+                    bool hasPublishedB = false;
+                    _model1PostEventProcessor.RegisterAction(m =>
+                    {
+                        if (!hasPublishedB)
+                        {
+                            hasPublishedB = true;
+                            _router.PublishEvent(_model1.Id, new Event1("B"));
+                        }
+                    });
+                    _router.PublishEvent(_model1.Id, new Event1("A"));
+                    // the pre processor will run again as the event workflow for this model is restarted
+                    _model1PreEventProcessor.InvocationCount.ShouldBe(2);
+                    // however we won't dispatch 2 udpates as we'll process all events first
+                    _model1Controller.ReceivedModels.Count.ShouldBe(1);
                 }
 
                 private void AssertReceivedEventPayloadsAreInOrder(params string[] args)
@@ -373,7 +417,7 @@ namespace Esp.Net
                 { }
             }
 
-            public class ModelChangedEvent
+            public class ModelChangedEvent : RouterTests2
             {
                 [Test]
                 public void ThrowsIfEventProcessorSubscribesToOwnModelChangedEvent()
@@ -383,60 +427,63 @@ namespace Esp.Net
                 [Test]
                 public void WhenEventProcessingWorkflowFinishedModelChangedEventIsRaised()
                 {
+                    _router.PublishEvent(_model1.Id, new Event1());
+                    _model1EventProcessor.ModelChangedEvents.Count.ShouldBe(0);
+                    _model2EventProcessor.ModelChangedEvents.Count.ShouldBe(1);
                 }
-            }
-
-            public class EventObservationDisposal
-            {
-                [Test]
-                public void DisposedPreviewObservationStageObserversDontRecievEvent()
-                {
-                }
-
-                [Test]
-                public void DisposedNormalObservationStageObserversDontRecievEvent()
-                {
-                }
-
-                [Test]
-                public void DisposedCommittedObservationStageObserversDontRecievEvent()
-                {
-                }
-            }
-
-            public class ErrorFlows
-            {
-                [Test]
-                public void CancelingTwiceAtPreviewObservationStageThrows()
-                {
-                }
-
-                [Test]
-                public void CancelingAtNormalObservationStageThrows()
-                {
-                }
-
-                [Test]
-                public void CancelingAtCommittedObservationStageThrows()
-                {
-                }
-
-                [Test]
-                public void CommittingAtPreviewObservationStageThrows()
-                { }
-
-                [Test]
-                public void CommittingAtCommittedObservationStageThrows()
-                { }
-
-                [Test]
-                public void CommittingTwiceAtNormalObservationStageThrows()
-                { }
             }
 
             // pre
             // staged
             // post
+        }
+
+        public class EventObservationDisposal
+        {
+            [Test]
+            public void DisposedPreviewObservationStageObserversDontRecievEvent()
+            {
+            }
+
+            [Test]
+            public void DisposedNormalObservationStageObserversDontRecievEvent()
+            {
+            }
+
+            [Test]
+            public void DisposedCommittedObservationStageObserversDontRecievEvent()
+            {
+            }
+        }
+
+        public class ErrorFlows
+        {
+            [Test]
+            public void CancelingTwiceAtPreviewObservationStageThrows()
+            {
+            }
+
+            [Test]
+            public void CancelingAtNormalObservationStageThrows()
+            {
+            }
+
+            [Test]
+            public void CancelingAtCommittedObservationStageThrows()
+            {
+            }
+
+            [Test]
+            public void CommittingAtPreviewObservationStageThrows()
+            { }
+
+            [Test]
+            public void CommittingAtCommittedObservationStageThrows()
+            { }
+
+            [Test]
+            public void CommittingTwiceAtNormalObservationStageThrows()
+            { }
         }
 
         public class ModelObservation
@@ -608,16 +655,17 @@ namespace Esp.Net
         {
             public bool ShouldCancel { get; set; }
             public ObservationStage CancelAtStage { get; set; }
+            public int CancelAtEventProcesserId { get; set; }
 
             public bool ShouldCommit { get; set; }
             public ObservationStage CommitAtStage { get; set; }
+            public int CommitAtEventProcesserId { get; set; }
 
             public bool ShouldRemove { get; set; }
             public ObservationStage RemoveAtStage { get; set; }
+            public int RemoveAtEventProcesserId { get; set; }
 
             public bool ShouldRemoveOnModelObservation { get; set; }
-
-            public int TargetEventProcesserId { get; set; }
         }
 
         public class Event1 : BaseEvent
@@ -665,6 +713,7 @@ namespace Esp.Net
             private readonly Guid _modelId;
             private readonly int _id;
             private readonly IRouter _router;
+            private readonly IList<ModelChangedEvent<TestModel>> _modelChangedEvents = new List<ModelChangedEvent<TestModel>>();
 
             public TestModelEventProcessor(IRouter router, Guid modelId, int id)
             {
@@ -675,11 +724,38 @@ namespace Esp.Net
                 Event1Details = ObserveEvent<Event1>();
                 Event2Details = ObserveEvent<Event2>();
                 Event3Details = ObserveEvent<Event3>();
+                ListenForModelChangedEvents();
             }
-            
+
+            private void ListenForModelChangedEvents()
+            {
+                // This should never yield a ModelChangedEvent<T> for changes to TestModel with id '_modelId'.
+                // You don't get change events for your own model else we'd end up in an infinite loop.
+                // Thus this is observing changes to 'TestModel' other than '_modelId' with the intent of 
+                // applying thoes changes to TestModel with id _modelId.
+                _router
+                    .GetEventObservable<TestModel, ModelChangedEvent<TestModel>>(_modelId)
+                    // typically a filter would be used here to narrow down model change to those related to model with id _modelId
+                    // .Where((m, e) => e.ModelId == someOtherDependentModelId)
+                    .Observe(
+                    (m, e, c) =>
+                    {
+                        // m in this case should have id of _modelId (like any other event), and e
+                        // will have the model chagned event containing state of other TestModels that 
+                        // have changed.
+                        ModelChangedEvents.Add(e);
+                    }
+                );
+            }
+
             public EventObservationDetails<Event1> Event1Details { get; private set; }
             public EventObservationDetails<Event2> Event2Details { get; private set; }
             public EventObservationDetails<Event3> Event3Details { get; private set; }
+
+            public IList<ModelChangedEvent<TestModel>> ModelChangedEvents
+            {
+                get { return _modelChangedEvents; }
+            }
 
             private EventObservationDetails<TEvent> ObserveEvent<TEvent>() where TEvent : BaseEvent
             {
@@ -701,17 +777,17 @@ namespace Esp.Net
                         (model, @event, context) =>
                         {
                             details.ReceivedEvents.Add(@event);
-                            var shouldCancel = @event.ShouldCancel && stage == @event.CancelAtStage && @event.TargetEventProcesserId == _id;
+                            var shouldCancel = @event.ShouldCancel && stage == @event.CancelAtStage && @event.CancelAtEventProcesserId == _id;
                             if (shouldCancel)
                             {
                                 context.Cancel();
                             }
-                            var shouldCommit = @event.ShouldCommit && stage == @event.CommitAtStage && @event.TargetEventProcesserId == _id;
+                            var shouldCommit = @event.ShouldCommit && stage == @event.CommitAtStage && @event.CommitAtEventProcesserId == _id;
                             if (shouldCommit)
                             {
                                 context.Commit();
                             }
-                            var shouldRemove = @event.ShouldRemove && stage == @event.RemoveAtStage && @event.TargetEventProcesserId == _id;
+                            var shouldRemove = @event.ShouldRemove && stage == @event.RemoveAtStage && @event.RemoveAtEventProcesserId == _id;
                             if (shouldRemove)
                             {
                                 _router.RemoveModel(_modelId);

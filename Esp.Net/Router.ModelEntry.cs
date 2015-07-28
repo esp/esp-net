@@ -36,6 +36,7 @@ namespace Esp.Net
             void RunPostProcessor();
             void DispatchModel();
             void OnRemoved();
+            void PublishModelChangedEvent();
         }
 
         private interface IModelEntry<out TModel> : IModelEntry
@@ -46,6 +47,11 @@ namespace Esp.Net
             IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal);
         }
 
+        private interface IModelChangedEventPublisher
+        {
+            void BroadcastEvent<TModel>(ModelChangedEvent<TModel> @event);
+        }
+
         private class ModelEntry<TModel> : IModelEntry<TModel>
         {
             private readonly TModel _model;
@@ -53,6 +59,7 @@ namespace Esp.Net
             private readonly IPostEventProcessor<TModel> _postEventProcessor;
             private readonly RouterGuard _routerGuard;
             private readonly IEventObservationRegistrar _eventObservationRegistrar;
+            private readonly IModelChangedEventPublisher _modelChangedEventPublisher;
             private readonly Queue<dynamic> _eventDispatchQueue = new Queue<dynamic>();
             private readonly Dictionary<Type, dynamic> _eventSubjects = new Dictionary<Type, dynamic>();
             private readonly ModelSubject<TModel> _modelUpdateSubject = new ModelSubject<TModel>();
@@ -64,7 +71,8 @@ namespace Esp.Net
                 IPreEventProcessor<TModel> preEventProcessor, 
                 IPostEventProcessor<TModel> postEventProcessor, 
                 RouterGuard routerGuard,
-                IEventObservationRegistrar eventObservationRegistrar)
+                IEventObservationRegistrar eventObservationRegistrar,
+                IModelChangedEventPublisher modelChangedEventPublisher)
             {
                 Id = id;
                 _model = model;
@@ -72,6 +80,7 @@ namespace Esp.Net
                 _postEventProcessor = postEventProcessor;
                 _routerGuard = routerGuard;
                 _eventObservationRegistrar = eventObservationRegistrar;
+                _modelChangedEventPublisher = modelChangedEventPublisher;
             }
 
             public Guid Id { get; private set; }
@@ -125,6 +134,12 @@ namespace Esp.Net
                     eventSubjects.CommittedSubject.OnCompleted();
                 }
                 _modelUpdateSubject.OnCompleted();
+            }
+
+            public void PublishModelChangedEvent()
+            {
+                var modelChangedEvent = new ModelChangedEvent<TModel>(Id, _model);
+                _modelChangedEventPublisher.BroadcastEvent(modelChangedEvent);
             }
 
             public IModelObservable<TModel> GetModelObservable()

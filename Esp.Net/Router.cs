@@ -74,18 +74,29 @@ namespace Esp.Net
                 preEventProcessor, 
                 postEventProcessor, 
                 _routerGuard,
-                _modelsEventsObservations.CreateForModel(modelId)
+                _modelsEventsObservations.CreateForModel(modelId),
+                new ModelChangedEventPublisher(this)
             );
             _modelsById.Add(modelId, entry);
         }
 
         public void RemoveModel(Guid modelId)
         {
-            //_routerGuard.EnsureValid();
+            _routerGuard.EnsureValid();
             IModelEntry modelEntry;
             if (!_modelsById.TryGetValue(modelId, out modelEntry)) throw new ArgumentException(string.Format("Model with id {0} not registered", modelId));
             _modelsById.Remove(modelId);
             modelEntry.OnRemoved();
+        }
+
+        public void BroadcastEvent<TEvent>(TEvent @event)
+        {
+            _routerGuard.EnsureValid();
+            foreach (IModelEntry modelEntry in _modelsById.Values)
+            {
+                modelEntry.Enqueue(@event);
+            }
+            PurgeEventQueues();
         }
 
         public void PublishEvent<TEvent>(Guid modelId, TEvent @event)
@@ -99,7 +110,6 @@ namespace Esp.Net
         public IModelObservable<TModel> GetModelObservable<TModel>(Guid modelId)
         {
             _routerGuard.EnsureValid();
-
             IModelEntry<TModel> entry = GetModelEntry<TModel>(modelId);
             return entry.GetModelObservable();
         }
@@ -137,7 +147,6 @@ namespace Esp.Net
                 try
                 {
                     IModelEntry modelEntry = GetNextModelEntryWithEvents();
-
                     while (modelEntry != null)
                     {
                         var changedModels = new Dictionary<Guid, IModelEntry>();
@@ -155,6 +164,7 @@ namespace Esp.Net
                                     modelEntry.RunPostProcessor();
                                 }
                             }
+                            modelEntry.PublishModelChangedEvent();
                             if (!changedModels.ContainsKey(modelEntry.Id))
                                 changedModels.Add(modelEntry.Id, modelEntry);
                             modelEntry = GetNextModelEntryWithEvents();
@@ -199,6 +209,24 @@ namespace Esp.Net
                 throw new InvalidOperationException(string.Format("Model with id [{0}] isn't registered", modelId));
             }
             return (IModelEntry<TModel>)entry;
+        }
+
+        private class ModelChangedEventPublisher : IModelChangedEventPublisher
+        {
+            private readonly Router _parent;
+
+            public ModelChangedEventPublisher(Router parent)
+            {
+                _parent = parent;
+            }
+
+            public void BroadcastEvent<TModel>(ModelChangedEvent<TModel> @event)
+            {
+                foreach (IModelEntry modelEntry in _parent._modelsById.Values)
+                {
+                    if (modelEntry.Id != @event.ModelId) modelEntry.Enqueue(@event);
+                }
+            }
         }
     }
 }

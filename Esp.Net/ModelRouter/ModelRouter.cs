@@ -30,6 +30,11 @@ namespace Esp.Net.ModelRouter
             _underlying = underlying;
         }
 
+        public void BroadcastEvent<TEvent>(TEvent @event)
+        {
+            _underlying.BroadcastEvent(@event);
+        }
+
         public void PublishEvent<TEvent>(TEvent @event)
         {
             _underlying.PublishEvent(_modelIid, @event);

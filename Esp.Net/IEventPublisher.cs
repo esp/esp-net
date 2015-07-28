@@ -20,6 +20,7 @@ namespace Esp.Net
 {
     public interface IEventPublisher
     {
+        void BroadcastEvent<TEvent>(TEvent @event);
         void PublishEvent<TEvent>(Guid modelId, TEvent @event);
     }
 }
