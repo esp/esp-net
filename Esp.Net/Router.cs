@@ -94,7 +94,7 @@ namespace Esp.Net
             _routerGuard.EnsureValid();
             foreach (IModelEntry modelEntry in _modelsById.Values)
             {
-                modelEntry.Enqueue(@event);
+                modelEntry.TryEnqueue(@event);
             }
             PurgeEventQueues();
         }
@@ -103,7 +103,7 @@ namespace Esp.Net
         {
             _routerGuard.EnsureValid();
             var modelEntry = _modelsById[modelId];
-            modelEntry.Enqueue(@event);
+            modelEntry.TryEnqueue(@event);
             PurgeEventQueues();
         }
 
@@ -208,7 +208,16 @@ namespace Esp.Net
             {
                 throw new InvalidOperationException(string.Format("Model with id [{0}] isn't registered", modelId));
             }
-            return (IModelEntry<TModel>)entry;
+            IModelEntry<TModel> result;
+            try
+            {
+                result = (IModelEntry<TModel>) entry;
+            }
+            catch (InvalidCastException)
+            {
+                throw new InvalidOperationException(string.Format("Model with id [{0}] is not registered against model of type [{1}]. Please ensure you're using the same model type that was registered against this id.", modelId, typeof(TModel).FullName));
+            }
+            return result;
         }
 
         private class ModelChangedEventPublisher : IModelChangedEventPublisher
@@ -224,7 +233,7 @@ namespace Esp.Net
             {
                 foreach (IModelEntry modelEntry in _parent._modelsById.Values)
                 {
-                    if (modelEntry.Id != @event.ModelId) modelEntry.Enqueue(@event);
+                    if (modelEntry.Id != @event.ModelId) modelEntry.TryEnqueueModelChangedEvent(@event);
                 }
             }
         }

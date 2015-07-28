@@ -30,7 +30,8 @@ namespace Esp.Net
             Guid Id { get; }
             bool HadEvents { get; }
             bool IsRemoved { get; }
-            void Enqueue<TEvent>(TEvent @event);
+            void TryEnqueue<TEvent>(TEvent @event);
+            void TryEnqueueModelChangedEvent<TChangedModel>(ModelChangedEvent<TChangedModel> @event);
             void PurgeEventQueue();
             void RunPreProcessor();
             void RunPostProcessor();
@@ -89,9 +90,17 @@ namespace Esp.Net
             
             public bool IsRemoved { get; private set; }
 
-            public void Enqueue<TEvent>(TEvent @event)
+            public void TryEnqueue<TEvent>(TEvent @event)
             {
+                if (!_eventSubjects.ContainsKey(typeof (TEvent))) return;
                 _eventDispatchQueue.Enqueue(ProcessEvent(@event));
+            }
+
+            public void TryEnqueueModelChangedEvent<TChangedModel>(ModelChangedEvent<TChangedModel> @event)
+            {
+                // Publishing model change events to an event entry of the same model type is not supported. 
+                if(typeof(TModel).IsAssignableFrom(typeof(TChangedModel)))return;
+                TryEnqueue(@event);
             }
 
             public void PurgeEventQueue()

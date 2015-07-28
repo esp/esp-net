@@ -17,15 +17,17 @@ namespace Esp.Net
         private TestModel _model1;
         private StubModelProcessor _model1PreEventProcessor;
         private StubModelProcessor _model1PostEventProcessor;
-        private TestModelEventProcessor _model1EventProcessor;
-        private TestModelEventProcessor _model1EventProcessor2;
-        private TestController _model1Controller;
+        private GenericModelEventProcessor<TestModel> _model1EventProcessor;
+        private GenericModelEventProcessor<TestModel> _model1EventProcessor2;
+        private TestModelController _model1Controller;
 
         private TestModel _model2;
         private StubModelProcessor _model2PreEventProcessor;
         private StubModelProcessor _model2PostEventProcessor;
-        private TestModelEventProcessor _model2EventProcessor;
-        private TestController _model2Controller;
+        private GenericModelEventProcessor<TestModel> _model2EventProcessor;
+        private TestModelController _model2Controller;
+
+        private TestModel3 _model3;
 
         private const int EventProcessor1Id = 1;
         private const int EventProcessor2Id = 2;
@@ -41,16 +43,19 @@ namespace Esp.Net
             _model1PreEventProcessor = new StubModelProcessor();
             _model1PostEventProcessor = new StubModelProcessor();
             _router.RegisterModel(_model1.Id, _model1, _model1PreEventProcessor, _model1PostEventProcessor);
-            _model1EventProcessor = new TestModelEventProcessor(_router, _model1.Id, EventProcessor1Id);
-            _model1EventProcessor2 = new TestModelEventProcessor(_router, _model1.Id, EventProcessor2Id);
-            _model1Controller = new TestController(_router, _model1.Id);
+            _model1EventProcessor = new GenericModelEventProcessor<TestModel>(_router, _model1.Id, EventProcessor1Id);
+            _model1EventProcessor2 = new GenericModelEventProcessor<TestModel>(_router, _model1.Id, EventProcessor2Id);
+            _model1Controller = new TestModelController(_router, _model1.Id);
 
             _model2 = new TestModel();
             _model2PreEventProcessor = new StubModelProcessor();
             _model2PostEventProcessor = new StubModelProcessor();
             _router.RegisterModel(_model2.Id, _model2, _model2PreEventProcessor, _model2PostEventProcessor);
-            _model2EventProcessor = new TestModelEventProcessor(_router, _model2.Id, EventProcessor3Id);
-            _model2Controller = new TestController(_router, _model2.Id);
+            _model2EventProcessor = new GenericModelEventProcessor<TestModel>(_router, _model2.Id, EventProcessor3Id);
+            _model2Controller = new TestModelController(_router, _model2.Id);
+
+            _model3 = new TestModel3();
+            _router.RegisterModel(_model3.Id, _model3);
         }
 
         public class Ctor
@@ -207,11 +212,11 @@ namespace Esp.Net
             public void RemovalByAModelObserverEndsEventWorkflow()
             {
                 var receivedModelCount = 0;
+                _model1EventProcessor.Event1Details.NormalStage.RegisterAction((m, e) => m.ControllerShouldRemove = true);
                 _router.GetModelObservable<TestModel>(_model1.Id).Observe(model => receivedModelCount++);
                 _router.PublishEvent(_model1.Id, new Event1());
-                _router.PublishEvent(_model1.Id, new Event1() { ShouldRemoveOnModelObservation = true });
-                _model1Controller.ReceivedModels.Count.ShouldBe(2);
-                receivedModelCount.ShouldBe(1);
+                _model1Controller.ReceivedModels.Count.ShouldBe(1);
+                receivedModelCount.ShouldBe(0);
             }
         }
 
@@ -288,6 +293,15 @@ namespace Esp.Net
                 _model2EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(1);
                 _model1PostEventProcessor.InvocationCount.ShouldBe(1);
                 _model2PostEventProcessor.InvocationCount.ShouldBe(1);
+            }
+
+            [Test]
+            public void OnlyProcessEventsIfThereAreObservers()
+            {
+                _router.PublishEvent(_model1.Id, "AnEventWithNoObservers");
+                _model1PreEventProcessor.InvocationCount.ShouldBe(0);
+                _model1PostEventProcessor.InvocationCount.ShouldBe(0);
+                _model1Controller.ReceivedModels.Count.ShouldBe(0);
             }
 
             public class SubsequentEvents : RouterTests2
@@ -420,22 +434,43 @@ namespace Esp.Net
             public class ModelChangedEvent : RouterTests2
             {
                 [Test]
-                public void ThrowsIfEventProcessorSubscribesToOwnModelChangedEvent()
+                public void WhenEventProcessingWorkflowFinishedModelChangedEventIsRaised()
                 {
+                    var receivedEvents = new List<ModelChangedEvent<TestModel>>();
+                    _router.GetEventObservable<TestModel3, ModelChangedEvent<TestModel>>(_model3.Id).Observe((m, e) =>
+                    {
+                        receivedEvents.Add(e);
+                    });
+                    _router.PublishEvent(_model1.Id, new Event1());
+                    receivedEvents.Count.ShouldBe(1);
+                    receivedEvents[0].Model.Id.ShouldBe(_model1.Id);
+                    receivedEvents[0].ModelId.ShouldBe(_model1.Id);
                 }
 
                 [Test]
-                public void WhenEventProcessingWorkflowFinishedModelChangedEventIsRaised()
+                public void ObservingAModelChangedEventForTheSameModelHasARuntimeException()
                 {
+                    _router.GetEventObservable<TestModel, ModelChangedEvent<TestModel>>(_model3.Id).Observe((m, e) =>
+                    {
+                    });
                     _router.PublishEvent(_model1.Id, new Event1());
-                    _model1EventProcessor.ModelChangedEvents.Count.ShouldBe(0);
-                    _model2EventProcessor.ModelChangedEvents.Count.ShouldBe(1);
                 }
             }
 
-            // pre
-            // staged
-            // post
+            public class ModelIdTypeMismatchErrors : RouterTests2
+            {
+                [Test]
+                public void GetEventObservableWithIncorrectModelTypeThrows()
+                {
+                    Assert.Throws<InvalidOperationException>(() => _router.GetEventObservable<string, string>(_model1.Id));
+                }
+
+                [Test]
+                public void GetModelObservableWithIncorrectModelTypeThrows()
+                {
+                    Assert.Throws<InvalidOperationException>(() => _router.GetModelObservable<string>(_model1.Id));
+                }
+            }
         }
 
         public class EventObservationDisposal
@@ -651,6 +686,15 @@ namespace Esp.Net
             public bool ControllerShouldRemove { get; set; }
         }
 
+        public class TestModel3
+        {
+            public TestModel3()
+            {
+                Id = Guid.NewGuid();
+            }
+            public Guid Id { get; private set; }
+        }
+
         public class BaseEvent
         {
             public bool ShouldCancel { get; set; }
@@ -664,8 +708,6 @@ namespace Esp.Net
             public bool ShouldRemove { get; set; }
             public ObservationStage RemoveAtStage { get; set; }
             public int RemoveAtEventProcesserId { get; set; }
-
-            public bool ShouldRemoveOnModelObservation { get; set; }
         }
 
         public class Event1 : BaseEvent
@@ -708,14 +750,17 @@ namespace Esp.Net
             }
         }
 
-        public class TestModelEventProcessor
+        // this generic event processor exists to:  
+        // * record what events it receives during execution
+        // * push events through the flow as requested by tests
+        // * run actions during the workflow as requested by the tests
+        public class GenericModelEventProcessor<TModel>
         {
             private readonly Guid _modelId;
             private readonly int _id;
             private readonly IRouter _router;
-            private readonly IList<ModelChangedEvent<TestModel>> _modelChangedEvents = new List<ModelChangedEvent<TestModel>>();
 
-            public TestModelEventProcessor(IRouter router, Guid modelId, int id)
+            public GenericModelEventProcessor(IRouter router, Guid modelId, int id)
             {
                 _modelId = modelId;
                 _id = id;
@@ -724,38 +769,11 @@ namespace Esp.Net
                 Event1Details = ObserveEvent<Event1>();
                 Event2Details = ObserveEvent<Event2>();
                 Event3Details = ObserveEvent<Event3>();
-                ListenForModelChangedEvents();
-            }
-
-            private void ListenForModelChangedEvents()
-            {
-                // This should never yield a ModelChangedEvent<T> for changes to TestModel with id '_modelId'.
-                // You don't get change events for your own model else we'd end up in an infinite loop.
-                // Thus this is observing changes to 'TestModel' other than '_modelId' with the intent of 
-                // applying thoes changes to TestModel with id _modelId.
-                _router
-                    .GetEventObservable<TestModel, ModelChangedEvent<TestModel>>(_modelId)
-                    // typically a filter would be used here to narrow down model change to those related to model with id _modelId
-                    // .Where((m, e) => e.ModelId == someOtherDependentModelId)
-                    .Observe(
-                    (m, e, c) =>
-                    {
-                        // m in this case should have id of _modelId (like any other event), and e
-                        // will have the model chagned event containing state of other TestModels that 
-                        // have changed.
-                        ModelChangedEvents.Add(e);
-                    }
-                );
             }
 
             public EventObservationDetails<Event1> Event1Details { get; private set; }
             public EventObservationDetails<Event2> Event2Details { get; private set; }
             public EventObservationDetails<Event3> Event3Details { get; private set; }
-
-            public IList<ModelChangedEvent<TestModel>> ModelChangedEvents
-            {
-                get { return _modelChangedEvents; }
-            }
 
             private EventObservationDetails<TEvent> ObserveEvent<TEvent>() where TEvent : BaseEvent
             {
@@ -772,7 +790,7 @@ namespace Esp.Net
             {
                 var details = new ObservationStageDetails<TEvent>(stage);
                 details.ObservationDisposable = _router
-                    .GetEventObservable<TestModel, TEvent>(_modelId, details.Stage)
+                    .GetEventObservable<TModel, TEvent>(_modelId, details.Stage)
                     .Observe(
                         (model, @event, context) =>
                         {
@@ -792,8 +810,7 @@ namespace Esp.Net
                             {
                                 _router.RemoveModel(_modelId);
                             }
-                            model.ControllerShouldRemove = @event.ShouldRemoveOnModelObservation;
-                            foreach (Action<TestModel, TEvent> action in details.Actions)
+                            foreach (Action<TModel, TEvent> action in details.Actions)
                             {
                                 action(model, @event);
                             }
@@ -815,29 +832,29 @@ namespace Esp.Net
 
             public class ObservationStageDetails<TEvent>
             {
-                private readonly List<Action<TestModel, TEvent>> _actions;
+                private readonly List<Action<TModel, TEvent>> _actions;
                 public ObservationStageDetails(ObservationStage stage)
                 {
                     Stage = stage;
                     ReceivedEvents = new List<TEvent>();
-                    _actions = new List<Action<TestModel, TEvent>>();
-                    Actions = new ReadOnlyCollection<Action<TestModel, TEvent>>(_actions);
+                    _actions = new List<Action<TModel, TEvent>>();
+                    Actions = new ReadOnlyCollection<Action<TModel, TEvent>>(_actions);
                 }
                 public ObservationStage Stage { get; private set; }
                 public List<TEvent> ReceivedEvents { get; private set; }
                 public IDisposable ObservationDisposable { get; set; }
                 public int StreamCompletedCount { get; set; }
-                public IList<Action<TestModel, TEvent>> Actions { get; private set; }
-                public void RegisterAction(Action<TestModel, TEvent> action)
+                public IList<Action<TModel, TEvent>> Actions { get; private set; }
+                public void RegisterAction(Action<TModel, TEvent> action)
                 {
                     _actions.Add(action);
                 }
             }
         }
 
-        public class TestController
+        public class TestModelController
         {
-            public TestController(IRouter router, Guid modelId)
+            public TestModelController(IRouter router, Guid modelId)
             {
                 ReceivedModels = new List<TestModel>();
                 ModelObservationDisposable = router
