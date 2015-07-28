@@ -18,14 +18,6 @@ using System;
 
 namespace Esp.Net
 {
-    public interface IEventContext
-    {
-        bool IsCanceled { get; }
-        bool IsCommitted { get; }
-        void Cancel();
-        void Commit();
-    }
-
     internal class EventContext : IEventContext
     {
         private bool _isCanceled;

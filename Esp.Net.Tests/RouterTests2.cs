@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Reflection;
 using Esp.Net.Reactive;
 using NUnit.Framework;
 using Shouldly;
@@ -29,13 +28,14 @@ namespace Esp.Net
         private TestModelController _model2Controller;
 
         private TestModel3 _model3;
+        private TestModel4 _model4;
 
         private const int EventProcessor1Id = 1;
         private const int EventProcessor2Id = 2;
         private const int EventProcessor3Id = 3;
 
         [SetUp]
-        public void SetUp()
+        public virtual void SetUp()
         {
             _threadGuard = new StubThreadGuard();
             _router = new Router(_threadGuard);
@@ -57,6 +57,9 @@ namespace Esp.Net
 
             _model3 = new TestModel3();
             _router.RegisterModel(_model3.Id, _model3);
+
+            _model4 = new TestModel4();
+            _router.RegisterModel(_model4.Id, _model4);
         }
 
         public class Ctor
@@ -250,7 +253,7 @@ namespace Esp.Net
             [Test]
             public void CommittedObservationStageObserversRecieveEvent()
             {
-                _router.PublishEvent(_model1.Id, new Event1 { ShouldCommit = true, CommitAtEventProcesserId = EventProcessor1Id });
+                _router.PublishEvent(_model1.Id, new Event1 { ShouldCommit = true, CommitAtStage = ObservationStage.Normal, CommitAtEventProcesserId = EventProcessor1Id });
                 _model1EventProcessor.Event1Details.CommittedStage.ReceivedEvents.Count.ShouldBe(1);
                 _model1EventProcessor2.Event1Details.CommittedStage.ReceivedEvents.Count.ShouldBe(1);
             }
@@ -425,15 +428,28 @@ namespace Esp.Net
                 }
             }
 
-            public class Broadcast
+            public class Broadcast : RouterTests2
             {
                 [Test]
                 public void DeliversEventToAllModels()
-                { }
+                {
+                    _router.BroadcastEvent(new Event1());
+                    _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(1);
+                    _model1Controller.ReceivedModels.Count.ShouldBe(1);
+
+                    _model2EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(1);
+                    _model2Controller.ReceivedModels.Count.ShouldBe(1);
+                }
 
                 [Test]
                 public void CanBroadcastUsingObjectOverload()
                 {
+                    _router.BroadcastEvent((object)new Event1());
+                    _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(1);
+                    _model1Controller.ReceivedModels.Count.ShouldBe(1);
+
+                    _model2EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(1);
+                    _model2Controller.ReceivedModels.Count.ShouldBe(1);
                 }
             }
 
@@ -442,6 +458,8 @@ namespace Esp.Net
                 [Test]
                 public void CanPublishUsingObjectOverload()
                 {
+                    _router.PublishEvent(_model1.Id, (object)new Event1());
+                    _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(1);
                 }
             }
 
@@ -487,89 +505,149 @@ namespace Esp.Net
             }
         }
 
-        public class EventObservationDisposal
+        public class EventObservationDisposal : RouterTests2
         {
             [Test]
             public void DisposedPreviewObservationStageObserversDontRecievEvent()
             {
+                _model1EventProcessor.Event1Details.PreviewStage.ObservationDisposable.Dispose();
+                _router.PublishEvent(_model1.Id, new Event1());
+                _model1EventProcessor.Event1Details.PreviewStage.ReceivedEvents.Count.ShouldBe(0);
+                _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(1);
             }
 
             [Test]
             public void DisposedNormalObservationStageObserversDontRecievEvent()
             {
+                _model1EventProcessor.Event1Details.NormalStage.ObservationDisposable.Dispose();
+                _router.PublishEvent(_model1.Id, new Event1());
+                _model1EventProcessor.Event1Details.PreviewStage.ReceivedEvents.Count.ShouldBe(1);
+                _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(0);
             }
 
             [Test]
             public void DisposedCommittedObservationStageObserversDontRecievEvent()
             {
+                _model1EventProcessor.Event1Details.CommittedStage.ObservationDisposable.Dispose();
+                _router.PublishEvent(_model1.Id, new Event1{ ShouldCommit = true, CommitAtStage = ObservationStage.Normal, CommitAtEventProcesserId = EventProcessor1Id });
+                _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(1);
+                _model1EventProcessor.Event1Details.CommittedStage.ReceivedEvents.Count.ShouldBe(0);
             }
         }
 
-        public class ErrorFlows
+        public class ErrorFlows : RouterTests2
         {
-            [Test]
-            public void CancelingTwiceAtPreviewObservationStageThrows()
-            {
-            }
-
             [Test]
             public void CancelingAtNormalObservationStageThrows()
             {
+                Assert.Throws<InvalidOperationException>(() =>
+                {
+                    var event1 = new Event1
+                    {
+                        ShouldCancel = true,
+                        CancelAtStage = ObservationStage.Normal,
+                        CancelAtEventProcesserId = EventProcessor1Id,
+                    };
+                    _router.PublishEvent(_model1.Id, event1);
+                });
             }
 
             [Test]
             public void CancelingAtCommittedObservationStageThrows()
             {
+                Assert.Throws<InvalidOperationException>(() =>
+                {
+                    var event1 = new Event1
+                    {
+                        ShouldCommit = true, 
+                        CommitAtStage = ObservationStage.Normal, 
+                        CommitAtEventProcesserId = EventProcessor1Id,
+
+                        ShouldCancel = true,
+                        CancelAtStage = ObservationStage.Committed,
+                        CancelAtEventProcesserId = EventProcessor1Id,
+                    };
+                    _router.PublishEvent(_model1.Id, event1);
+                });
             }
 
             [Test]
             public void CommittingAtPreviewObservationStageThrows()
-            { }
-
-            [Test]
-            public void CommittingAtCommittedObservationStageThrows()
-            { }
-
-            [Test]
-            public void CommittingTwiceAtNormalObservationStageThrows()
-            { }
+            {
+                Assert.Throws<InvalidOperationException>(() =>
+                {
+                    var event1 = new Event1
+                    {
+                        ShouldCommit = true,
+                        CommitAtStage = ObservationStage.Preview,
+                        CommitAtEventProcesserId = EventProcessor1Id,
+                    };
+                    _router.PublishEvent(_model1.Id, event1);
+                });
+            }
         }
 
-        public class ModelObservation
+        public class ModelObservation : RouterTests2
         {
             [Test]
             public void ThrowsIfModelIdGuidEmpty()
             {
+                Assert.Throws<ArgumentException>(() => _router.GetModelObservable<TestModel>(Guid.Empty));
             }
 
             [Test]
             public void ObserversReceiveModelOnEventWorkflowCompleted()
             {
-                
+                _router.PublishEvent(_model1.Id, new Event1());
+                _model1Controller.ReceivedModels.Count.ShouldBe(1);
             }
 
             [Test]
             public void DisposedObserversReceiveDontModelOnEventWorkflowCompleted()
             {
-
+                _model1Controller.ModelObservationDisposable.Dispose();
+                _router.PublishEvent(_model1.Id, new Event1());
+                _model1Controller.ReceivedModels.Count.ShouldBe(0);
             }
 
             [Test]
             public void MutipleSubsequentEventsOnlyYield1ModelUpdate()
             {
+                PublishEventWithMultipeSubsequentEvents(5);
+                _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(6);
+                _model1Controller.ReceivedModels.Count.ShouldBe(1);
             }
 
             [Test]
-            public void EventsPublishedDuringModelDispatchGetProcessedFromBackingQueue()
+            public void EventsPublishedDuringModelDispatchGetProcessed()
             {
-
+                bool publishedEventFromController = false;
+                _model1Controller.RegisterAction(m =>
+                {
+                    if (!publishedEventFromController)
+                    {
+                        publishedEventFromController = true;
+                        _router.PublishEvent(_model1.Id, new Event1());
+                    }
+                });
+                _router.PublishEvent(_model1.Id, new Event1());
+                publishedEventFromController.ShouldBe(true);
+                _model1Controller.ReceivedModels.Count.ShouldBe(2);
             }
 
-            public class ModelCloning
+            public class ModelCloning : RouterTests2
             {
                 [Test]
                 public void DispatchesAModelCloneIfTheModelImplementsIClonable()
                 {
+                    var receivedModels = new List<TestModel4>();
+                    _router.GetEventObservable<TestModel4, int>(_model4.Id).Observe((m, e) => { /*noop*/ });
+                    _router.GetModelObservable<TestModel4>(_model4.Id).Observe(m => receivedModels.Add(m));
+                    _router.PublishEvent(_model4.Id, 2);
+                    _router.PublishEvent(_model4.Id, 4);
+                    receivedModels.Count.ShouldBe(2);
+                    receivedModels[0].IsClone.ShouldBe(true);
+                    receivedModels[1].IsClone.ShouldBe(true);
                 }
             }
         }
@@ -578,39 +656,62 @@ namespace Esp.Net
         {
         }
 
-        public class ThreadGuard
+        public class ThreadGuard : RouterTests2
         {
+            [SetUp]
+            public override void SetUp()
+            {
+                base.SetUp();
+                _threadGuard.HasAccess = false;
+            }
+
             [Test]
             public void ShouldThrowIfRegisterModelCalledOnInvalidThread()
             {
-                // all overloads
+                Assert.Throws<InvalidOperationException>(() => _router.RegisterModel(Guid.NewGuid(), _model1));
+                Assert.Throws<InvalidOperationException>(() => _router.RegisterModel(Guid.NewGuid(), _model1, (IPreEventProcessor<TestModel>)new StubModelProcessor()));
+                Assert.Throws<InvalidOperationException>(() => _router.RegisterModel(Guid.NewGuid(), _model1, (IPostEventProcessor<TestModel>)new StubModelProcessor()));
+                Assert.Throws<InvalidOperationException>(() => _router.RegisterModel(Guid.NewGuid(), _model1, new StubModelProcessor(), new StubModelProcessor()));
             }
 
             [Test]
             public void ShouldThrowIfRemoveModelCalledOnInvalidThread()
             {
+                Assert.Throws<InvalidOperationException>(() => _router.RemoveModel(_model1.Id));
             }
 
             [Test]
             public void ShouldThrowIfPublishEventCalledOnInvalidThread()
             {
+                Assert.Throws<InvalidOperationException>(() => _router.PublishEvent(_model1.Id, new Event1()));
+                Assert.Throws<InvalidOperationException>(() => _router.PublishEvent(_model1.Id, (object)new Event1()));
             }
 
             [Test]
             public void ShouldThrowIfBroadcastEventCalledOnInvalidThread()
             {
+                Assert.Throws<InvalidOperationException>(() => _router.BroadcastEvent(new Event1()));
+                Assert.Throws<InvalidOperationException>(() => _router.BroadcastEvent((object)new Event1()));
             }
-
 
             [Test]
             public void ShouldThrowIfGetModelObservableCalledOnInvalidThread()
             {
+                Assert.Throws<InvalidOperationException>(() => _router.GetModelObservable<TestModel>(_model1.Id));
+                _threadGuard.HasAccess = true;
+                var obs = _router.GetModelObservable<TestModel>(_model1.Id);
+                _threadGuard.HasAccess = false;
+                Assert.Throws<InvalidOperationException>(() => obs.Observe(m => { }));
             }
 
             [Test]
             public void ShouldThrowIfGetEventObservableCalledOnInvalidThread()
             {
-                // all overloads
+                Assert.Throws<InvalidOperationException>(() => _router.GetEventObservable<TestModel, Event1>(_model1.Id));
+                _threadGuard.HasAccess = true;
+                var obs = _router.GetEventObservable<TestModel, Event1>(_model1.Id);
+                _threadGuard.HasAccess = false;
+                Assert.Throws<InvalidOperationException>(() => obs.Observe((m, e) => { }));
             }
         }
 
@@ -683,13 +784,14 @@ namespace Esp.Net
         protected void PublishEventWithMultipeSubsequentEvents(int numberOfSubsequentEvents)
         {
             _router
-                .GetEventObservable<TestModel, int>(_model1.Id)
+                .GetEventObservable<TestModel, Event1>(_model1.Id)
+                .Where((m, e) => e.Payload != "subsequent")
                 .Observe(
                     (model, @event) =>
                     {
                         for (int i = 0; i < numberOfSubsequentEvents; i++)
                         {
-                            _router.PublishEvent(_model1.Id, new Event1());
+                            _router.PublishEvent(_model1.Id, new Event1("subsequent"));
                         }
                     }
                 );
@@ -713,6 +815,23 @@ namespace Esp.Net
                 Id = Guid.NewGuid();
             }
             public Guid Id { get; private set; }
+        }
+
+        public class TestModel4 : ICloneable<TestModel4>
+        {
+            public TestModel4()
+            {
+                Id = Guid.NewGuid();
+            }
+            
+            public Guid Id { get; private set; }
+
+            public bool IsClone { get; private set; }
+
+            public TestModel4 Clone()
+            {
+                return new TestModel4() { Id = Id, IsClone = true };
+            }
         }
 
         public class BaseEvent
@@ -830,9 +949,9 @@ namespace Esp.Net
                             {
                                 _router.RemoveModel(_modelId);
                             }
-                            foreach (Action<TModel, TEvent> action in details.Actions)
+                            foreach (Action<TModel, TEvent, IEventContext> action in details.Actions)
                             {
-                                action(model, @event);
+                                action(model, @event, context);
                             }
                         },
                         () =>
@@ -852,20 +971,24 @@ namespace Esp.Net
 
             public class ObservationStageDetails<TEvent>
             {
-                private readonly List<Action<TModel, TEvent>> _actions;
+                private readonly List<Action<TModel, TEvent, IEventContext>> _actions;
                 public ObservationStageDetails(ObservationStage stage)
                 {
                     Stage = stage;
                     ReceivedEvents = new List<TEvent>();
-                    _actions = new List<Action<TModel, TEvent>>();
-                    Actions = new ReadOnlyCollection<Action<TModel, TEvent>>(_actions);
+                    _actions = new List<Action<TModel, TEvent, IEventContext>>();
+                    Actions = new ReadOnlyCollection<Action<TModel, TEvent, IEventContext>>(_actions);
                 }
                 public ObservationStage Stage { get; private set; }
                 public List<TEvent> ReceivedEvents { get; private set; }
                 public IDisposable ObservationDisposable { get; set; }
                 public int StreamCompletedCount { get; set; }
-                public IList<Action<TModel, TEvent>> Actions { get; private set; }
+                public IList<Action<TModel, TEvent, IEventContext>> Actions { get; private set; }
                 public void RegisterAction(Action<TModel, TEvent> action)
+                {
+                    _actions.Add((m, e, c) => action(m, e));
+                }
+                public void RegisterAction(Action<TModel, TEvent, IEventContext> action)
                 {
                     _actions.Add(action);
                 }
@@ -874,6 +997,8 @@ namespace Esp.Net
 
         public class TestModelController
         {
+            private readonly List<Action<TestModel>> _actions = new List<Action<TestModel>>();
+
             public TestModelController(IRouter router, Guid modelId)
             {
                 ReceivedModels = new List<TestModel>();
@@ -885,6 +1010,10 @@ namespace Esp.Net
                             ReceivedModels.Add(model);
                             if (model.ControllerShouldRemove)
                                router.RemoveModel(modelId);
+                            foreach (Action<TestModel> action in _actions)
+                            {
+                                action(model);
+                            }
                         },
                         () =>
                         {
@@ -898,6 +1027,11 @@ namespace Esp.Net
             public List<TestModel> ReceivedModels { get; private set; }
           
             public int StreamCompletedCount { get; private set; }
+
+            public void RegisterAction(Action<TestModel> action)
+            {
+                _actions.Add(action);
+            }
         }
 
         public class StubThreadGuard : IThreadGuard

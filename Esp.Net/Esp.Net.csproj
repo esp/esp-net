@@ -44,6 +44,7 @@
     <Compile Include="..\AssemblyInfoCommon.cs">
       <Link>Properties\AssemblyInfoCommon.cs</Link>
     </Compile>
+    <Compile Include="IEventContext.cs" />
     <Compile Include="IEventSubject.cs" />
     <Compile Include="IModelSubject.cs" />
     <Compile Include="IPreEventProcessor.cs" />

@@ -126,6 +126,7 @@ namespace Esp.Net
 
         public IModelObservable<TModel> GetModelObservable<TModel>(Guid modelId)
         {
+            Guard.Requires<ArgumentException>(modelId != Guid.Empty, "modelId can not be Guid.Empty");
             _routerGuard.EnsureValid();
             IModelEntry<TModel> entry = GetModelEntry<TModel>(modelId);
             return entry.GetModelObservable();

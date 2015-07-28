@@ -49,7 +49,7 @@ namespace Esp.Net
             {
                 if (!_threadGuard.CheckAccess())
                 {
-                    throw new InvalidOperationException("Router called on invalid thread");
+                    throw new InvalidOperationException("Router accessed on invalid thread");
                 }
             }
         }
