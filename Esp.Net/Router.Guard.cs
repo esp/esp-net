@@ -41,7 +41,7 @@ namespace Esp.Net
             {
                 if (_state.CurrentStatus == Status.Halted)
                 {
-                    throw _state.HaltingException;
+                    throw new Exception("Router halted due to previous error", _state.HaltingException);
                 }
             }
 

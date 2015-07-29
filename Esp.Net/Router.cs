@@ -107,6 +107,16 @@ namespace Esp.Net
             publishEventMethod.Invoke(this, new object[] { modelId, @event });
         }
 
+        public void ExecuteEvent<TEvent>(Guid modelId, TEvent @event)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ExecuteEvent(Guid modelId, object @event)
+        {
+            throw new NotImplementedException();
+        }
+
         public void BroadcastEvent<TEvent>(TEvent @event)
         {
             _routerGuard.EnsureValid();
@@ -155,6 +165,7 @@ namespace Esp.Net
 
         public IRouter<TModel> CreateModelRouter<TModel>(Guid modelId)
         {
+            _routerGuard.EnsureValid();
             return new ModelRouter<TModel>(modelId, this);
         }
 

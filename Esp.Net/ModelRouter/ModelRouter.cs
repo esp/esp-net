@@ -30,14 +30,34 @@ namespace Esp.Net.ModelRouter
             _underlying = underlying;
         }
 
+        public void PublishEvent<TEvent>(TEvent @event)
+        {
+            _underlying.PublishEvent(_modelIid, @event);
+        }
+
+        public void PublishEvent(object @event)
+        {
+            _underlying.PublishEvent(_modelIid, @event);
+        }
+
+        public void ExecuteEvent<TEvent>(TEvent @event)
+        {
+            _underlying.ExecuteEvent(_modelIid, @event);
+        }
+
+        public void ExecuteEvent(object @event)
+        {
+            _underlying.ExecuteEvent(_modelIid, @event);
+        }
+
         public void BroadcastEvent<TEvent>(TEvent @event)
         {
             _underlying.BroadcastEvent(@event);
         }
 
-        public void PublishEvent<TEvent>(TEvent @event)
+        public void BroadcastEvent(object @event)
         {
-            _underlying.PublishEvent(_modelIid, @event);
+            _underlying.BroadcastEvent(@event);
         }
 
         public IModelObservable<TModel> GetModelObservable()
