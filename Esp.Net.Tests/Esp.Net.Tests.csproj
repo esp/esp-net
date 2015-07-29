@@ -56,9 +56,8 @@
     <Compile Include="Plugins\HeldEvents\HeldEventTests.cs" />
     <Compile Include="Reactive\ReactiveTests.cs" />
     <Compile Include="Reactive\StubEventObservable.cs" />
-    <Compile Include="RouterTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RouterTests2.cs" />
+    <Compile Include="RouterTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Esp.Net.licenseheader">

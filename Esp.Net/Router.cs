@@ -156,11 +156,11 @@ namespace Esp.Net
             return entry.GetEventObservable<TSubEventType, TBaseEvent>(observationStage);
         }
 
-        public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TBaseEvent>(Guid modelId, Type eventType, ObservationStage observationStage = ObservationStage.Normal)
+        public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TBaseEvent>(Guid modelId, Type subEventType, ObservationStage observationStage = ObservationStage.Normal)
         {
             _routerGuard.EnsureValid();
             IModelEntry<TModel> entry = GetModelEntry<TModel>(modelId);
-            return entry.GetEventObservable<TBaseEvent>(eventType, observationStage);
+            return entry.GetEventObservable<TBaseEvent>(subEventType, observationStage);
         }
 
         public IRouter<TModel> CreateModelRouter<TModel>(Guid modelId)

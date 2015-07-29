@@ -44,7 +44,7 @@ namespace Esp.Net
             IModelObservable<TModel> GetModelObservable();
             IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal);
             IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TSubEventType, TBaseEvent>(ObservationStage observationStage = ObservationStage.Normal) where TSubEventType : TBaseEvent;
-            IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal);
+            IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type subEventType, ObservationStage observationStage = ObservationStage.Normal);
         }
 
         private interface IModelChangedEventPublisher
@@ -172,20 +172,20 @@ namespace Esp.Net
             }
 
             /// <summary>
-            /// Returns an event IEventObservable typed against TBaseEvent for the sub event of eventType. This is useful when you combine mutiple events into a single stream 
+            /// Returns an event IEventObservable typed against TBaseEvent for the sub event of subEventType. This is useful when you combine mutiple events into a single stream 
             /// and care little for the high level type of the event.
             /// </summary>
             /// <typeparam name="TBaseEvent"></typeparam>
-            /// <param name="eventType"></param>
+            /// <param name="subEventType"></param>
             /// <param name="observationStage"></param>
             /// <returns></returns>
-            public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal)
+            public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type subEventType, ObservationStage observationStage = ObservationStage.Normal)
             {
-                Guard.Requires<InvalidOperationException>(typeof(TBaseEvent).IsAssignableFrom(eventType), "Event type {0} must derive from {1}", eventType, typeof(TBaseEvent));
+                Guard.Requires<ArgumentException>(typeof(TBaseEvent).IsAssignableFrom(subEventType), "Event type {0} must derive from {1}", subEventType, typeof(TBaseEvent));
                 return EventObservable.Create<TModel, TBaseEvent, IEventContext>(o =>
                 {
                     _routerGuard.EnsureValid();
-                    var getEventStreamMethod = GetEventObservableMethodInfo.MakeGenericMethod(eventType);
+                    var getEventStreamMethod = GetEventObservableMethodInfo.MakeGenericMethod(subEventType);
                     dynamic observable = getEventStreamMethod.Invoke(this, new object[] { observationStage });
                     return (IDisposable)observable.Observe(o);
                 });
