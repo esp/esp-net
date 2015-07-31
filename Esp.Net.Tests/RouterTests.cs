@@ -476,36 +476,80 @@ namespace Esp.Net
                 }
             }
 
-            public class ExecuteEvent
+            public class ExecuteEvent : RouterTests
             {
                 [Test]
-                public void OnlyAllowsExecuteDuringEventWorkflowStages()
+                public void ThrowsIfExecutedOutsideOfEventLoop()
                 {
-                    Assert.Inconclusive();
+                    AssertEventPublishThrows();
                 }
 
                 [Test]
-                public void ThrowsIfExecuteHandlerRaisesAnotherEvent()
+                public void ThrowsIfCanNotExecutedFromPreProcessor()
                 {
-                    Assert.Inconclusive();
+                    _model1PreEventProcessor.RegisterAction(m => _router.ExecuteEvent(_model1.Id, new Event3()));
+                    AssertEventPublishThrows();
                 }
 
                 [Test]
-                public void ImmediatelyPublishesTheExecutedEventToPreviewObservationStageObservers()
+                public void ThrowsIfCanNotExecutedFromAPostProcessor()
                 {
-                    Assert.Inconclusive();
+                    _model1PostEventProcessor.RegisterAction(m => _router.ExecuteEvent(_model1.Id, new Event3()));
+                    AssertEventPublishThrows();
                 }
 
                 [Test]
-                public void ImmediatelyPublishesTheExecutedEventToNormalObservationStageObservers()
+                public void ThrowsIfCanNotExecutedDuringModelUpdate()
                 {
-                    Assert.Inconclusive();
+                    _model1Controller.RegisterAction(c => _router.ExecuteEvent(_model1.Id, new Event3()));
+                    AssertEventPublishThrows();
                 }
 
                 [Test]
-                public void ImmediatelyPublishesTheExecutedEventToCommittedObservationStageObservers()
+                public void ThrowsIfExecutedAgainstAnotherModel()
                 {
-                    Assert.Inconclusive();
+                    _model1EventProcessor.Event1Details.NormalStage.RegisterAction((m, e) =>
+                    {
+                        _router.ExecuteEvent(_model2.Id, new Event3());
+                    });
+                    AssertEventPublishThrows();
+                }
+
+                [Test]
+                public void ThrowsIfThrowsIfExecutedHandlerRaisesAnotherEvent()
+                {
+                    _model1EventProcessor.Event1Details.NormalStage.RegisterAction((m, e) =>
+                    {
+                        _router.ExecuteEvent(_model1.Id, new Event3());
+                    });
+                    _model1EventProcessor.Event3Details.NormalStage.RegisterAction((m, e) =>
+                    {
+                        _router.ExecuteEvent(_model1.Id, new Event1());
+                    });
+                    AssertEventPublishThrows();
+                }
+
+                [Test]
+                public void ImmediatelyPublishesTheExecutedEventObservers()
+                {
+                    var passed = false;
+                    _model1EventProcessor.Event1Details.NormalStage.RegisterAction((m, e) =>
+                    {
+                        _router.ExecuteEvent(_model1.Id, new Event3());
+                        passed = _model1EventProcessor.Event3Details.PreviewStage.ReceivedEvents.Count == 1;
+                        passed = passed && _model1EventProcessor.Event3Details.NormalStage.ReceivedEvents.Count == 1;
+                        passed = passed && _model1EventProcessor.Event3Details.CommittedStage.ReceivedEvents.Count == 1;
+                    });
+                    _router.PublishEvent(_model1.Id, new Event1());
+                    passed.ShouldBe(true);
+                    _model1PreEventProcessor.InvocationCount.ShouldBe(1);
+                    _model1PostEventProcessor.InvocationCount.ShouldBe(1);
+                }
+
+                private void AssertEventPublishThrows()
+                {
+                    InvalidOperationException ex = Assert.Throws<InvalidOperationException>(() => _router.PublishEvent(_model1.Id, new Event1()));
+                    ex.Message.ShouldContain("You can only execute an event from ");
                 }
             }
 
@@ -1053,6 +1097,11 @@ namespace Esp.Net
         public class Event2 : BaseEvent { }
 
         public class Event3 : BaseEvent { }
+
+        public class AnExecutedEvent
+        {
+            int Payload { get; set; }
+        }
 
         public class StubModelProcessor : IPreEventProcessor<TestModel>, IPostEventProcessor<TestModel>
         {
