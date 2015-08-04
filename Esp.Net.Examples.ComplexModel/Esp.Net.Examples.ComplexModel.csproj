@@ -31,9 +31,24 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>Esp.Net.Examples.ComplexModel.Program</StartupObject>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Reactive.Core">
+      <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Interfaces">
+      <HintPath>..\packages\Rx-Interfaces.2.2.5\lib\net45\System.Reactive.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Linq">
+      <HintPath>..\packages\Rx-Linq.2.2.5\lib\net45\System.Reactive.Linq.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.PlatformServices">
+      <HintPath>..\packages\Rx-PlatformServices.2.2.5\lib\net45\System.Reactive.PlatformServices.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -41,14 +56,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Entities\Events.cs" />
-    <Compile Include="Entities\StructureModel.cs" />
-    <Compile Include="Entities\StructureEventProcessor.cs" />
+    <Compile Include="Controllers\ViewController.cs" />
+    <Compile Include="DisposableBase.cs" />
+    <Compile Include="Model\Entities\ReferenceData\CurrencyPairReferenceData.cs" />
+    <Compile Include="Model\Entities\ReferenceData\IReferenceDataTask.cs" />
+    <Compile Include="Model\Entities\ReferenceData\ReferenceDataTask.cs" />
+    <Compile Include="Model\Entities\Schedule\Schedule.cs" />
+    <Compile Include="Model\Events.cs" />
+    <Compile Include="Model\Entities\StructureModel.cs" />
+    <Compile Include="Model\StructureEventProcessor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Esp.Net\Esp.Net.csproj">
