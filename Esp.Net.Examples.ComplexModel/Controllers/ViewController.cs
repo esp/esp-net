@@ -1,6 +1,6 @@
 ﻿using System;
-using Esp.Net.Examples.ComplexModel.Model;
 using Esp.Net.Examples.ComplexModel.Model.Entities;
+using Esp.Net.Examples.ComplexModel.Model.Events;
 
 namespace Esp.Net.Examples.ComplexModel.Controllers
 {
@@ -24,7 +24,7 @@ namespace Esp.Net.Examples.ComplexModel.Controllers
         {
             AddDisposable(_router.GetModelObservable<StructureModel>(_modelId).Observe(structureModel =>
             {
-                Console.WriteLine(structureModel.ToString());
+                Console.WriteLine("CONTROLLER: model update: {0}", structureModel.ToString());
             }));
         }
 

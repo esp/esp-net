@@ -2,7 +2,7 @@ using System;
 
 namespace Esp.Net.Examples.ComplexModel.Model.Entities.ReferenceData
 {
-    internal class CurrencyPairReferenceData
+    public class CurrencyPairReferenceData
     {
         public CurrencyPairReferenceData(string currencyPair, DateTime[] holidayDates)
         {

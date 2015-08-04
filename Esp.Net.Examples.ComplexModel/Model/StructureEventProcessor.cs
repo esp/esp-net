@@ -1,5 +1,5 @@
-﻿using System;
-using Esp.Net.Examples.ComplexModel.Model.Entities;
+﻿using Esp.Net.Examples.ComplexModel.Model.Entities;
+using Esp.Net.Examples.ComplexModel.Model.Events;
 using Esp.Net.ModelRouter;
 
 namespace Esp.Net.Examples.ComplexModel.Model

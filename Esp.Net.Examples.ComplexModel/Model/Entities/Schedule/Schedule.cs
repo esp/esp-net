@@ -3,7 +3,7 @@ using Esp.Net.Examples.ComplexModel.Model.Entities.ReferenceData;
 
 namespace Esp.Net.Examples.ComplexModel.Model.Entities.Schedule
 {
-    internal class Schedule
+    public class Schedule
     {
         public void SetReferenceData(CurrencyPairReferenceData referenceData)
         {

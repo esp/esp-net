@@ -29,6 +29,7 @@ namespace Esp.Net.Examples.ComplexModel
                 eventProcessor.Start();
 
                 ModelScheduler.Schedule(TimeSpan.FromSeconds(1), () => controller.FakeCurrencyChanged());
+                ModelScheduler.Schedule(TimeSpan.FromSeconds(1), () => controller.FakeNotionalChanged());
             }
             catch (Exception ex)
             {

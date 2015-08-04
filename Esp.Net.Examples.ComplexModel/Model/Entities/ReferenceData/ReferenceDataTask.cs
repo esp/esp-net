@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reactive.Concurrency;
+using Esp.Net.Examples.ComplexModel.Model.Events;
 
 namespace Esp.Net.Examples.ComplexModel.Model.Entities.ReferenceData
 {

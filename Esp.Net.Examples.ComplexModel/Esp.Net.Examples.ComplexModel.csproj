@@ -62,8 +62,10 @@
     <Compile Include="Model\Entities\ReferenceData\IReferenceDataTask.cs" />
     <Compile Include="Model\Entities\ReferenceData\ReferenceDataTask.cs" />
     <Compile Include="Model\Entities\Schedule\Schedule.cs" />
-    <Compile Include="Model\Events.cs" />
+    <Compile Include="Model\Events\CurrencyPairChangedEvent.cs" />
+    <Compile Include="Model\Events\CurrencyPairReferenceDataReceivedEvent.cs" />
     <Compile Include="Model\Entities\StructureModel.cs" />
+    <Compile Include="Model\Events\NotionalChangedEvent.cs" />
     <Compile Include="Model\StructureEventProcessor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
