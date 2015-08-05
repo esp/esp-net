@@ -1,41 +1,36 @@
-﻿using Esp.Net.Examples.ComplexModel.Model.Events;
+﻿using System;
+using Esp.Net.Examples.ComplexModel.Model.Events;
 using Esp.Net.ModelRouter;
 using log4net;
 
 namespace Esp.Net.Examples.ComplexModel.Model
 {
-    internal class StructurePreEventProcessor : IPreEventProcessor<StructureModel>
+    internal class StructureEventProcessor : DisposableBase,  IPreEventProcessor<StructureModel>,  IPostEventProcessor<StructureModel>
     {
-        public void Process(StructureModel model)
-        {
-            model.IncrementVersion();
-        }
-    }
+        private readonly IRouter _router;
+        private readonly Guid _modelId;
 
-    internal class StructureEventProcessor : DisposableBase
-    {
-        private static readonly ILog Log = LogManager.GetLogger(typeof(StructureEventProcessor));
-
-        private readonly IRouter<StructureModel> _router;
-
-        public StructureEventProcessor(IRouter<StructureModel> router)
+        public StructureEventProcessor(IRouter router, Guid modelId)
         {
             _router = router;
+            _modelId = modelId;
         }
 
         public void Start()
         {
-            AddDisposable(_router.GetEventObservable<NotionalChangedEvent>().Observe((m, e) => m.SetNotional(e.Notional)));
-            AddDisposable(_router.GetEventObservable<CurrencyPairChangedEvent>().Observe((m, e, context) => m.SetCurrencyPair(e.CurrencyPair)));
-            AddDisposable(_router.GetEventObservable<CurrencyPairReferenceDataReceivedEvent>().Observe((m, e) => m.ReceiveCurrencyPairReferenceData(e.RefData)));
-            AddDisposable(_router.GetEventObservable<FixingFrequencyChangedEvent>().Observe((m, e) => m.SetFixingFrequency(e.Frequency)));
-            AddDisposable(_router.GetEventObservable<ScheduleResolvedEvent>().Observe((m, e) => m.AddScheduleCoupons(e.Coupons)));
+            AddDisposable(_router.GetEventObservable<StructureModel, NotionalChangedEvent>(_modelId).Observe((m, e) => m.SetNotional(e.Notional)));
+            AddDisposable(_router.GetEventObservable<StructureModel, CurrencyPairChangedEvent>(_modelId).Observe((m, e, context) => m.SetCurrencyPair(e.CurrencyPair)));
+            AddDisposable(_router.GetEventObservable<StructureModel, CurrencyPairReferenceDataReceivedEvent>(_modelId).Observe((m, e) => m.ReceiveCurrencyPairReferenceData(e.RefData)));
+            AddDisposable(_router.GetEventObservable<StructureModel, FixingFrequencyChangedEvent>(_modelId).Observe((m, e) => m.SetFixingFrequency(e.Frequency)));
+            AddDisposable(_router.GetEventObservable<StructureModel, ScheduleResolvedEvent>(_modelId).Observe((m, e) => m.AddScheduleCoupons(e.Coupons)));
         }
-    }
 
-    internal class StructurePostEventProcessor : IPostEventProcessor<StructureModel>
-    {
-        public void Process(StructureModel model)
+        void IPreEventProcessor<StructureModel>.Process(StructureModel model)
+        {
+            model.IncrementVersion();
+        }
+
+        void IPostEventProcessor<StructureModel>.Process(StructureModel model)
         {
             model.Validate();
         }

@@ -5,6 +5,7 @@ using Esp.Net.Examples.ComplexModel.Model;
 using Esp.Net.Examples.ComplexModel.Model.ReferenceData;
 using Esp.Net.Examples.ComplexModel.Model.Schedule;
 using Esp.Net.Examples.ComplexModel.Model.Snapshot;
+using Esp.Net.ModelRouter;
 using Esp.Net.Reactive;
 using log4net;
 using log4net.Appender;
@@ -44,28 +45,33 @@ namespace Esp.Net.Examples.ComplexModel
 
         private void BootstrapSystem()
         {
-            // typically any type creation would be done by a container. It's just done manually here for the example.
+            // Typically any type creation would be done by a container. It's just done manually here for the example.
 
             IRouter router = new Router(_scheduler);
 
+            // Create some gateways that perform async operations and raise their results as events back to the router.
+            // The model will own these.
             IReferenceDataGateway referenceDataTask = new ReferenceDataGateway(router, _scheduler);
             IScheduleGenerationGateway scheduleGenerationGateway = new ScheduleGenerationGateway(router, _scheduler);
 
             var modelId = Guid.NewGuid();
 
+            // Create the model and event processor/s  
             StructureModel model = new StructureModel(modelId, referenceDataTask, scheduleGenerationGateway);
-            router.RegisterModel(modelId, model, new StructurePreEventProcessor(), new StructurePostEventProcessor());
+            // note we have a single event processer here that doesn't pre, process and post processing
+            StructureEventProcessor eventProcessor = new StructureEventProcessor(router, modelId);
+            router.RegisterModel(modelId, model, eventProcessor, eventProcessor);
 
-            StructureEventProcessor eventProcessor = new StructureEventProcessor(router.CreateModelRouter<StructureModel>(modelId));
-
+            // Create a more specialised view of the model for the controller (i.e. the view).
+            // this specialised view (StructureSnapshot) is immutable.
             IModelObservable<StructureSnapshot> modelObservable = router.GetModelObservable<StructureModel>(modelId).Select(m => m.CreateSnapshot());
-
             ViewController controller = new ViewController(modelId, router, modelObservable);
 
+            // Spin up the system
             controller.Start();
             eventProcessor.Start();
 
-            // fake up some users interactions
+            // Fake up some users interactions
             _scheduler.Schedule(TimeSpan.FromSeconds(1), () => controller.FakeCurrencyChanged());
             _scheduler.Schedule(TimeSpan.FromSeconds(2), () => controller.FakeNotionalChanged());
             _scheduler.Schedule(TimeSpan.FromSeconds(2), () => controller.FakeFixingFrequencyChanged());
