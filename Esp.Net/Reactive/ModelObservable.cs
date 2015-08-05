@@ -78,6 +78,23 @@ namespace Esp.Net.Reactive
                 }
             );
         }
+
+        public static IModelObservable<TSubModel> Select<TModel, TSubModel>(this IModelObservable<TModel> source, Func<TModel, TSubModel> selector)
+        {
+            return Create<TSubModel>(
+                o =>
+                {
+                    var disposable = source.Observe(
+                        i =>
+                        {
+                            o.OnNext(selector(i));
+                        },
+                        o.OnCompleted
+                    );
+                    return disposable;
+                }
+            );
+        }
     }
 
     internal class ModelObservable<T> : IModelObservable<T>

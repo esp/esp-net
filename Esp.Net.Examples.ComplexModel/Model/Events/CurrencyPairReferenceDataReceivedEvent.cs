@@ -1,4 +1,4 @@
-﻿using Esp.Net.Examples.ComplexModel.Model.Entities.ReferenceData;
+﻿using Esp.Net.Examples.ComplexModel.Model.ReferenceData;
 
 namespace Esp.Net.Examples.ComplexModel.Model.Events
 {

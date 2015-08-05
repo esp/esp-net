@@ -1,41 +1,56 @@
 ﻿using System;
-using Esp.Net.Examples.ComplexModel.Model.Entities;
 using Esp.Net.Examples.ComplexModel.Model.Events;
+using Esp.Net.Examples.ComplexModel.Model.Schedule;
+using Esp.Net.Examples.ComplexModel.Model.Snapshot;
+using Esp.Net.Reactive;
 
 namespace Esp.Net.Examples.ComplexModel.Controllers
 {
     internal class ViewController : DisposableBase
     {
-        private readonly Guid _modelId;
-        private readonly IRouter _router;
+        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(typeof(ViewController));
 
-        public ViewController(Guid modelId, IRouter router)
+        private readonly Guid _modelId;
+        private readonly IEventPublisher _eventPublisher;
+        private readonly IModelObservable<StructureSnapshot> _modelObservable;
+
+        public ViewController(Guid modelId, IEventPublisher eventPublisher, IModelObservable<StructureSnapshot> modelObservable)
         {
             _modelId = modelId;
-            _router = router;
+            _eventPublisher = eventPublisher;
+            _modelObservable = modelObservable;
         }
 
         public void Start()
         {
-            ObserveModel();
+            SyncViewWithModel();
         }
 
-        private void ObserveModel()
+        private void SyncViewWithModel()
         {
-            AddDisposable(_router.GetModelObservable<StructureModel>(_modelId).Observe(structureModel =>
+            AddDisposable(_modelObservable.Observe(structureSnapshot =>
             {
-                Console.WriteLine("CONTROLLER: model update: {0}", structureModel.ToString());
+                // sync update here 
+                Log.DebugFormat("Model update received: {0}", structureSnapshot);
             }));
         }
 
         public void FakeCurrencyChanged()
         {
-            _router.PublishEvent(_modelId, new CurrencyPairChangedEvent("EURUSD"));
+            // this method would be called by the view
+            _eventPublisher.PublishEvent(_modelId, new CurrencyPairChangedEvent("EURUSD"));
         }
 
         public void FakeNotionalChanged()
         {
-            _router.PublishEvent(_modelId, new NotionalChangedEvent(1.2354m));
+            // this method would be called by the view
+            _eventPublisher.PublishEvent(_modelId, new NotionalChangedEvent(1.2354m));
+        }
+
+        public void FakeFixingFrequencyChanged()
+        {
+            // this method would be called by the view
+            _eventPublisher.PublishEvent(_modelId, new FixingFrequencyChangedEvent(FixingFrequency.Monthly));
         }
     }
 }

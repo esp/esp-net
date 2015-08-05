@@ -35,6 +35,10 @@
     <StartupObject>Esp.Net.Examples.ComplexModel.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="log4net, Version=1.2.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Reactive.Core">
@@ -58,17 +62,27 @@
   <ItemGroup>
     <Compile Include="Controllers\ViewController.cs" />
     <Compile Include="DisposableBase.cs" />
-    <Compile Include="Model\Entities\ReferenceData\CurrencyPairReferenceData.cs" />
-    <Compile Include="Model\Entities\ReferenceData\IReferenceDataTask.cs" />
-    <Compile Include="Model\Entities\ReferenceData\ReferenceDataTask.cs" />
-    <Compile Include="Model\Entities\Schedule\Schedule.cs" />
+    <Compile Include="Model\Schedule\IScheduleGenerationGateway.cs" />
+    <Compile Include="Model\ReferenceData\CurrencyPairReferenceData.cs" />
+    <Compile Include="Model\ReferenceData\IReferenceDataGateway.cs" />
+    <Compile Include="Model\ReferenceData\ReferenceDataGateway.cs" />
+    <Compile Include="Model\Schedule\Coupon.cs" />
+    <Compile Include="Model\Schedule\FixingFrequency.cs" />
+    <Compile Include="Model\Schedule\Schedule.cs" />
+    <Compile Include="Model\Schedule\ScheduleGenerationGateway.cs" />
+    <Compile Include="Model\Events\FixingFrequencyChangedEvent.cs" />
+    <Compile Include="Model\Events\ScheduleResolvedEvent.cs" />
+    <Compile Include="Model\Snapshot\Schedule\CouponSnapshot.cs" />
+    <Compile Include="Model\Snapshot\Schedule\ScheduleSnapshot.cs" />
+    <Compile Include="Model\Snapshot\StructureSnapshot.cs" />
     <Compile Include="Model\Events\CurrencyPairChangedEvent.cs" />
     <Compile Include="Model\Events\CurrencyPairReferenceDataReceivedEvent.cs" />
-    <Compile Include="Model\Entities\StructureModel.cs" />
+    <Compile Include="Model\StructureModel.cs" />
     <Compile Include="Model\Events\NotionalChangedEvent.cs" />
     <Compile Include="Model\StructureEventProcessor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RouterScheduler.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

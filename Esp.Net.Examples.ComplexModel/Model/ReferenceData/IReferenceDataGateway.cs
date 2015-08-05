@@ -1,8 +1,8 @@
 using System;
 
-namespace Esp.Net.Examples.ComplexModel.Model.Entities.ReferenceData
+namespace Esp.Net.Examples.ComplexModel.Model.ReferenceData
 {
-    public interface IReferenceDataTask
+    public interface IReferenceDataGateway
     {
         void BeginGetReferenceDataForCurrencyPair(Guid modelId, string currencyPair);
     }

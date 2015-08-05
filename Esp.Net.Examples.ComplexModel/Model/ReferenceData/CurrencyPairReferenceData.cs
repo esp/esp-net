@@ -1,6 +1,6 @@
 using System;
 
-namespace Esp.Net.Examples.ComplexModel.Model.Entities.ReferenceData
+namespace Esp.Net.Examples.ComplexModel.Model.ReferenceData
 {
     public class CurrencyPairReferenceData
     {
