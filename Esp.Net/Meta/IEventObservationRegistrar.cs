@@ -14,12 +14,11 @@
 // limitations under the License.
 #endregion
 
-namespace Esp.Net
+namespace Esp.Net.Meta
 {
-    public enum ObservationStage
+    internal interface IEventObservationRegistrar
     {
-        Preview,
-        Normal,
-        Committed
+        void IncrementRegistration<TEvent>();
+        void DecrementRegistration<TEvent>();
     }
 }

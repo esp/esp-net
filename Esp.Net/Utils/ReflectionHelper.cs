@@ -15,34 +15,23 @@
 #endregion
 
 using System;
+using System.Linq;
+using System.Reflection;
 
-namespace Esp.Net
+namespace Esp.Net.Utils
 {
-    internal class EventContext : IEventContext
+    internal class ReflectionHelper
     {
-        private bool _isCanceled;
-        private bool _isCommitted;
-
-        public bool IsCanceled 
+        public static MethodInfo GetGenericMethodByArgumentCount(Type declaringType, string methodName, int numberOfTypeArguments, int numberOfArguments)
         {
-            get { return _isCanceled; }
-        }
-
-        public bool IsCommitted
-        {
-            get { return _isCommitted; }
-        }
-
-        public void Cancel()
-        {
-            if(_isCanceled) throw new Exception("Already canceled");
-            _isCanceled = true;
-        }
-        
-        public void Commit()
-        {
-            if (_isCommitted) throw new Exception("Already committed");
-            _isCommitted = true;
-        }
+            var query =
+                from m in declaringType.GetMethods()
+                where
+                    m.Name == methodName &&
+                    m.GetGenericArguments().Length == numberOfTypeArguments &&
+                    m.GetParameters().Length == numberOfArguments
+                select m;
+            return query.Single();
+        } 
     }
 }

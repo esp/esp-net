@@ -1,4 +1,4 @@
-﻿#region copyright
+#region copyright
 // Copyright 2015 Keith Woods
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,12 +14,9 @@
 // limitations under the License.
 #endregion
 
-namespace Esp.Net
+namespace Esp.Net.ModelRouter
 {
-    public enum ObservationStage
+    public interface IRouter<out TModel> : IModelSubject<TModel>, IEventSubject<TModel>, IEventPublisher
     {
-        Preview,
-        Normal,
-        Committed
     }
 }

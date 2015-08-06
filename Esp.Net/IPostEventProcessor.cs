@@ -16,10 +16,8 @@
 
 namespace Esp.Net
 {
-    public enum ObservationStage
+    public interface IPostEventProcessor<in TModel>
     {
-        Preview,
-        Normal,
-        Committed
+        void Process(TModel model);
     }
 }

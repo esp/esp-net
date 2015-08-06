@@ -16,38 +16,37 @@
 
 using System;
 
-namespace Esp.Net.Reactive
+namespace Esp.Net.Disposables
 {
-    public interface IModelObserver<in T>
+    internal class EspDisposable : IDisposable
     {
-        void OnNext(T item);
-        void OnCompleted();
-    }
+        public static IDisposable Empty { get; private set; }
 
-    internal class ModelObserver<T> : IModelObserver<T>
-    {
-        private readonly Action<T> _onNext;
-        private readonly Action _onCompleted;
-
-        public ModelObserver(Action<T> onNext)
-            : this(onNext, null)
+        static EspDisposable()
         {
+            Empty = new EspDisposable(() => { /* Noop*/ });
         }
 
-        public ModelObserver(Action<T> onNext, Action onCompleted)
+        public static IDisposable Create(Action action)
         {
-            _onNext = onNext;
-            _onCompleted = onCompleted;
+            return new EspDisposable(action);
         }
 
-        public void OnNext(T item)
+        private readonly Action _action;
+
+        private EspDisposable(Action action)
         {
-            _onNext(item);
+            if (action == null)
+            {
+                throw new ArgumentNullException("action", "Action must not be null.");
+            }
+
+            _action = action;
         }
 
-        public void OnCompleted()
+        public void Dispose()
         {
-            if (_onCompleted != null) _onCompleted();
+            _action();
         }
     }
 }

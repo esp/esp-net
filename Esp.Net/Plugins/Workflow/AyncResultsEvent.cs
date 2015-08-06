@@ -1,4 +1,4 @@
-﻿#region copyright
+#region copyright
 // Copyright 2015 Keith Woods
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,12 +14,22 @@
 // limitations under the License.
 #endregion
 
-namespace Esp.Net
+#if ESP_EXPERIMENTAL
+using System;
+
+namespace Esp.Net.Plugins.Workflow
 {
-    public enum ObservationStage
+    internal class AyncResultsEvent<TResult> : IIdentifiableEvent
     {
-        Preview,
-        Normal,
-        Committed
+        public AyncResultsEvent(TResult results, Guid id)
+        {
+            Result = results;
+            Id = id;
+        }
+
+        public TResult Result { get; private set; }
+
+        public Guid Id { get; private set; }
     }
 }
+#endif

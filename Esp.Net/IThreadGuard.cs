@@ -1,4 +1,4 @@
-﻿#region copyright
+#region copyright
 // Copyright 2015 Keith Woods
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,10 +16,8 @@
 
 namespace Esp.Net
 {
-    public enum ObservationStage
+    public interface IThreadGuard
     {
-        Preview,
-        Normal,
-        Committed
+        bool CheckAccess();
     }
 }

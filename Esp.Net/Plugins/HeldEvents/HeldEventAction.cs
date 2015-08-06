@@ -14,12 +14,13 @@
 // limitations under the License.
 #endregion
 
-namespace Esp.Net
+#if ESP_EXPERIMENTAL
+namespace Esp.Net.Plugins.HeldEvents
 {
-    public enum ObservationStage
+    public enum HeldEventAction
     {
-        Preview,
-        Normal,
-        Committed
+        Release,
+        Ignore
     }
 }
+#endif

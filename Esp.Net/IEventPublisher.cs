@@ -1,4 +1,4 @@
-﻿#region copyright
+#region copyright
 // Copyright 2015 Keith Woods
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,12 +14,19 @@
 // limitations under the License.
 #endregion
 
+using System;
+
 namespace Esp.Net
 {
-    public enum ObservationStage
+    public interface IEventPublisher
     {
-        Preview,
-        Normal,
-        Committed
+        void PublishEvent<TEvent>(Guid modelId, TEvent @event);
+        void PublishEvent(Guid modelId, object @event);
+
+        void ExecuteEvent<TEvent>(Guid modelId, TEvent @event);
+        void ExecuteEvent(Guid modelId, object @event);
+
+        void BroadcastEvent<TEvent>(TEvent @event);
+        void BroadcastEvent(object @event);
     }
 }

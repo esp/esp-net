@@ -14,12 +14,18 @@
 // limitations under the License.
 #endregion
 
-namespace Esp.Net
+using System;
+using NUnit.Framework;
+
+namespace Esp.Net.Disposables
 {
-    public enum ObservationStage
+    [TestFixture]
+    public sealed class EspDisposableTests
     {
-        Preview,
-        Normal,
-        Committed
+        [Test]
+        public void ShouldThrowWithNullAction()
+        {
+            Assert.Throws<ArgumentNullException>(() => EspDisposable.Create(null));
+        }
     }
 }

@@ -1,4 +1,4 @@
-﻿#region copyright
+#region copyright
 // Copyright 2015 Keith Woods
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,12 +14,13 @@
 // limitations under the License.
 #endregion
 
+using System;
+using Esp.Net.Reactive;
+
 namespace Esp.Net
 {
-    public enum ObservationStage
+    public interface IModelSubject
     {
-        Preview,
-        Normal,
-        Committed
+        IModelObservable<TModel> GetModelObservable<TModel>(Guid modelId);
     }
 }

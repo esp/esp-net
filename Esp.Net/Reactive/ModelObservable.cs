@@ -13,14 +13,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #endregion
+
 using System;
-using Esp.Net.Model;
 
 namespace Esp.Net.Reactive
 {
     public interface IModelObservable<out T>
     {
         IDisposable Observe(Action<T> onNext);
+        IDisposable Observe(Action<T> onNext, Action onCompleted);
         IDisposable Observe(IModelObserver<T> observer);
     }
 
@@ -43,7 +44,8 @@ namespace Esp.Net.Reactive
                             {
                                 o.OnNext(i);
                             }
-                        }
+                        },
+                        o.OnCompleted
                     );
                     return disposable;
                 }
@@ -69,7 +71,8 @@ namespace Esp.Net.Reactive
                             {
                                 disposable.Dispose();
                             }
-                        }
+                        },
+                        o.OnCompleted
                     );
                     return disposable;
                 }
@@ -89,6 +92,12 @@ namespace Esp.Net.Reactive
         public IDisposable Observe(Action<T> onNext)
         {
             var streamObserver = new ModelObserver<T>(onNext);
+            return Observe(streamObserver);
+        }
+
+        public IDisposable Observe(Action<T> onNext, Action onCompleted)
+        {
+            var streamObserver = new ModelObserver<T>(onNext, onCompleted);
             return Observe(streamObserver);
         }
 

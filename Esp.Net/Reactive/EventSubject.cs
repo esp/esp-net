@@ -13,29 +13,57 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #endregion
+
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using Esp.Net.Model;
+using Esp.Net.Disposables;
+using Esp.Net.Meta;
 
 namespace Esp.Net.Reactive
 {
     internal class EventSubject<TModel, TEvent, TContext> : IEventObservable<TModel, TEvent, TContext>, IEventObserver<TModel, TEvent, TContext>
     {
-        readonly List<IEventObserver<TModel, TEvent, TContext>> _observers = new List<IEventObserver<TModel, TEvent, TContext>>();
+        private readonly IEventObservationRegistrar _observationRegistrar;
+        private readonly List<IEventObserver<TModel, TEvent, TContext>> _observers = new List<IEventObserver<TModel, TEvent, TContext>>();
+        private bool _hasCompleted = false;
+
+        public EventSubject(IEventObservationRegistrar observationRegistrar)
+        {
+            _observationRegistrar = observationRegistrar;
+        }
 
         public void OnNext(TModel model, TEvent @event, TContext context)
         {
             var observers = _observers.ToArray();
             foreach(var observer in observers) 
 			{
+                if (_hasCompleted) break;
                 observer.OnNext(model, @event, context);
 			}
+        }
+
+        public void OnCompleted()
+        {
+            if (!_hasCompleted)
+            {
+                _hasCompleted = true;
+                var observers = _observers.ToArray();
+                foreach (var observer in observers)
+                {
+                    observer.OnCompleted();
+                }
+            }
         }
 
         public IDisposable Observe(ObserveAction<TModel, TEvent> onNext)
         {
             var observer = new EventObserver<TModel, TEvent, TContext>(onNext);
+            return Observe(observer);
+        }
+
+        public IDisposable Observe(ObserveAction<TModel, TEvent> onNext, Action onCompleted)
+        {
+            var observer = new EventObserver<TModel, TEvent, TContext>(onNext, onCompleted);
             return Observe(observer);
         }
 
@@ -45,10 +73,21 @@ namespace Esp.Net.Reactive
             return Observe(observer);
         }
 
+        public IDisposable Observe(ObserveAction<TModel, TEvent, TContext> onNext, Action onCompleted)
+        {
+            var observer = new EventObserver<TModel, TEvent, TContext>(onNext, onCompleted);
+            return Observe(observer);
+        }
+
         public IDisposable Observe(IEventObserver<TModel, TEvent, TContext> observer)
         {
             _observers.Add(observer);
-            return EspDisposable.Create(() =>_observers.Remove(observer));
+            _observationRegistrar.IncrementRegistration<TEvent>();
+            return EspDisposable.Create(() =>
+            {
+                _observers.Remove(observer);
+                _observationRegistrar.DecrementRegistration<TEvent>();
+            });
         }
     }
 }

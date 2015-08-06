@@ -13,106 +13,202 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #endregion
+
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Esp.Net.Meta;
+using Esp.Net.ModelRouter;
 using Esp.Net.Reactive;
+using Esp.Net.Utils;
 
-namespace Esp.Net
+namespace Esp.Net   
 {
-    public interface IRouter<out TModel> : IEventPublisher
+    public partial class Router : IRouter
     {
-        IModelObservable<TModel> GetModelObservable();
-        IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal);
-        IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TSubEventType, TBaseEvent>(ObservationStage observationStage = ObservationStage.Normal) where TSubEventType : TBaseEvent;
-        IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal);
-    }
-
-    public interface IEventPublisher
-    {
-        void PublishEvent<TEvent>(TEvent @event);
-    }
-
-    public class Router<TModel> : IRouter<TModel>
-    {
-        private readonly TModel _model;
-        private readonly IRouterScheduler _scheduler;
-        private readonly IPreEventProcessor<TModel> _preEventProcessor;
-        private readonly IPostEventProcessor<TModel> _postEventProcessor;
-        private readonly Queue<dynamic> _eventDispatchQueue = new Queue<dynamic>();
-        private readonly Dictionary<Type, dynamic> _eventSubjects = new Dictionary<Type, dynamic>();
+        private readonly Dictionary<Guid, IModelEntry> _modelsById = new Dictionary<Guid, IModelEntry>();
         private readonly State _state = new State();
-        private readonly ModelSubject<TModel> _modelUpdateSubject = new ModelSubject<TModel>();
-        private static readonly MethodInfo GetEventObservableMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router<TModel>), "GetEventObservable", 1, 1);
+        private readonly RouterGuard _routerGuard;
+        private readonly ModelsEventsObservations _modelsEventsObservations;
+        private static readonly MethodInfo PublishEventMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router), "PublishEvent", 1, 2);
+        private static readonly MethodInfo BroadcastEventMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router), "BroadcastEvent", 1, 1);
 
-        public Router(TModel model, IRouterScheduler scheduler)
-            : this(model, scheduler, null, null)
+        public Router(IThreadGuard threadGuard)
         {
+            Guard.Requires<ArgumentNullException>(threadGuard != null, "threadGuard can not be null");
+            _routerGuard = new RouterGuard(_state, threadGuard);
+            _modelsEventsObservations = new ModelsEventsObservations(threadGuard);
         }
 
-        public Router(TModel model, IRouterScheduler scheduler, IPreEventProcessor<TModel> preEventProcessor)
-            : this(model, scheduler, preEventProcessor, null)
+        public IEventsObservationRegistrar EventsObservationRegistrar
         {
+            get
+            {
+                return _modelsEventsObservations;
+            }
         }
 
-        public Router(TModel model, IRouterScheduler scheduler, IPostEventProcessor<TModel> postEventProcessor)
-            : this(model, scheduler, null, postEventProcessor)
+        public void RegisterModel<TModel>(Guid modelId, TModel model)
         {
+            RegisterModel(modelId, model, null, null);
         }
 
-        public Router(TModel model, IRouterScheduler scheduler, IPreEventProcessor<TModel> preEventProcessor, IPostEventProcessor<TModel> postEventProcessor)
+        public void RegisterModel<TModel>(Guid modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor)
         {
-            _model = model;
-            _scheduler = scheduler;
-            _preEventProcessor = preEventProcessor;
-            _postEventProcessor = postEventProcessor;
+            Guard.Requires<ArgumentNullException>(preEventProcessor != null, "preEventProcessor can not be null");
+            RegisterModel(modelId, model, preEventProcessor, null);
         }
 
-        public void PublishEvent<TEvent>(TEvent @event)
+        public void RegisterModel<TModel>(Guid modelId, TModel model, IPostEventProcessor<TModel> postEventProcessor)
         {
-            ThrowIfHalted();
-            ThrowIfInvalidThread();
-            _eventDispatchQueue.Enqueue(ProcessEvent(@event));
-            PurgeEventQueue();
+            Guard.Requires<ArgumentNullException>(postEventProcessor != null, "postEventProcessor can not be null");
+            RegisterModel(modelId, model, null, postEventProcessor);
         }
 
-        private void PurgeEventQueue()
+        public void RegisterModel<TModel>(Guid modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor, IPostEventProcessor<TModel> postEventProcessor)
+        {
+            Guard.Requires<ArgumentException>(modelId != Guid.Empty, "modelId can not be Guid.Empty");
+            Guard.Requires<ArgumentNullException>(model != null, "model can not be null");
+            _routerGuard.EnsureValid();
+            Guard.Requires<ArgumentException>(!_modelsById.ContainsKey(modelId), "modelId {0} already registered", modelId);
+            var entry = new ModelEntry<TModel>(
+                modelId, 
+                model, 
+                preEventProcessor, 
+                postEventProcessor, 
+                _routerGuard,
+                _modelsEventsObservations.CreateForModel(modelId),
+                new ModelChangedEventPublisher(this)
+            );
+            _modelsById.Add(modelId, entry);
+        }
+
+        public void RemoveModel(Guid modelId)
+        {
+            _routerGuard.EnsureValid();
+            IModelEntry modelEntry;
+            if (!_modelsById.TryGetValue(modelId, out modelEntry)) throw new ArgumentException(string.Format("Model with id {0} not registered", modelId));
+            _modelsById.Remove(modelId);
+            modelEntry.OnRemoved();
+        }
+
+        public void PublishEvent<TEvent>(Guid modelId, TEvent @event)
+        {
+            _routerGuard.EnsureValid();
+            var modelEntry = _modelsById[modelId];
+            modelEntry.TryEnqueue(@event);
+            PurgeEventQueues();
+        }
+
+        public void PublishEvent(Guid modelId, object @event)
+        {
+            _routerGuard.EnsureValid();
+            var publishEventMethod = PublishEventMethodInfo.MakeGenericMethod(@event.GetType());
+            publishEventMethod.Invoke(this, new object[] { modelId, @event });
+        }
+
+        public void ExecuteEvent<TEvent>(Guid modelId, TEvent @event)
+        {
+            throw new NotImplementedException();
+//            _routerGuard.EnsureValid();
+//            var canExecute = _state.CurrentStatus == Status.EventProcessorDispatch;
+//            Guard.Requires<InvalidOperationException>(canExecute, "You can only execute an event from within the observer passed to IEventObservable.Observe(IEventObserver) and when the router is within an existing event loop.");
+            
+        }
+
+        public void ExecuteEvent(Guid modelId, object @event)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void BroadcastEvent<TEvent>(TEvent @event)
+        {
+            _routerGuard.EnsureValid();
+            foreach (IModelEntry modelEntry in _modelsById.Values)
+            {
+                modelEntry.TryEnqueue(@event);
+            }
+            PurgeEventQueues();
+        }
+
+        public void BroadcastEvent(object @event)
+        {
+            _routerGuard.EnsureValid();
+            var publishEventMethod = BroadcastEventMethodInfo.MakeGenericMethod(@event.GetType());
+            publishEventMethod.Invoke(this, new object[] { @event });
+        }
+
+        public IModelObservable<TModel> GetModelObservable<TModel>(Guid modelId)
+        {
+            Guard.Requires<ArgumentException>(modelId != Guid.Empty, "modelId can not be Guid.Empty");
+            _routerGuard.EnsureValid();
+            IModelEntry<TModel> entry = GetModelEntry<TModel>(modelId);
+            return entry.GetModelObservable();
+        }
+
+        public IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TModel, TEvent>(Guid modelId, ObservationStage observationStage = ObservationStage.Normal)
+        {
+            _routerGuard.EnsureValid();
+            IModelEntry<TModel> entry = GetModelEntry<TModel>(modelId);
+            return entry.GetEventObservable<TEvent>(observationStage);
+        }
+
+        public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TSubEventType, TBaseEvent>(Guid modelId, ObservationStage observationStage = ObservationStage.Normal) where TSubEventType : TBaseEvent
+        {
+            _routerGuard.EnsureValid();
+            IModelEntry<TModel> entry = GetModelEntry<TModel>(modelId);
+            return entry.GetEventObservable<TSubEventType, TBaseEvent>(observationStage);
+        }
+
+        public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TBaseEvent>(Guid modelId, Type subEventType, ObservationStage observationStage = ObservationStage.Normal)
+        {
+            _routerGuard.EnsureValid();
+            IModelEntry<TModel> entry = GetModelEntry<TModel>(modelId);
+            return entry.GetEventObservable<TBaseEvent>(subEventType, observationStage);
+        }
+
+        public IRouter<TModel> CreateModelRouter<TModel>(Guid modelId)
+        {
+            _routerGuard.EnsureValid();
+            return new ModelRouter<TModel>(modelId, this);
+        }
+
+        private void PurgeEventQueues()
         {
             if (_state.CurrentStatus == Status.Idle)
             {
                 try
                 {
-                    bool hasEvents = _eventDispatchQueue.Count > 0;
-
-                    while (hasEvents)
+                    IModelEntry modelEntry = GetNextModelEntryWithEvents();
+                    while (modelEntry != null)
                     {
-                        bool wasDispatched = false;
-                        while (hasEvents)
+                        var changedModels = new Dictionary<Guid, IModelEntry>();
+                        while (modelEntry != null)
                         {
                             _state.MoveToPreProcessing();
-                            if (_preEventProcessor != null) _preEventProcessor.Process(_model);
-                            _state.MoveToEventDispatch();
-                            while (hasEvents)
+                            modelEntry.RunPreProcessor();
+                            if (!modelEntry.IsRemoved)
                             {
-                                var dispatchAction = _eventDispatchQueue.Dequeue();
-                                var wasDispatched1 = dispatchAction();
-                                if (!wasDispatched && wasDispatched1) wasDispatched = true;
-                                hasEvents = _eventDispatchQueue.Count > 0;
+                                _state.MoveToEventDispatch();
+                                modelEntry.PurgeEventQueue();
+                                if (!modelEntry.IsRemoved)
+                                {
+                                    _state.MoveToPostProcessing();
+                                    modelEntry.RunPostProcessor();
+                                }
                             }
-                            _state.MoveToPostProcessing();
-                            if (_postEventProcessor != null) _postEventProcessor.Process(_model);
-                            hasEvents = _eventDispatchQueue.Count > 0;
+                            modelEntry.BroadcastModelChangedEvent();
+                            if (!changedModels.ContainsKey(modelEntry.Id))
+                                changedModels.Add(modelEntry.Id, modelEntry);
+                            modelEntry = GetNextModelEntryWithEvents();
                         }
                         _state.MoveToDispatchModelUpdates();
-                        if (wasDispatched)
+                        foreach (IModelEntry changedModelEntry in changedModels.Values)
                         {
-                            var cloneable = _model as ICloneable<TModel>;
-                            TModel modelToDispatch = cloneable == null 
-                                ? _model 
-                                : cloneable.Clone();
-                            _modelUpdateSubject.OnNext(modelToDispatch);
+                            if (!changedModelEntry.IsRemoved)
+                                changedModelEntry.DispatchModel();
                         }
-                        hasEvents = _eventDispatchQueue.Count > 0;
+                        modelEntry = GetNextModelEntryWithEvents();
                     }
                     _state.MoveToIdle();
                 }
@@ -124,200 +220,58 @@ namespace Esp.Net
             }
         }
 
-        public IModelObservable<TModel> GetModelObservable()
+        private IModelEntry GetNextModelEntryWithEvents()
         {
-            ThrowIfHalted();
-            return ModelObservable.Create<TModel>(o =>
+            IModelEntry modelEntry = null;
+            foreach (IModelEntry entry in _modelsById.Values)
             {
-                ThrowIfHalted();
-                ThrowIfInvalidThread();
-                return _modelUpdateSubject.Observe(o);
-            });
-        }
-
-        /// <summary>
-        /// Returns an event IEventObservable typed against TBaseEvent for the sub event of eventType. This is useful when you combine mutiple events into a single stream 
-        /// and care little for the high level type of the event.
-        /// </summary>
-        /// <typeparam name="TSubEventType"></typeparam>
-        /// <typeparam name="TBaseEvent"></typeparam>
-        /// <param name="observationStage"></param>
-        /// <returns></returns>
-        public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TSubEventType, TBaseEvent>(ObservationStage observationStage = ObservationStage.Normal)
-            where TSubEventType : TBaseEvent 
-        {
-            return GetEventObservable<TBaseEvent>(typeof (TSubEventType));
-        }
-
-        /// <summary>
-        /// Returns an event IEventObservable typed against TBaseEvent for the sub event of eventType. This is useful when you combine mutiple events into a single stream 
-        /// and care little for the high level type of the event.
-        /// </summary>
-        /// <typeparam name="TBaseEvent"></typeparam>
-        /// <param name="eventType"></param>
-        /// <param name="observationStage"></param>
-        /// <returns></returns>
-        public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal)
-        {
-            ThrowIfHalted();
-            Guard.Requires<InvalidOperationException>(typeof(TBaseEvent).IsAssignableFrom(eventType), "Event type {0} must derive from {1}", eventType, typeof(TBaseEvent));
-            return EventObservable.Create<TModel, TBaseEvent, IEventContext>(o =>
-            {
-
-                ThrowIfHalted();
-                ThrowIfInvalidThread();
-                var getEventStreamMethod = GetEventObservableMethodInfo.MakeGenericMethod(eventType);
-                dynamic observable = getEventStreamMethod.Invoke(this, new object[] { observationStage });
-                return (IDisposable)observable.Observe(o);
-            });
-        }
-
-        /// <summary>
-        /// Returns an IEventObservable that will yield events of type TEvent when observed.
-        /// </summary>
-        /// <typeparam name="TEvent">Type type of event to observe</typeparam>
-        /// <param name="observationStage">The stage in the event processing workflow you wish to observe at</param>
-        /// <returns></returns>
-        public IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal)
-        {
-            ThrowIfHalted();
-            return EventObservable.Create<TModel, TEvent, IEventContext>(o =>
-            {
-                ThrowIfHalted();
-                ThrowIfInvalidThread();
-                EventSubjects<TEvent> eventSubjects;
-                if (!_eventSubjects.ContainsKey(typeof (TEvent)))
+                if (entry.HadEvents)
                 {
-                    eventSubjects = new EventSubjects<TEvent>();
-                    _eventSubjects[typeof (TEvent)] = eventSubjects;
+                    modelEntry = entry;
+                    break;
                 }
-                else
+            }
+            return modelEntry;
+        }
+
+        private IModelEntry<TModel> GetModelEntry<TModel>(Guid modelId)
+        {
+            IModelEntry entry;
+            if (!_modelsById.TryGetValue(modelId, out entry))
+            {
+                throw new InvalidOperationException(string.Format("Model with id [{0}] isn't registered", modelId));
+            }
+            IModelEntry<TModel> result;
+            try
+            {
+                result = (IModelEntry<TModel>) entry;
+            }
+            catch (InvalidCastException)
+            {
+                throw new InvalidOperationException(string.Format("Model with id [{0}] is not registered against model of type [{1}]. Please ensure you're using the same model type that was registered against this id.", modelId, typeof(TModel).FullName));
+            }
+            return result;
+        }
+
+        // Having this type and IModelChangedEventPublisher is a bit of a 'roundabout' way of 
+        // publishing model changed events. However it removes the need to use reflection to 
+        // infer the closed ModelChangedEvent<TModel> type so is a bit more efficient.
+        private class ModelChangedEventPublisher : IModelChangedEventPublisher
+        {
+            private readonly Router _parent;
+
+            public ModelChangedEventPublisher(Router parent)
+            {
+                _parent = parent;
+            }
+
+            public void BroadcastEvent<TModel>(ModelChangedEvent<TModel> @event)
+            {
+                foreach (IModelEntry modelEntry in _parent._modelsById.Values)
                 {
-                    eventSubjects = (EventSubjects<TEvent>)_eventSubjects[typeof(TEvent)];
+                    if (modelEntry.Id != @event.ModelId) modelEntry.TryEnqueue(@event);
                 }
-                EventSubject<TModel, TEvent, IEventContext> subject;
-                switch (observationStage)
-                {
-                    case ObservationStage.Preview:
-                        subject = eventSubjects.PreviewSubject;
-                        break;
-                    case ObservationStage.Normal:
-                        subject = eventSubjects.NormalSubject;
-                        break;
-                    case ObservationStage.Committed:
-                        subject = eventSubjects.CommittedSubject;
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException("observationStage " + observationStage + " not supported", observationStage, null);
-                }
-                return subject.Observe(o);
-            });
-        }
-
-        private Func<bool> ProcessEvent<TEvent>(TEvent @event)
-        {
-            return () =>
-            {
-                dynamic eventSubjects;
-                if (_eventSubjects.TryGetValue(typeof (TEvent), out eventSubjects))
-                {
-                    var eventContext = new EventContext();
-                    eventSubjects.PreviewSubject.OnNext(_model, @event, eventContext);
-                    if (!eventContext.IsCanceled)
-                    {
-                        eventSubjects.NormalSubject.OnNext(_model, @event, eventContext);
-                        if (eventContext.IsCommitted)
-                        {
-                            eventSubjects.CommittedSubject.OnNext(_model, @event, eventContext);
-                        }
-                    }
-                    return true;
-                }
-                return false;
-            };
-        }
-
-        private void ThrowIfHalted()
-        {
-            if (_state.CurrentStatus == Status.Halted)
-            {
-                throw _state.HaltingException;
             }
-        }
-
-        private void ThrowIfInvalidThread()
-        {
-            if(!_scheduler.CheckAccess())
-            {
-                throw new InvalidOperationException("Router called on invalid thread");
-            }
-        }
-
-        private class EventSubjects<TEvent>
-        {
-            public EventSubjects()
-            {
-                PreviewSubject = new EventSubject<TModel, TEvent, IEventContext>();
-                NormalSubject = new EventSubject<TModel, TEvent, IEventContext>();
-                CommittedSubject = new EventSubject<TModel, TEvent, IEventContext>();
-            }
-
-            public EventSubject<TModel, TEvent, IEventContext> PreviewSubject { get; private set; }
-            public EventSubject<TModel, TEvent, IEventContext> NormalSubject { get; private set; }
-            public EventSubject<TModel, TEvent, IEventContext> CommittedSubject { get; private set; }
-        }
-
-        private class State
-        {
-            public State()
-            {
-                CurrentStatus = Status.Idle;
-            }
-
-            public Exception HaltingException { get; private set; }
-            
-            public Status CurrentStatus { get; private set; }
-
-            public void MoveToPreProcessing()
-            {
-                CurrentStatus = Status.PreEventProcessing;
-            }
-
-            public void MoveToEventDispatch()
-            {
-                CurrentStatus = Status.EventProcessorDispatch;
-            }
-
-            public void MoveToPostProcessing()
-            {
-                CurrentStatus = Status.PostProcessing;
-            }
-
-            public void MoveToDispatchModelUpdates()
-            {
-                CurrentStatus = Status.DispatchModelUpdates;
-            }
-
-            public void MoveToHalted(Exception exception)
-            {
-                HaltingException = exception;
-                CurrentStatus = Status.Halted;
-            }
-
-            public void MoveToIdle()
-            {
-                CurrentStatus = Status.Idle;
-            }
-        }
-
-        private enum Status
-        {
-            Idle,
-            PreEventProcessing,
-            EventProcessorDispatch,
-            PostProcessing,
-            DispatchModelUpdates,
-            Halted,
         }
     }
 }

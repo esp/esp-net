@@ -1,4 +1,4 @@
-﻿#region copyright
+#region copyright
 // Copyright 2015 Keith Woods
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,33 +16,32 @@
 
 using System;
 
-namespace Esp.Net
+namespace Esp.Net.Disposables
 {
-    internal class EventContext : IEventContext
+    internal class EspSerialDisposable : IDisposable
     {
-        private bool _isCanceled;
-        private bool _isCommitted;
+        private bool _isDisposed;
 
-        public bool IsCanceled 
+        private IDisposable _disposable;
+
+        public IDisposable Disposable
         {
-            get { return _isCanceled; }
+            get { return _disposable; }
+            set
+            {
+                using (_disposable) { }
+                if (_isDisposed) 
+                    using (value) { }
+                else
+                    _disposable = value;
+            }
         }
 
-        public bool IsCommitted
+        public void Dispose()
         {
-            get { return _isCommitted; }
-        }
-
-        public void Cancel()
-        {
-            if(_isCanceled) throw new Exception("Already canceled");
-            _isCanceled = true;
-        }
-        
-        public void Commit()
-        {
-            if (_isCommitted) throw new Exception("Already committed");
-            _isCommitted = true;
+            if (_isDisposed) return;
+            _isDisposed = true;
+            using (_disposable) { }
         }
     }
 }

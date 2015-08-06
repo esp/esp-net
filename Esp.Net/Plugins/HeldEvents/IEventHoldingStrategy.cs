@@ -14,12 +14,18 @@
 // limitations under the License.
 #endregion
 
-namespace Esp.Net
+#if ESP_EXPERIMENTAL
+namespace Esp.Net.Plugins.HeldEvents
 {
-    public enum ObservationStage
+    public interface IEventHoldingStrategy<in TModel, in TEvent> where TEvent : IIdentifiableEvent
     {
-        Preview,
-        Normal,
-        Committed
+        bool ShouldHold(TModel model, TEvent @event, IEventContext context);
+        IEventDescription GetEventDescription(TModel model, TEvent @event);
+    }
+
+    public interface IEventHoldingStrategy<in TModel, in TEvent, in TBaseEvent> : IEventHoldingStrategy<TModel, TEvent>
+        where TEvent : IIdentifiableEvent, TBaseEvent
+    {
     }
 }
+#endif

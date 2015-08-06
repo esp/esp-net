@@ -16,10 +16,16 @@
 
 namespace Esp.Net
 {
-    public enum ObservationStage
+    public partial class Router
     {
-        Preview,
-        Normal,
-        Committed
+        private enum Status
+        {
+            Idle,
+            PreEventProcessing,
+            EventProcessorDispatch,
+            PostProcessing,
+            DispatchModelUpdates,
+            Halted,
+        }
     }
 }

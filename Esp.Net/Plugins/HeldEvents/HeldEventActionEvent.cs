@@ -1,4 +1,4 @@
-﻿#region copyright
+#region copyright
 // Copyright 2015 Keith Woods
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,12 +14,22 @@
 // limitations under the License.
 #endregion
 
-namespace Esp.Net
+#if ESP_EXPERIMENTAL
+using System;
+
+namespace Esp.Net.Plugins.HeldEvents
 {
-    public enum ObservationStage
+    public class HeldEventActionEvent
     {
-        Preview,
-        Normal,
-        Committed
+        public HeldEventActionEvent(Guid eventId, HeldEventAction action)
+        {
+            Action = action;
+            EventId = eventId;
+        }
+
+        public HeldEventAction Action { get; private set; }
+
+        public Guid EventId { get; private set; }
     }
 }
+#endif

@@ -14,12 +14,21 @@
 // limitations under the License.
 #endregion
 
-namespace Esp.Net
+using System;
+
+namespace Esp.Net.Utils
 {
-    public enum ObservationStage
+    internal static class Guard
     {
-        Preview,
-        Normal,
-        Committed
+        public static void Requires<TException>(bool check, string format, params object[] args)
+            where TException : Exception
+        {
+            if (!check)
+            {
+                var errorMessage = string.Format(format, args);
+                var exception = (TException)Activator.CreateInstance(typeof(TException), errorMessage);
+                throw exception;
+            }
+        }
     }
 }

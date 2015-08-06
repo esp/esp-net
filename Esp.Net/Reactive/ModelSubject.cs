@@ -13,28 +13,50 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #endregion
+
 using System;
 using System.Collections.Generic;
-using Esp.Net.Model;
+using Esp.Net.Disposables;
 
 namespace Esp.Net.Reactive
 {
     internal class ModelSubject<T> : IModelObservable<T>, IModelObserver<T>
     {
         readonly List<IModelObserver<T>> _observers = new List<IModelObserver<T>>();
+        private bool _hasCompleted = false;
 
         public void OnNext(T item)
         {
             var observers = _observers.ToArray();
             foreach(var observer in observers) 
 			{
+                if (_hasCompleted) break;
 				observer.OnNext(item);
 			}
+        }
+
+        public void OnCompleted()
+        {
+            if (!_hasCompleted)
+            {
+                _hasCompleted = true;
+                var observers = _observers.ToArray();
+                foreach (var observer in observers)
+                {
+                    observer.OnCompleted();
+                }
+            }
         }
 
         public IDisposable Observe(Action<T> onNext)
         {
             var observer = new ModelObserver<T>(onNext);
+            return Observe(observer);
+        }
+
+        public IDisposable Observe(Action<T> onNext, Action onCompleted)
+        {
+            var observer = new ModelObserver<T>(onNext, onCompleted);
             return Observe(observer);
         }
 

@@ -13,13 +13,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #endregion
+using System;
 
-namespace Esp.Net
+namespace Esp.Net.Disposables
 {
-    public enum ObservationStage
+    internal abstract class DisposableBase : IDisposable
     {
-        Preview,
-        Normal,
-        Committed
+        private readonly CollectionDisposable _disposables = new CollectionDisposable();
+
+        public void AddDisposable(IDisposable disposable)
+        {
+            _disposables.Add(disposable);
+        }
+
+        public void Dispose()
+        {
+            _disposables.Dispose();
+        }
     }
 }

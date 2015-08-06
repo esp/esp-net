@@ -13,8 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #endregion
+
 using System;
-using Esp.Net.Model;
+using Esp.Net.Disposables;
 
 namespace Esp.Net.Reactive
 {
@@ -24,7 +25,11 @@ namespace Esp.Net.Reactive
     public interface IEventObservable<out TModel, out TEvent, out TContext>
     {
         IDisposable Observe(ObserveAction<TModel, TEvent> onNext);
+        IDisposable Observe(ObserveAction<TModel, TEvent> onNext, Action onCompleted);
+
         IDisposable Observe(ObserveAction<TModel, TEvent, TContext> onNext);
+        IDisposable Observe(ObserveAction<TModel, TEvent, TContext> onNext, Action onCompleted);
+        
         IDisposable Observe(IEventObserver<TModel, TEvent, TContext> observer);
     }
 
@@ -75,7 +80,8 @@ namespace Esp.Net.Reactive
                             {
                                 o.OnNext(m, e, c);
                             }
-                        }
+                        },
+                        o.OnCompleted
                     );
                     return disposable;
                 }
@@ -101,7 +107,8 @@ namespace Esp.Net.Reactive
                             {
                                 disposable.Dispose();
                             }
-                        }
+                        },
+                        o.OnCompleted
                     );
                     return disposable;
                 }
@@ -124,9 +131,21 @@ namespace Esp.Net.Reactive
             return Observe(streamObserver);
         }
 
+        public IDisposable Observe(ObserveAction<TModel, TEvent> onNext, Action onCompleted)
+        {
+            var streamObserver = new EventObserver<TModel, TEvent, TContext>(onNext, onCompleted);
+            return Observe(streamObserver);
+        }
+
         public IDisposable Observe(ObserveAction<TModel, TEvent, TContext> onNext)
         {
             var streamObserver = new EventObserver<TModel, TEvent, TContext>(onNext);
+            return Observe(streamObserver);
+        }
+
+        public IDisposable Observe(ObserveAction<TModel, TEvent, TContext> onNext, Action onCompleted)
+        {
+            var streamObserver = new EventObserver<TModel, TEvent, TContext>(onNext, onCompleted);
             return Observe(streamObserver);
         }
 

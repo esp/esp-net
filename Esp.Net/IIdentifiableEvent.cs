@@ -1,4 +1,4 @@
-﻿#region copyright
+#region copyright
 // Copyright 2015 Keith Woods
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,12 +14,15 @@
 // limitations under the License.
 #endregion
 
+
+using System;
+
+#if ESP_EXPERIMENTAL
 namespace Esp.Net
 {
-    public enum ObservationStage
+    public interface IIdentifiableEvent
     {
-        Preview,
-        Normal,
-        Committed
+        Guid Id { get; }
     }
 }
+#endif

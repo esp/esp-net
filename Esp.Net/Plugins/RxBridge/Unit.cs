@@ -14,12 +14,18 @@
 // limitations under the License.
 #endregion
 
-namespace Esp.Net
+#if ESP_LOCAL
+// ReSharper disable once CheckNamespace
+namespace System.Reactive.Linq
 {
-    public enum ObservationStage
+    internal class Unit
     {
-        Preview,
-        Normal,
-        Committed
+        static Unit()
+        {
+            Default = new Unit();
+        }
+
+        public static Unit Default { get; private set; }
     }
 }
+#endif

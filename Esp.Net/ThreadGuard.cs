@@ -16,10 +16,22 @@
 
 namespace Esp.Net
 {
-    public enum ObservationStage
+    public class ThreadGuard : IThreadGuard
     {
-        Preview,
-        Normal,
-        Committed
+        public static IThreadGuard Default { get; private set; }
+
+        static ThreadGuard()
+        {
+            Default  = new ThreadGuard();
+        }
+
+        private ThreadGuard()
+        {
+        }
+        
+        public bool CheckAccess()
+        {
+            return true;
+        }
     }
 }
