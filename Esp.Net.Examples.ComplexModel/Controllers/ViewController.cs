@@ -52,5 +52,11 @@ namespace Esp.Net.Examples.ComplexModel.Controllers
             // this method would be called by the view
             _eventPublisher.PublishEvent(_modelId, new FixingFrequencyChangedEvent(FixingFrequency.Monthly));
         }
+
+        public void FakeNotionalPerFixingChanged()
+        {
+            // this method would be called by the view
+            _eventPublisher.PublishEvent(_modelId, new SetNotionalPerFixingEvent(1000m));
+        }
     }
 }

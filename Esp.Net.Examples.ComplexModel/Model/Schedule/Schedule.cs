@@ -10,25 +10,37 @@ namespace Esp.Net.Examples.ComplexModel.Model.Schedule
         private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(typeof(Schedule));
 
         private readonly List<Coupon> _coupons = new List<Coupon>();
-        private bool _isValid = false;
+        private bool _isValid;
         private DateTime[] _holidayDates;
+
+        public bool HasSchedule { get; private set; }
 
         public void SetHolidayDates(DateTime[] holidayDates)
         {
             Log.Debug("Setting holiday dates");
             _holidayDates = holidayDates;
+            foreach (Coupon coupon in _coupons)
+            {
+                coupon.SetHolidayDates(_holidayDates.ToArray());
+            }
         }
-
-        public bool HasSchedule { get; private set; }
 
         public void AddScheduleCoupons(CouponSnapshot[] coupons)
         {
             Log.Debug("Adding Coupons");
             foreach (CouponSnapshot snapshot in coupons)
             {
-                _coupons.Add(new Coupon { Notional = snapshot.Notional, Id = snapshot.Id});
+                _coupons.Add(new Coupon(snapshot));
             }
             HasSchedule = true;
+        }
+
+        public void SetNotionalPerFixing(decimal? notionalPerFixing)
+        {
+            foreach (Coupon coupon in _coupons)
+            {
+                coupon.SetNotional(notionalPerFixing);
+            }
         }
 
         public void Reset()

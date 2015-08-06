@@ -62,6 +62,7 @@
   <ItemGroup>
     <Compile Include="Controllers\ViewController.cs" />
     <Compile Include="DisposableBase.cs" />
+    <Compile Include="Model\Events\SetNotionalPerFixingEvent.cs" />
     <Compile Include="Model\Schedule\IScheduleGenerationGateway.cs" />
     <Compile Include="Model\ReferenceData\CurrencyPairReferenceData.cs" />
     <Compile Include="Model\ReferenceData\IReferenceDataGateway.cs" />

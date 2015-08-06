@@ -41,6 +41,12 @@ namespace Esp.Net.Examples.ComplexModel.Model
             _notional = notional;
         }
 
+        public void SetNotionalPerFixing(decimal? notionalPerFixing)
+        {
+            Log.DebugFormat("Setting notional per fixing to {0}", notionalPerFixing);
+            _schedule.SetNotionalPerFixing(notionalPerFixing);
+        }
+
         public void SetCurrencyPair(string currencyPair)
         {
             Log.DebugFormat("Setting currency pair to {0}", currencyPair);

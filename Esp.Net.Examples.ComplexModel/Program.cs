@@ -5,7 +5,6 @@ using Esp.Net.Examples.ComplexModel.Model;
 using Esp.Net.Examples.ComplexModel.Model.ReferenceData;
 using Esp.Net.Examples.ComplexModel.Model.Schedule;
 using Esp.Net.Examples.ComplexModel.Model.Snapshot;
-using Esp.Net.ModelRouter;
 using Esp.Net.Reactive;
 using log4net;
 using log4net.Appender;
@@ -19,7 +18,7 @@ namespace Esp.Net.Examples.ComplexModel
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(Program));
 
-        private readonly RouterScheduler _scheduler = new RouterScheduler();
+        private readonly RouterScheduler _businessLogicScheduler = new RouterScheduler();
 
         static void Main(string[] args)
         {
@@ -40,30 +39,30 @@ namespace Esp.Net.Examples.ComplexModel
         {
             ConfigureLogging();
             Log.Debug("Running");
-            _scheduler.Schedule(BootstrapSystem);
+            _businessLogicScheduler.Schedule(BootstrapSystem);
         }
 
         private void BootstrapSystem()
         {
             // Typically any type creation would be done by a container. It's just done manually here for the example.
 
-            IRouter router = new Router(_scheduler);
+            IRouter router = new Router(_businessLogicScheduler);
 
             // Create some gateways that perform async operations and raise their results as events back to the router.
             // The model will own these.
-            IReferenceDataGateway referenceDataTask = new ReferenceDataGateway(router, _scheduler);
-            IScheduleGenerationGateway scheduleGenerationGateway = new ScheduleGenerationGateway(router, _scheduler);
+            IReferenceDataGateway referenceDataTask = new ReferenceDataGateway(router, _businessLogicScheduler);
+            IScheduleGenerationGateway scheduleGenerationGateway = new ScheduleGenerationGateway(router, _businessLogicScheduler);
 
             var modelId = Guid.NewGuid();
 
             // Create the model and event processor/s  
             StructureModel model = new StructureModel(modelId, referenceDataTask, scheduleGenerationGateway);
-            // note we have a single event processer here that doesn't pre, process and post processing
+            // A single event processer is used for pre, process and post processing of events
             StructureEventProcessor eventProcessor = new StructureEventProcessor(router, modelId);
             router.RegisterModel(modelId, model, eventProcessor, eventProcessor);
 
-            // Create a more specialised view of the model for the controller (i.e. the view).
-            // this specialised view (StructureSnapshot) is immutable.
+            // Create a more specialised view of the model for the controller.
+            // This specialised view simply extracts an immutable view of the model (StructureSnapshot).
             IModelObservable<StructureSnapshot> modelObservable = router.GetModelObservable<StructureModel>(modelId).Select(m => m.CreateSnapshot());
             ViewController controller = new ViewController(modelId, router, modelObservable);
 
@@ -72,9 +71,10 @@ namespace Esp.Net.Examples.ComplexModel
             eventProcessor.Start();
 
             // Fake up some users interactions
-            _scheduler.Schedule(TimeSpan.FromSeconds(1), () => controller.FakeCurrencyChanged());
-            _scheduler.Schedule(TimeSpan.FromSeconds(2), () => controller.FakeNotionalChanged());
-            _scheduler.Schedule(TimeSpan.FromSeconds(2), () => controller.FakeFixingFrequencyChanged());
+            _businessLogicScheduler.Schedule(TimeSpan.FromSeconds(1), () => controller.FakeCurrencyChanged());
+            _businessLogicScheduler.Schedule(TimeSpan.FromSeconds(2), () => controller.FakeNotionalChanged());
+            _businessLogicScheduler.Schedule(TimeSpan.FromSeconds(2), () => controller.FakeFixingFrequencyChanged());
+            _businessLogicScheduler.Schedule(TimeSpan.FromSeconds(10), () => controller.FakeNotionalPerFixingChanged());
         }
 
         private void ConfigureLogging()

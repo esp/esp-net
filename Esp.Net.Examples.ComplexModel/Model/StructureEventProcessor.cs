@@ -1,7 +1,5 @@
 ﻿using System;
 using Esp.Net.Examples.ComplexModel.Model.Events;
-using Esp.Net.ModelRouter;
-using log4net;
 
 namespace Esp.Net.Examples.ComplexModel.Model
 {
@@ -23,6 +21,7 @@ namespace Esp.Net.Examples.ComplexModel.Model
             AddDisposable(_router.GetEventObservable<StructureModel, CurrencyPairReferenceDataReceivedEvent>(_modelId).Observe((m, e) => m.ReceiveCurrencyPairReferenceData(e.RefData)));
             AddDisposable(_router.GetEventObservable<StructureModel, FixingFrequencyChangedEvent>(_modelId).Observe((m, e) => m.SetFixingFrequency(e.Frequency)));
             AddDisposable(_router.GetEventObservable<StructureModel, ScheduleResolvedEvent>(_modelId).Observe((m, e) => m.AddScheduleCoupons(e.Coupons)));
+            AddDisposable(_router.GetEventObservable<StructureModel, SetNotionalPerFixingEvent>(_modelId).Observe((m, e) => m.SetNotionalPerFixing(e.NotionalPerFixing)));
         }
 
         void IPreEventProcessor<StructureModel>.Process(StructureModel model)

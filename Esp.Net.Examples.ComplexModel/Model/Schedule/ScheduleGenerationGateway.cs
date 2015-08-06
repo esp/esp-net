@@ -24,9 +24,15 @@ namespace Esp.Net.Examples.ComplexModel.Model.Schedule
             _scheduler.Schedule(TimeSpan.FromSeconds(2), () =>
             {
                 Log.Debug("Schedule received");
+                var holidayDates = new[] { DateTime.Today.AddDays(7), DateTime.Today.AddDays(14) };
                 _eventPublisher.PublishEvent(
                     modelId, 
-                    new ScheduleResolvedEvent(new[] { new CouponSnapshot(1, Guid.NewGuid()), new CouponSnapshot(1, Guid.NewGuid()), new CouponSnapshot(1, Guid.NewGuid()) })
+                    new ScheduleResolvedEvent(new[]
+                    {
+                        new CouponSnapshot(Guid.NewGuid(), 500m, DateTime.Today.AddDays(1), holidayDates), 
+                        new CouponSnapshot(Guid.NewGuid(), 500m, DateTime.Today.AddDays(1), holidayDates), 
+                        new CouponSnapshot(Guid.NewGuid(), 500m, DateTime.Today.AddDays(1), holidayDates),
+                    })
                 );
             });
         }
