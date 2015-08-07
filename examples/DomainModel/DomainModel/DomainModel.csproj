@@ -35,6 +35,9 @@
     <StartupObject>Esp.Net.Examples.ComplexModel.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Esp.Net">
+      <HintPath>..\packages\esp-net.0.2.8\lib\net40\Esp.Net.dll</HintPath>
+    </Reference>
     <Reference Include="log4net, Version=1.2.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
       <Private>True</Private>
@@ -88,12 +91,6 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Esp.Net\Esp.Net.csproj">
-      <Project>{2c08eebf-99f4-43ad-b87f-2b90deb6f8de}</Project>
-      <Name>Esp.Net</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
