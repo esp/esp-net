@@ -26,6 +26,7 @@ namespace Esp.Net
             PostProcessing,
             DispatchModelUpdates,
             Halted,
+            Executing
         }
     }
 }
