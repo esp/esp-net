@@ -31,6 +31,7 @@ namespace Esp.Net
         private readonly RouterGuard _routerGuard;
         private readonly ModelsEventsObservations _modelsEventsObservations;
         private static readonly MethodInfo PublishEventMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router), "PublishEvent", 1, 2);
+        private static readonly MethodInfo ExecuteEventMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router), "ExecuteEvent", 1, 2);
         private static readonly MethodInfo BroadcastEventMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router), "BroadcastEvent", 1, 1);
 
         public Router(IThreadGuard threadGuard)
@@ -118,7 +119,9 @@ namespace Esp.Net
 
         public void ExecuteEvent(Guid modelId, object @event)
         {
-            throw new NotImplementedException();
+            _routerGuard.EnsureValid();
+            var executeEventMethod = ExecuteEventMethodInfo.MakeGenericMethod(@event.GetType());
+            executeEventMethod.Invoke(this, new object[] { modelId, @event });
         }
 
         public void BroadcastEvent<TEvent>(TEvent @event)

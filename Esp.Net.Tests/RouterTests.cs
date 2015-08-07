@@ -547,6 +547,20 @@ namespace Esp.Net
                     _model1PostEventProcessor.InvocationCount.ShouldBe(1);
                 }
 
+                [Test]
+                public void CanExecuteUsingObjectObjectOverload()
+                {
+                    var passed = false;
+                    _model1EventProcessor.Event1Details.NormalStage.RegisterAction((m, e) =>
+                    {
+                        object event3 = new Event3();
+                        _router.ExecuteEvent(_model1.Id, event3);
+                        passed = _model1EventProcessor.Event3Details.NormalStage.ReceivedEvents.Count == 1;
+                    });
+                    _router.PublishEvent(_model1.Id, new Event1());
+                    passed.ShouldBe(true);
+                }
+
                 private void AssertEventPublishThrows()
                 {
                     InvalidOperationException ex = Assert.Throws<InvalidOperationException>(() => _router.PublishEvent(_model1.Id, new Event1()));
