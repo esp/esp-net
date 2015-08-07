@@ -14,12 +14,12 @@ before_build:
  - ps: ./tools/gitversion.exe /l console /output buildserver /updateAssemblyInfo
 
 build:
-  project: Esp.Net.sln
+  project: .\src\Esp.Net.sln
 
 after_build:
-  - cmd: ECHO nuget pack Esp.Net\Esp.Net.nuspec -version "%GitVersion_NuGetVersion%" -prop "target=%CONFIGURATION%"
-  - cmd: nuget pack Esp.Net\Esp.Net.nuspec -version "%GitVersion_NuGetVersion%" -prop "target=%CONFIGURATION%"
-  - cmd: ECHO nuget pack Esp.Net\Esp.Net.SourcePackage.nuspec -version "%GitVersion_NuGetVersion%"
-  - cmd: nuget pack Esp.Net\Esp.Net.SourcePackage.nuspec -version "%GitVersion_NuGetVersion%"
+  - cmd: ECHO nuget pack .\src\Esp.Net\Esp.Net.nuspec -version "%GitVersion_NuGetVersion%" -prop "target=%CONFIGURATION%"
+  - cmd: nuget pack .\src\Esp.Net\Esp.Net.nuspec -version "%GitVersion_NuGetVersion%" -prop "target=%CONFIGURATION%"
+  - cmd: ECHO nuget pack .\src\Esp.Net\Esp.Net.SourcePackage.nuspec -version "%GitVersion_NuGetVersion%"
+  - cmd: nuget pack .\src\Esp.Net\Esp.Net.SourcePackage.nuspec -version "%GitVersion_NuGetVersion%"
   - cmd: appveyor PushArtifact "esp-net.%GitVersion_NuGetVersion%.nupkg"
   - cmd: appveyor PushArtifact "esp-net-source.%GitVersion_NuGetVersion%.nupkg"
