@@ -109,11 +109,11 @@ namespace Esp.Net
 
         public void ExecuteEvent<TEvent>(Guid modelId, TEvent @event)
         {
-            throw new NotImplementedException();
-//            _routerGuard.EnsureValid();
-//            var canExecute = _state.CurrentStatus == Status.EventProcessorDispatch;
-//            Guard.Requires<InvalidOperationException>(canExecute, "You can only execute an event from within the observer passed to IEventObservable.Observe(IEventObserver) and when the router is within an existing event loop.");
-            
+            _routerGuard.EnsureValid();
+            _state.MoveToExecuting(modelId);
+            var modelEntry = _modelsById[modelId];
+            modelEntry.ExecuteEvent(@event);
+            _state.EndExecuting();
         }
 
         public void ExecuteEvent(Guid modelId, object @event)
@@ -185,7 +185,7 @@ namespace Esp.Net
                         var changedModels = new Dictionary<Guid, IModelEntry>();
                         while (modelEntry != null)
                         {
-                            _state.MoveToPreProcessing();
+                            _state.MoveToPreProcessing(modelEntry.Id);
                             modelEntry.RunPreProcessor();
                             if (!modelEntry.IsRemoved)
                             {
