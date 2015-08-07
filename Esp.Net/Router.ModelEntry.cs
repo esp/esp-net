@@ -31,6 +31,7 @@ namespace Esp.Net
             bool HadEvents { get; }
             bool IsRemoved { get; }
             void TryEnqueue<TEvent>(TEvent @event);
+            void ExecuteEvent<TEvent>(TEvent @event);
             void PurgeEventQueue();
             void RunPreProcessor();
             void RunPostProcessor();
@@ -97,7 +98,13 @@ namespace Esp.Net
                     var message = string.Format("The event stream observing event ModelChangedEvent<{0}> against model of type [{0}] is unsupported. Observing a ModelChangedEvent<T> where T is the same as the target models type is not supported.", typeof(TModel).Name);
                     throw new NotSupportedException(message);
                 }
-                _eventDispatchQueue.Enqueue(ProcessEvent(@event));
+                _eventDispatchQueue.Enqueue(CreateEventDispatchAction(@event));
+            }
+
+            public void ExecuteEvent<TEvent>(TEvent @event)
+            {
+                Action dispatchAction = CreateEventDispatchAction(@event);
+                dispatchAction();
             }
 
             public void PurgeEventQueue()
@@ -231,7 +238,7 @@ namespace Esp.Net
                 });
             }
 
-            private Action ProcessEvent<TEvent>(TEvent @event)
+            private Action CreateEventDispatchAction<TEvent>(TEvent @event)
             {
                 return () =>
                 {

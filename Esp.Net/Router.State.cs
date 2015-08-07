@@ -22,6 +22,8 @@ namespace Esp.Net
     {
         private class State
         {
+            private Guid _modelBeingProcessed;
+
             public State()
             {
                 CurrentStatus = Status.Idle;
@@ -31,8 +33,9 @@ namespace Esp.Net
 
             public Status CurrentStatus { get; private set; }
 
-            public void MoveToPreProcessing()
+            public void MoveToPreProcessing(Guid modelId)
             {
+                _modelBeingProcessed = modelId;
                 CurrentStatus = Status.PreEventProcessing;
             }
 
@@ -48,6 +51,7 @@ namespace Esp.Net
 
             public void MoveToDispatchModelUpdates()
             {
+                _modelBeingProcessed = Guid.Empty;
                 CurrentStatus = Status.DispatchModelUpdates;
             }
 
@@ -59,7 +63,32 @@ namespace Esp.Net
 
             public void MoveToIdle()
             {
+                _modelBeingProcessed = Guid.Empty;
                 CurrentStatus = Status.Idle;
+            }
+
+            public void MoveToExecuting(Guid modelId)
+            {
+                var canExecute = 
+                    CurrentStatus == Status.EventProcessorDispatch &&
+                    _modelBeingProcessed == modelId;
+                if (canExecute)
+                {
+                    CurrentStatus = Status.Executing;
+                }
+                else 
+                {
+                    throw new InvalidOperationException("Can't execute event. You can only execute an event 1) from within the observer passed to IEventObservable.Observe(IEventObserver), 2) when the router is within an existing event loop, 3) when the current event loop is for the same model you are executing against");
+                }
+            }
+
+            public void EndExecuting()
+            {
+                if (CurrentStatus != Status.Executing)
+                {
+                    throw new InvalidOperationException("Can't end executing state as event execution isn't underway.");
+                }
+                CurrentStatus = Status.EventProcessorDispatch;
             }
         }
     }
