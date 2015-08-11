@@ -78,12 +78,18 @@
     <Compile Include="Model\Events\ScheduleResolvedEvent.cs" />
     <Compile Include="Model\Snapshot\Schedule\CouponSnapshot.cs" />
     <Compile Include="Model\Snapshot\Schedule\ScheduleSnapshot.cs" />
-    <Compile Include="Model\Snapshot\StructureSnapshot.cs" />
+    <Compile Include="Model\Snapshot\OptionSnapshot.cs" />
     <Compile Include="Model\Events\CurrencyPairChangedEvent.cs" />
     <Compile Include="Model\Events\CurrencyPairReferenceDataReceivedEvent.cs" />
-    <Compile Include="Model\StructureModel.cs" />
+    <Compile Include="Model\Option.cs" />
     <Compile Include="Model\Events\NotionalChangedEvent.cs" />
-    <Compile Include="Model\StructureEventProcessor.cs" />
+    <Compile Include="Model\OptionEventProcessor.cs" />
+    <Compile Include="Model\Snapshot\Schedule\Strategy\Legs\LegSnapshot.cs" />
+    <Compile Include="Model\Snapshot\Schedule\Strategy\StrategySnapshot.cs" />
+    <Compile Include="Model\Strategies\Legs\Leg.cs" />
+    <Compile Include="Model\Side.cs" />
+    <Compile Include="Model\Strategies\Strategy.cs" />
+    <Compile Include="Model\Strategies\StrategyType.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RouterScheduler.cs" />
@@ -92,6 +98,7 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

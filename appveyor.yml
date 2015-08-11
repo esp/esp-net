@@ -10,11 +10,14 @@ nuget:
   disable_publish_on_pr: false
 
 before_build:
+ - cd src
  - nuget restore
+ - cd ..\
  - ps: ./tools/gitversion.exe /l console /output buildserver /updateAssemblyInfo
-
+  
 build:
-  project: .\src\Esp.Net.sln
+  project: src\Esp.Net.sln
+  verbosity: detailed
 
 after_build:
   - cmd: ECHO nuget pack .\src\Esp.Net\Esp.Net.nuspec -version "%GitVersion_NuGetVersion%" -prop "target=%CONFIGURATION%"

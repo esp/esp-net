@@ -12,9 +12,9 @@ namespace Esp.Net.Examples.ComplexModel.Controllers
 
         private readonly Guid _modelId;
         private readonly IEventPublisher _eventPublisher;
-        private readonly IModelObservable<StructureSnapshot> _modelObservable;
+        private readonly IModelObservable<OptionSnapshot> _modelObservable;
 
-        public ViewController(Guid modelId, IEventPublisher eventPublisher, IModelObservable<StructureSnapshot> modelObservable)
+        public ViewController(Guid modelId, IEventPublisher eventPublisher, IModelObservable<OptionSnapshot> modelObservable)
         {
             _modelId = modelId;
             _eventPublisher = eventPublisher;

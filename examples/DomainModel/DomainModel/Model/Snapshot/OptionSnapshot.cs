@@ -1,12 +1,23 @@
-﻿using Esp.Net.Examples.ComplexModel.Model.Schedule;
+﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using Esp.Net.Examples.ComplexModel.Model.Schedule;
 using Esp.Net.Examples.ComplexModel.Model.Snapshot.Schedule;
+using Esp.Net.Examples.ComplexModel.Model.Snapshot.Schedule.Strategy;
 
 namespace Esp.Net.Examples.ComplexModel.Model.Snapshot
 {
-    // immutable representation of a StructureModel
-    public class StructureSnapshot
+    // immutable representation of a Option
+    public class OptionSnapshot
     {
-        public StructureSnapshot(ScheduleSnapshot schedule, bool isValid, FixingFrequency? frequency, int version, string currencyPair, decimal? notional)
+        public OptionSnapshot(
+            ScheduleSnapshot schedule, 
+            bool isValid, 
+            FixingFrequency? frequency, 
+            int version, 
+            string currencyPair, 
+            decimal? notional, 
+            IList<StrategySnapshot> strategies
+        )
         {
             Schedule = schedule;
             IsValid = isValid;
@@ -14,6 +25,7 @@ namespace Esp.Net.Examples.ComplexModel.Model.Snapshot
             Version = version;
             CurrencyPair = currencyPair;
             Notional = notional;
+            Strategies = new ReadOnlyCollection<StrategySnapshot>(strategies);
         }
 
         public int Version { get; private set; }
@@ -27,6 +39,8 @@ namespace Esp.Net.Examples.ComplexModel.Model.Snapshot
         public FixingFrequency? Frequency { get; private set; }
 
         public ScheduleSnapshot Schedule { get; private set; }
+
+        public IList<StrategySnapshot> Strategies { get; private set; }
 
         public override string ToString()
         {

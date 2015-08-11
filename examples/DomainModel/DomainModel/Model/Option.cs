@@ -1,14 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Esp.Net.Examples.ComplexModel.Model.ReferenceData;
 using Esp.Net.Examples.ComplexModel.Model.Schedule;
 using Esp.Net.Examples.ComplexModel.Model.Snapshot;
 using Esp.Net.Examples.ComplexModel.Model.Snapshot.Schedule;
+using Esp.Net.Examples.ComplexModel.Model.Strategies;
 
 namespace Esp.Net.Examples.ComplexModel.Model
 {
-    public class StructureModel
+    public class Option
     {
-        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(typeof(StructureModel));
+        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(typeof(Option));
 
         private readonly IReferenceDataGateway _referenceDataGateway;
         private readonly IScheduleGenerationGateway _scheduleGenerationGateway;
@@ -19,12 +22,14 @@ namespace Esp.Net.Examples.ComplexModel.Model
         private int _version = 0;
         private bool _isValid = false;
         private FixingFrequency? _frequency;
-
-        public StructureModel(Guid modelId, IReferenceDataGateway referenceDataGateway, IScheduleGenerationGateway scheduleGenerationGateway)
+        private List<Strategy> _strategies;
+ 
+        public Option(Guid modelId, IReferenceDataGateway referenceDataGateway, IScheduleGenerationGateway scheduleGenerationGateway)
         {
             Id = modelId;
             _referenceDataGateway = referenceDataGateway;
             _scheduleGenerationGateway = scheduleGenerationGateway;
+            _strategies = new List<Strategy>();
         }
 
         public Guid Id { get; private set; }
@@ -82,9 +87,17 @@ namespace Esp.Net.Examples.ComplexModel.Model
             return _isValid;
         }
 
-        public StructureSnapshot CreateSnapshot()
+        public OptionSnapshot CreateSnapshot()
         {
-            return new StructureSnapshot(_schedule.CreateSnapshot(), _isValid, _frequency, _version, _currencyPair, _notional);
+            return new OptionSnapshot(
+                _schedule.CreateSnapshot(), 
+                _isValid, 
+                _frequency, 
+                _version, 
+                _currencyPair, 
+                _notional,
+                _strategies.Select(s => s.CreateSnapShot()).ToList()
+            );
         }
 
         public void SetFixingFrequency(FixingFrequency? frequency)

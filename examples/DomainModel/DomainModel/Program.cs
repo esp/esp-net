@@ -56,14 +56,14 @@ namespace Esp.Net.Examples.ComplexModel
             var modelId = Guid.NewGuid();
 
             // Create the model and event processor/s  
-            StructureModel model = new StructureModel(modelId, referenceDataTask, scheduleGenerationGateway);
+            Option model = new Option(modelId, referenceDataTask, scheduleGenerationGateway);
             // A single event processer is used for pre, process and post processing of events
-            StructureEventProcessor eventProcessor = new StructureEventProcessor(router, modelId);
+            OptionEventProcessor eventProcessor = new OptionEventProcessor(router, modelId);
             router.RegisterModel(modelId, model, eventProcessor, eventProcessor);
 
             // Create a more specialised view of the model for the controller.
-            // This specialised view simply extracts an immutable view of the model (StructureSnapshot).
-            IModelObservable<StructureSnapshot> modelObservable = router.GetModelObservable<StructureModel>(modelId).Select(m => m.CreateSnapshot());
+            // This specialised view simply extracts an immutable view of the model (OptionSnapshot).
+            IModelObservable<OptionSnapshot> modelObservable = router.GetModelObservable<Option>(modelId).Select(m => m.CreateSnapshot());
             ViewController controller = new ViewController(modelId, router, modelObservable);
 
             // Spin up the system
