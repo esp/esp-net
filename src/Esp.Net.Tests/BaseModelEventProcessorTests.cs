@@ -176,7 +176,7 @@ namespace Esp.Net
             }
 
             [ObserveEvent(typeof(WorkflowTestEvent), ObservationStage.Preview)]
-            public void ObservePreviewTestEventAtPreview(TestModel model, WorkflowTestEvent e, IEventContext context)
+            private void ObservePreviewTestEventAtPreview(TestModel model, WorkflowTestEvent e, IEventContext context)
             {
                 WorkflowTestEvents.Add(Tuple.Create(model, e, ObservationStage.Preview));
             }
@@ -197,7 +197,7 @@ namespace Esp.Net
             [ObserveBaseEvent(typeof(FooEvent), typeof(BaseEvent), ObservationStage.Preview)]
             [ObserveBaseEvent(typeof(BarEvent), typeof(BaseEvent))]
             [ObserveBaseEvent(typeof(BazEvent), typeof(BaseEvent), ObservationStage.Committed)]
-            public void ObserveBaseEvent(TestModel model, BaseEvent e, IEventContext context)
+            private void ObserveBaseEvent(TestModel model, BaseEvent e, IEventContext context)
             {
                 BaseEvents.Add(Tuple.Create(model, e, context.CurrentStage));
             }

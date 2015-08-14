@@ -62,7 +62,7 @@ namespace Esp.Net
         {
             // TODO all this functionality this should be weaved in rather than using reflection
             var methodsWithAttributes =
-                from methodInfo in GetType().GetMethods()
+                from methodInfo in GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
                 let observeEventAttribute = methodInfo.GetCustomAttribute<ObserveEventAttribute>(true)
                 let observeBaseEventAttributes = methodInfo.GetCustomAttributes<ObserveBaseEventAttribute>(true).ToArray()
                 where observeEventAttribute != null || observeBaseEventAttributes.Length > 0

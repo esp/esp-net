@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Esp.Net.Disposables;
+using Esp.Net.ModelRouter;
 using Esp.Net.Reactive;
 using Esp.Net.Utils;
 
@@ -26,7 +27,7 @@ namespace Esp.Net.Plugins.HeldEvents
 {
     public static class RouterExt
     {
-        private static readonly MethodInfo GetEventObservableMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(RouterExt), "GetEventObservable", 2, 3);
+        private static readonly MethodInfo GetEventObservableMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(RouterExt), "GetEventObservable", 2, 2);
 
         public static IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TEvent, TBaseEvent>(
             this IRouter router,
@@ -36,7 +37,18 @@ namespace Esp.Net.Plugins.HeldEvents
             where TEvent : TBaseEvent, IIdentifiableEvent
             where TModel : IHeldEventStore
         {
-            object[] parameters = new object[] { router, modelId, strategy };
+            var modelRouter = router.CreateModelRouter<TModel>(modelId);
+            return modelRouter.GetEventObservable(strategy);
+        }
+
+        public static IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TEvent, TBaseEvent>(
+            this IRouter<TModel> router,
+            IEventHoldingStrategy<TModel, TEvent, TBaseEvent> strategy
+        )
+            where TEvent : TBaseEvent, IIdentifiableEvent
+            where TModel : IHeldEventStore
+        {
+            object[] parameters = new object[] { router, strategy };
             return EventObservable.Create<TModel, TBaseEvent, IEventContext>(
                 o =>
                 {
@@ -55,13 +67,24 @@ namespace Esp.Net.Plugins.HeldEvents
             where TEvent : IIdentifiableEvent
             where TModel : IHeldEventStore
         {
+            var modelRouter = router.CreateModelRouter<TModel>(modelId);
+            return modelRouter.GetEventObservable(strategy);
+        }
+
+        public static IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TModel, TEvent>(
+            this IRouter<TModel> router,
+            IEventHoldingStrategy<TModel, TEvent> strategy
+        )
+            where TEvent : IIdentifiableEvent
+            where TModel : IHeldEventStore
+        {
             return EventObservable.Create<TModel, TEvent, IEventContext>(
                 o =>
                 {
                     var heldEvents = new Dictionary<Guid, HeldEventData<TEvent>>();
                     var releasedEvents = new HashSet<Guid>();
                     var disposables = new CollectionDisposable();
-                    disposables.Add(router.GetEventObservable<TModel, TEvent>(modelId, ObservationStage.Preview).Observe((m, e, c) =>
+                    disposables.Add(router.GetEventObservable<TEvent>(ObservationStage.Preview).Observe((m, e, c) =>
                     {
                         // Have we already re-published this event? If so we don't want to hold it again.
                         if (releasedEvents.Contains(e.Id))
@@ -86,7 +109,7 @@ namespace Esp.Net.Plugins.HeldEvents
                             }
                         }
                     }));
-                    disposables.Add(router.GetEventObservable<TModel, HeldEventActionEvent>(modelId).Observe((m, e, c) =>
+                    disposables.Add(router.GetEventObservable<HeldEventActionEvent>().Observe((m, e, c) =>
                     {
                         HeldEventData<TEvent> heldEventData;
                         // Since we're listening to a pipe of all events we need to filter out anything we don't know about.
@@ -99,7 +122,7 @@ namespace Esp.Net.Plugins.HeldEvents
                             {
                                 // Temporarily store the event we're republishing so we don't re-hold it
                                 releasedEvents.Add(e.EventId);
-                                router.PublishEvent(modelId, heldEventData.Event);
+                                router.PublishEvent(heldEventData.Event);
                             }
                         }
                     }));

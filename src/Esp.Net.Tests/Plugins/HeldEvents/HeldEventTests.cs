@@ -17,6 +17,7 @@
 #if ESP_EXPERIMENTAL
 using System;
 using System.Collections.Generic;
+using Esp.Net.ModelRouter;
 using Esp.Net.Reactive;
 using NUnit.Framework;
 using Shouldly;
@@ -276,6 +277,33 @@ namespace Esp.Net.Plugins.HeldEvents
             receivedBarEvents.Count.ShouldBe(2);
             receivedBarEvents[0].ShouldBeAssignableTo<FooEvent>();
             receivedBarEvents[1].ShouldBeAssignableTo<BarEvent>();
+        }
+
+        [Test]
+        public void CanHoldUsingModelRouter()
+        {
+            IRouter<TestModel> modelRouter = _router.CreateModelRouter<TestModel>(_model.Id);
+            IEventObservable<TestModel, BaseEvent, IEventContext> baseEventStream = modelRouter.GetEventObservable(new HoldBaseEventsBasedOnModelStrategy<FooEvent, BaseEvent>());
+            int receivedBaseEvents = 0, reveivedBarEvents = 0;
+            baseEventStream.Observe((model, baseEvent, context) =>
+            {
+                receivedBaseEvents++;
+            });
+            IEventObservable<TestModel, BarEvent, IEventContext> fooEventStream = modelRouter.GetEventObservable(new HoldEventsBasedOnModelStrategy<BarEvent>());
+            fooEventStream.Observe((model, barEvent, context) =>
+            {
+                reveivedBarEvents++;
+            });
+            var event1 = new FooEvent("EventPayload1");
+            var event2 = new BarEvent("EventPayload2");
+            _router.PublishEvent(_model.Id, event1);
+            _router.PublishEvent(_model.Id, event2);
+            receivedBaseEvents.ShouldBe(0);
+            reveivedBarEvents.ShouldBe(0);
+            ReleasedEvent(event1.Id, HeldEventAction.Release);
+            ReleasedEvent(event2.Id, HeldEventAction.Release);
+            receivedBaseEvents.ShouldBe(1);
+            reveivedBarEvents.ShouldBe(1);
         }
 
         public void SetUpFooEventHoldingStrategy()
