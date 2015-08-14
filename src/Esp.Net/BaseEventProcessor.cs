@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Esp.Net.Disposables;
@@ -22,16 +21,37 @@ namespace Esp.Net
 
         public void ObserveEvents()
         {
-//            var methods = from methodInfo in GetType().GetMethods()
-//                    let attribute = methodInfo.GetCustomAttribute<ObserveEventAttribute>(true)
-//                    where attribute != null 
-//                    select new { methodInfo, attribute };
-//            foreach (var tuple in methods)
-//            {
-//                GetEventObservableMethodInfo.MakeGenericMethod(new Type[] {tuple.attribute});
-//                // get the generic overload 
-//                // _router.GetEventObservable<>()
-//            }
+            // TODO all this functionality this should be weaved in, not done using reflection
+            var methods = from methodInfo in GetType().GetMethods()
+                    let attribute = methodInfo.GetCustomAttribute<ObserveEventAttribute>(true)
+                    where attribute != null 
+                    select new { methodInfo, attribute };
+            foreach (var tuple in methods)
+            {
+                var getEventObservableMethod = GetEventObservableMethodInfo.MakeGenericMethod(tuple.attribute.EventType);
+                object eventObservable = getEventObservableMethod.Invoke(_router, new object[] {tuple.attribute.Stage});
+                ParameterInfo[] parameters  = tuple.methodInfo.GetParameters();
+                Delegate d = null;
+                MethodInfo observeMethod;
+                if (parameters.Length == 2)
+                {
+                    var action = typeof(Action<,>).MakeGenericType(new Type[] { typeof(TModel), tuple.attribute.EventType});
+                    d = Delegate.CreateDelegate(action, this, tuple.methodInfo);
+                    observeMethod = eventObservable.GetType().GetMethod("Observe", new Type[] { action });
+                } 
+                else if (parameters.Length == 3)
+                {
+                    var action = typeof(Action<,,>).MakeGenericType(new Type[] { typeof(TModel), tuple.attribute.EventType, typeof(IEventContext) });
+                    d = Delegate.CreateDelegate(action, this, tuple.methodInfo);
+                    observeMethod = eventObservable.GetType().GetMethod("Observe", new Type[] { action });
+                }
+                else
+                {
+                    throw new NotSupportedException();
+                }
+                var disposable = observeMethod.Invoke(eventObservable, new[] {d});
+                AddDisposable((IDisposable)disposable);
+            }
         }
 
         protected void ObserveEvent<TEvent>(Action<TModel, TEvent, IEventContext> observer, ObservationStage stage = ObservationStage.Normal)
