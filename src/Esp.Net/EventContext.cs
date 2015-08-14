@@ -23,6 +23,8 @@ namespace Esp.Net
         private bool _isCanceled;
         private bool _isCommitted;
 
+        public ObservationStage CurrentStage { get; set; }
+
         public bool IsCanceled 
         {
             get { return _isCanceled; }

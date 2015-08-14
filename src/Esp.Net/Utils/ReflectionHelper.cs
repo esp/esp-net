@@ -24,14 +24,32 @@ namespace Esp.Net.Utils
     {
         public static MethodInfo GetGenericMethodByArgumentCount(Type declaringType, string methodName, int numberOfTypeArguments, int numberOfArguments)
         {
+            return GetGenericMethodByArgumentCountInternal(declaringType, methodName, numberOfTypeArguments, numberOfArguments, null);
+        }
+
+        public static MethodInfo GetGenericMethodByArgumentCount(Type declaringType, string methodName, int numberOfTypeArguments, int numberOfArguments, BindingFlags bindingFlags)
+        {
+            return GetGenericMethodByArgumentCountInternal(declaringType, methodName, numberOfTypeArguments, numberOfArguments, bindingFlags);
+        }
+
+        public static MethodInfo GetGenericMethodByArgumentCountInternal(
+            Type declaringType, 
+            string methodName,
+            int numberOfTypeArguments, 
+            int numberOfArguments, 
+            BindingFlags? bindingFlags)
+        {
+            MethodInfo[] methodInfos = bindingFlags.HasValue 
+                ? declaringType.GetMethods(bindingFlags.Value) 
+                : declaringType.GetMethods();
             var query =
-                from m in declaringType.GetMethods()
+                from m in methodInfos
                 where
                     m.Name == methodName &&
                     m.GetGenericArguments().Length == numberOfTypeArguments &&
                     m.GetParameters().Length == numberOfArguments
                 select m;
             return query.Single();
-        } 
+        }
     }
 }

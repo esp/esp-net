@@ -1,4 +1,4 @@
-﻿#region copyright
+#region copyright
 // Copyright 2015 Keith Woods
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,20 +15,23 @@
 #endregion
 using System;
 
-namespace Esp.Net.Disposables
+namespace Esp.Net
 {
-    public abstract class DisposableBase : IDisposable
+    [AttributeUsage(AttributeTargets.Method)]
+    public class ObserveEventAttribute : Attribute
     {
-        private readonly CollectionDisposable _disposables = new CollectionDisposable();
-
-        public void AddDisposable(IDisposable disposable)
+        public ObserveEventAttribute(Type eventType) : this(eventType, ObservationStage.Normal)
         {
-            _disposables.Add(disposable);
         }
 
-        public void Dispose()
+        public ObserveEventAttribute(Type eventType, ObservationStage stage)
         {
-            _disposables.Dispose();
+            EventType = eventType;
+            Stage = stage;
         }
+
+        public Type EventType { get; private set; }
+
+        public ObservationStage Stage { get; private set; }
     }
 }

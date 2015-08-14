@@ -27,24 +27,24 @@ namespace Esp.Net.Reactive
     internal class EventObserver<TModel, TEvent, TContext> : IEventObserver<TModel, TEvent, TContext>
     {
         private readonly Action _onCompleted;
-        private readonly ObserveAction<TModel, TEvent, TContext> _onNext;
+        private readonly Action<TModel, TEvent, TContext> _onNext;
 
-        public EventObserver(ObserveAction<TModel, TEvent> onNext)
+        public EventObserver(Action<TModel, TEvent> onNext)
             : this(onNext, null)
         {
         }
 
-        public EventObserver(ObserveAction<TModel, TEvent> onNext, Action onCompleted)
+        public EventObserver(Action<TModel, TEvent> onNext, Action onCompleted)
             : this((m, e, c) => onNext(m, e), onCompleted)
         {
         }
 
-        public EventObserver(ObserveAction<TModel, TEvent, TContext> onNext)
+        public EventObserver(Action<TModel, TEvent, TContext> onNext)
             : this(onNext, null)
         {
         }
 
-        public EventObserver(ObserveAction<TModel, TEvent, TContext> onNext, Action onCompleted)
+        public EventObserver(Action<TModel, TEvent, TContext> onNext, Action onCompleted)
         {
             _onNext = onNext;
             _onCompleted = onCompleted;

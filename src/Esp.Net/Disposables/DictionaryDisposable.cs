@@ -19,7 +19,7 @@ using System.Collections.Generic;
 
 namespace Esp.Net.Disposables
 {
-    internal class DictionaryDisposable<TKey> : IDisposable
+    public class DictionaryDisposable<TKey> : IDisposable
     {
         private readonly Dictionary<TKey, IDisposable> _disposables = new Dictionary<TKey, IDisposable>();
 
