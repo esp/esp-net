@@ -19,7 +19,7 @@ using System.Collections.Generic;
 
 namespace Esp.Net.Disposables
 {
-    internal class CollectionDisposable : IDisposable
+    public class CollectionDisposable : IDisposable
     {
         private readonly List<IDisposable> _disposables;
 

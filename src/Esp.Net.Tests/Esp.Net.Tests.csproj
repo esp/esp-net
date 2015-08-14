@@ -50,6 +50,7 @@
     <Compile Include="..\AssemblyInfoCommon.cs">
       <Link>Properties\AssemblyInfoCommon.cs</Link>
     </Compile>
+    <Compile Include="BaseModelEventProcessorTests.cs" />
     <Compile Include="Disposables\EspDisposableTests.cs" />
     <Compile Include="Reactive\StubSubject.cs" />
     <Compile Include="Plugins\Workflow\WorkflowTests.cs" />
@@ -60,9 +61,6 @@
     <Compile Include="RouterTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Esp.Net.licenseheader">
-      <Link>Esp.Net.licenseheader</Link>
-    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

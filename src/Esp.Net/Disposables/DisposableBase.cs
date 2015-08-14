@@ -17,7 +17,7 @@ using System;
 
 namespace Esp.Net.Disposables
 {
-    internal abstract class DisposableBase : IDisposable
+    public abstract class DisposableBase : IDisposable
     {
         private readonly CollectionDisposable _disposables = new CollectionDisposable();
 

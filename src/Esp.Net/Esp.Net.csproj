@@ -44,6 +44,7 @@
     <Compile Include="..\AssemblyInfoCommon.cs">
       <Link>Properties\AssemblyInfoCommon.cs</Link>
     </Compile>
+    <Compile Include="BaseEventProcessor.cs" />
     <Compile Include="IEventContext.cs" />
     <Compile Include="IEventSubject.cs" />
     <Compile Include="IModelSubject.cs" />
@@ -62,6 +63,7 @@
     <Compile Include="Meta\IEventObservationRegistrar.cs" />
     <Compile Include="Meta\ModelsEventsObservations.cs" />
     <Compile Include="IEventPublisher.cs" />
+    <Compile Include="ObserveEventAttribute.cs" />
     <Compile Include="Router.ModelEntry.cs" />
     <Compile Include="Router.Guard.cs" />
     <Compile Include="Router.State.cs" />
