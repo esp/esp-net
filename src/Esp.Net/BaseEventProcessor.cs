@@ -29,11 +29,33 @@ namespace Esp.Net
         private static readonly MethodInfo GetEventObservableMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof (IEventSubject<TModel>), "GetEventObservable", 1, 1);
         private static readonly MethodInfo ObserveBaseEventsMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof (BaseModelEventProcessor<TModel>), "ObserveBaseEvents", 1, 2, BindingFlags.Instance | BindingFlags.NonPublic);
 
-        private readonly IRouter<TModel> _router;
-
         protected BaseModelEventProcessor(IRouter<TModel> router)
         {
-            _router = router;
+            Router = router;
+        }
+
+        protected IRouter<TModel> Router { get; private set; }
+
+        protected void ObserveEvent<TEvent>(Action<TModel, TEvent, IEventContext> observer, ObservationStage stage = ObservationStage.Normal)
+        {
+            AddDisposable(Router.GetEventObservable<TEvent>(stage).Observe(observer));
+        }
+
+        protected void ObserveEvent<TEvent>(Action<TModel, TEvent> observer, ObservationStage stage = ObservationStage.Normal)
+        {
+            AddDisposable(Router.GetEventObservable<TEvent>(stage).Observe(observer));
+        }
+
+        protected void ObserveEvent<TEventBase>(Action<TModel, TEventBase> observer, params IEventObservable<TModel, TEventBase, IEventContext>[] observables)
+        {
+            var stream = EventObservable.Concat(observables);
+            AddDisposable(stream.Observe(observer));
+        }
+
+        protected void ObserveEvent<TEventBase>(Action<TModel, TEventBase, IEventContext> observer, params IEventObservable<TModel, TEventBase, IEventContext>[] observables)
+        {
+            var stream = EventObservable.Concat(observables);
+            AddDisposable(stream.Observe(observer));
         }
 
         public virtual void ObserveEvents()
@@ -54,29 +76,16 @@ namespace Esp.Net
                 else if (methodWithAttributes.observeBaseEventAttributes.Any())
                 {
                     var baseEventType = methodWithAttributes.observeBaseEventAttributes.First().BaseType;
-                    var observeBaseEvents = ObserveBaseEventsMethodInfo.MakeGenericMethod(new Type[] {baseEventType});
+                    var observeBaseEvents = ObserveBaseEventsMethodInfo.MakeGenericMethod(new Type[] { baseEventType });
                     observeBaseEvents.Invoke(this, new object[] { methodWithAttributes.methodInfo, methodWithAttributes.observeBaseEventAttributes });
                 }
             }
         }
 
-        protected void ObserveEvent<TEvent>(Action<TModel, TEvent, IEventContext> observer,
-            ObservationStage stage = ObservationStage.Normal)
-        {
-            AddDisposable(_router.GetEventObservable<TEvent>(stage).Observe(observer));
-        }
-
-        protected void ObserveEvent<TEventBase>(Action<TModel, TEventBase, IEventContext> observer,
-            params IEventObservable<TModel, TEventBase, IEventContext>[] observables)
-        {
-            var stream = EventObservable.Concat(observables);
-            AddDisposable(stream.Observe(observer));
-        }
-
         private void ObserveEvents(MethodInfo method, ObserveEventAttribute observeEventAttribute)
         {
             var getEventObservableMethod = GetEventObservableMethodInfo.MakeGenericMethod(observeEventAttribute.EventType);
-            object eventObservable = getEventObservableMethod.Invoke(_router, new object[] {observeEventAttribute.Stage});
+            object eventObservable = getEventObservableMethod.Invoke(Router, new object[] {observeEventAttribute.Stage});
             EnsureObserveEventSignatureCorrect(method, observeEventAttribute.EventType);
             ObserveEvent(method, observeEventAttribute.EventType, eventObservable);
         }
@@ -94,7 +103,7 @@ namespace Esp.Net
                 {
                     throw new NotSupportedException("Base event types don't match");
                 }
-                eventObservables[i] = _router.GetEventObservable<TBaseEvent>(baseEventAttribute.EventType, baseEventAttribute.Stage);
+                eventObservables[i] = Router.GetEventObservable<TBaseEvent>(baseEventAttribute.EventType, baseEventAttribute.Stage);
             }
             var eventObservable = EventObservable.Concat(eventObservables);
             ObserveEvent(method, baseEventType, eventObservable);
