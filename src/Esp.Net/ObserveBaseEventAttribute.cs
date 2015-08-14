@@ -17,20 +17,23 @@ using System;
 
 namespace Esp.Net
 {
-    [AttributeUsage(AttributeTargets.Method)]
-    public class ObserveEventAttribute : Attribute
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+    public class ObserveBaseEventAttribute : Attribute
     {
-        public ObserveEventAttribute(Type eventType) : this(eventType, ObservationStage.Normal)
+        public ObserveBaseEventAttribute(Type eventType, Type baseType) : this(eventType, baseType, ObservationStage.Normal)
         {
         }
 
-        public ObserveEventAttribute(Type eventType, ObservationStage stage)
+        public ObserveBaseEventAttribute(Type eventType, Type baseType, ObservationStage stage)
         {
             EventType = eventType;
+            BaseType = baseType;
             Stage = stage;
         }
 
         public Type EventType { get; private set; }
+
+        public Type BaseType { get; private set; }
 
         public ObservationStage Stage { get; private set; }
     }

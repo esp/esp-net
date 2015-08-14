@@ -65,6 +65,7 @@
     <Compile Include="Meta\IEventObservationRegistrar.cs" />
     <Compile Include="Meta\ModelsEventsObservations.cs" />
     <Compile Include="IEventPublisher.cs" />
+    <Compile Include="ObserveBaseEventAttribute.cs" />
     <Compile Include="ObserveEventAttribute.cs" />
     <Compile Include="Router.ModelEntry.cs" />
     <Compile Include="Router.Guard.cs" />

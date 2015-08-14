@@ -246,14 +246,17 @@ namespace Esp.Net
                     if (_eventSubjects.TryGetValue(typeof(TEvent), out eventSubjects))
                     {
                         var eventContext = new EventContext();
+                        eventContext.CurrentStage = ObservationStage.Preview;
                         eventSubjects.PreviewSubject.OnNext(_model, @event, eventContext);
                         if (eventContext.IsCommitted) throw new InvalidOperationException(string.Format("Committing event [{0}] at the ObservationStage.Preview is invalid", @event.GetType().Name));
                         if (!eventContext.IsCanceled && !IsRemoved)
                         {
+                            eventContext.CurrentStage = ObservationStage.Normal;
                             eventSubjects.NormalSubject.OnNext(_model, @event, eventContext);
                             if (eventContext.IsCanceled) throw new InvalidOperationException(string.Format("Cancelling event [{0}] at the ObservationStage.Normal is invalid", @event.GetType().Name));
                             if (eventContext.IsCommitted && !IsRemoved)
                             {
+                                eventContext.CurrentStage = ObservationStage.Committed;
                                 eventSubjects.CommittedSubject.OnNext(_model, @event, eventContext);
                                 if (eventContext.IsCanceled) throw new InvalidOperationException(string.Format("Cancelling event [{0}] at the ObservationStage.Committed is invalid", @event.GetType().Name));
                             }
