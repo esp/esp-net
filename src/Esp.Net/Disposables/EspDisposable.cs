@@ -18,7 +18,7 @@ using System;
 
 namespace Esp.Net.Disposables
 {
-    internal class EspDisposable : IDisposable
+    public class EspDisposable : IDisposable
     {
         public static IDisposable Empty { get; private set; }
 

@@ -232,7 +232,7 @@ namespace Esp.Net
                             subject = eventSubjects.CommittedSubject;
                             break;
                         default:
-                            throw new ArgumentOutOfRangeException("observationStage " + observationStage + " not supported", observationStage, null);
+                            throw new ArgumentOutOfRangeException(string.Format("observationStage {0} not supported", observationStage));
                     }
                     return subject.Observe(o);
                 });

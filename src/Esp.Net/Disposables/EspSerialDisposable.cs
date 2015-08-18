@@ -18,7 +18,7 @@ using System;
 
 namespace Esp.Net.Disposables
 {
-    internal class EspSerialDisposable : IDisposable
+    public class EspSerialDisposable : IDisposable
     {
         private bool _isDisposed;
 
