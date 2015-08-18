@@ -21,6 +21,6 @@ namespace Esp.Net
 {
     public interface IModelSubject
     {
-        IModelObservable<TModel> GetModelObservable<TModel>(Guid modelId);
+        IModelObservable<TModel> GetModelObservable<TModel>(object modelId);
     }
 }

@@ -22,7 +22,7 @@ namespace Esp.Net
     {
         private class State
         {
-            private Guid _modelBeingProcessed;
+            private object _modelBeingProcessed;
 
             public State()
             {
@@ -33,7 +33,7 @@ namespace Esp.Net
 
             public Status CurrentStatus { get; private set; }
 
-            public void MoveToPreProcessing(Guid modelId)
+            public void MoveToPreProcessing(object modelId)
             {
                 _modelBeingProcessed = modelId;
                 CurrentStatus = Status.PreEventProcessing;
@@ -51,7 +51,7 @@ namespace Esp.Net
 
             public void MoveToDispatchModelUpdates()
             {
-                _modelBeingProcessed = Guid.Empty;
+                _modelBeingProcessed = null;
                 CurrentStatus = Status.DispatchModelUpdates;
             }
 
@@ -63,11 +63,11 @@ namespace Esp.Net
 
             public void MoveToIdle()
             {
-                _modelBeingProcessed = Guid.Empty;
+                _modelBeingProcessed = null;
                 CurrentStatus = Status.Idle;
             }
 
-            public void MoveToExecuting(Guid modelId)
+            public void MoveToExecuting(object modelId)
             {
                 var canExecute = 
                     CurrentStatus == Status.EventProcessorDispatch &&
