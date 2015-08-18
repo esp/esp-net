@@ -75,9 +75,9 @@ namespace Esp.Net
         public class RegisterModel : RouterTests
         {
             [Test]
-            public void ThrowsIfModelIdGuidEmpty()
+            public void ThrowsIfModelIdNull()
             {
-                Assert.Throws<ArgumentException>(() => _router.RegisterModel(Guid.Empty, new object()));
+                Assert.Throws<ArgumentNullException>(() => _router.RegisterModel(null, new object()));
             }
 
             [Test]
@@ -730,9 +730,9 @@ namespace Esp.Net
         public class ModelObservation : RouterTests
         {
             [Test]
-            public void ThrowsIfModelIdGuidEmpty()
+            public void ThrowsIfModelIdNull()
             {
-                Assert.Throws<ArgumentException>(() => _router.GetModelObservable<TestModel>(Guid.Empty));
+                Assert.Throws<ArgumentNullException>(() => _router.GetModelObservable<TestModel>(null));
             }
 
             [Test]

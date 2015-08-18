@@ -71,7 +71,7 @@ namespace Esp.Net
             {
                 var canExecute = 
                     CurrentStatus == Status.EventProcessorDispatch &&
-                    _modelBeingProcessed == modelId;
+                    _modelBeingProcessed.Equals(modelId);
                 if (canExecute)
                 {
                     CurrentStatus = Status.Executing;
