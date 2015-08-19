@@ -15,6 +15,6 @@
     <tags>evented state processor reactive router event loop</tags>
   </metadata>
   <files>
-    <file src="bin\$target$\Esp.Net.dll" target="lib\net40\Esp.Net.dll" />
+    <file src="bin\$target$\Esp.Net.dll" target="lib\portable-net45%2Bsl50%2Bwin%2Bwpa81%2Bwp80%2BMonoAndroid10%2Bxamarinios10%2BMonoTouch10\Esp.Net.dll" />
   </files>
 </package>
