@@ -14,17 +14,15 @@
 // limitations under the License.
 #endregion
 
-using System;
-
 namespace Esp.Net
 {
     public interface IEventPublisher
     {
-        void PublishEvent<TEvent>(Guid modelId, TEvent @event);
-        void PublishEvent(Guid modelId, object @event);
+        void PublishEvent<TEvent>(object modelId, TEvent @event);
+        void PublishEvent(object modelId, object @event);
 
-        void ExecuteEvent<TEvent>(Guid modelId, TEvent @event);
-        void ExecuteEvent(Guid modelId, object @event);
+        void ExecuteEvent<TEvent>(object modelId, TEvent @event);
+        void ExecuteEvent(object modelId, object @event);
 
         void BroadcastEvent<TEvent>(TEvent @event);
         void BroadcastEvent(object @event);

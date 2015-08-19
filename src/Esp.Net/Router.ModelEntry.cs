@@ -27,7 +27,7 @@ namespace Esp.Net
     {
         private interface IModelEntry
         {
-            Guid Id { get; }
+            object Id { get; }
             bool HadEvents { get; }
             bool IsRemoved { get; }
             void TryEnqueue<TEvent>(TEvent @event);
@@ -67,7 +67,7 @@ namespace Esp.Net
             private static readonly MethodInfo GetEventObservableMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(ModelEntry<TModel>), "GetEventObservable", 1, 1);
 
             public ModelEntry(
-                Guid id, 
+                object id, 
                 TModel model, 
                 IPreEventProcessor<TModel> preEventProcessor, 
                 IPostEventProcessor<TModel> postEventProcessor, 
@@ -84,7 +84,7 @@ namespace Esp.Net
                 _modelChangedEventPublisher = modelChangedEventPublisher;
             }
 
-            public Guid Id { get; private set; }
+            public object Id { get; private set; }
 
             public bool HadEvents { get { return _eventDispatchQueue.Count > 0; } }
             

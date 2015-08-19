@@ -1,10 +1,8 @@
-﻿using System;
-
-namespace Esp.Net
+﻿namespace Esp.Net
 {
     public class ModelChangedEvent<TModel>
     {
-        public ModelChangedEvent(Guid modelId, TModel model)
+        public ModelChangedEvent(object modelId, TModel model)
         {
             Model = model;
             ModelId = modelId;
@@ -12,6 +10,6 @@ namespace Esp.Net
 
         public TModel Model { get; private set; }
 
-        public Guid ModelId { get; private set; }
+        public object ModelId { get; private set; }
     }
 }

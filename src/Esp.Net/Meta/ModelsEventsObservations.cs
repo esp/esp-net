@@ -23,48 +23,48 @@ namespace Esp.Net.Meta
     internal class ModelsEventsObservations : IEventsObservationRegistrar
     {
         private readonly IThreadGuard _threadGuard;
-        private readonly Dictionary<Guid, ModelEventObservations> _modelRegistries;
+        private readonly Dictionary<object, ModelEventObservations> _modelRegistries;
 
         public ModelsEventsObservations(IThreadGuard threadGuard)
         {
             _threadGuard = threadGuard;
-            _modelRegistries = new Dictionary<Guid, ModelEventObservations>();
+            _modelRegistries = new Dictionary<object    , ModelEventObservations>();
         }
 
-        public void IncrementRegistration<TEvent>(Guid modelId)
+        public void IncrementRegistration<TEvent>(object modelId)
         {
             ModelEventObservations eventObservations = GetEventRegistrations(modelId);
             eventObservations.IncrementRegistration<TEvent>();
         }
 
-        public void DecrementRegistration<TEvent>(Guid modelId)
+        public void DecrementRegistration<TEvent>(object modelId)
         {
             ModelEventObservations eventObservations = GetEventRegistrations(modelId);
             eventObservations.DecrementRegistration<TEvent>();
         }
 
-        int IEventsObservationRegistrar.GetEventObservationCount<TEventType>(Guid modelId)
+        int IEventsObservationRegistrar.GetEventObservationCount<TEventType>(object modelId)
         {
             Guard.Requires<InvalidOperationException>(_threadGuard.CheckAccess(), "Invalid thread access");
             ModelEventObservations eventObservations = GetEventRegistrations(modelId);
             return eventObservations.GetEventObservationCount<TEventType>();
         }
 
-        int IEventsObservationRegistrar.GetEventObservationCount(Guid modelId, Type eventType)
+        int IEventsObservationRegistrar.GetEventObservationCount(object modelId, Type eventType)
         {
             Guard.Requires<InvalidOperationException>(_threadGuard.CheckAccess(), "Invalid thread access");
             ModelEventObservations eventObservations = GetEventRegistrations(modelId);
             return eventObservations.GetEventObservationCount(eventType);
         }
 
-        IList<EventObservations> IEventsObservationRegistrar.GetEventObservations(Guid modelId)
+        IList<EventObservations> IEventsObservationRegistrar.GetEventObservations(object modelId)
         {
             Guard.Requires<InvalidOperationException>(_threadGuard.CheckAccess(), "Invalid thread access");
             ModelEventObservations eventObservations = GetEventRegistrations(modelId);
             return eventObservations.GetEventObservations();
         }
 
-        private ModelEventObservations GetEventRegistrations(Guid modelId)
+        private ModelEventObservations GetEventRegistrations(object modelId)
         {
             ModelEventObservations eventObservations;
             if (!_modelRegistries.TryGetValue(modelId, out eventObservations))
@@ -75,17 +75,17 @@ namespace Esp.Net.Meta
             return eventObservations;
         }
 
-        internal IEventObservationRegistrar CreateForModel(Guid modelId)
+        internal IEventObservationRegistrar CreateForModel(object modelId)
         {
             return new ModelEventObservationRegistrar(modelId, this);
         }
 
         private class ModelEventObservationRegistrar : IEventObservationRegistrar
         {
-            private readonly Guid _modelId;
+            private readonly object _modelId;
             private readonly ModelsEventsObservations _parent;
 
-            public ModelEventObservationRegistrar(Guid modelId, ModelsEventsObservations parent)
+            public ModelEventObservationRegistrar(object modelId, ModelsEventsObservations parent)
             {
                 _modelId = modelId;
                 _parent = parent;

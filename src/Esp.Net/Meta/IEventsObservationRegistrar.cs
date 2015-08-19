@@ -5,8 +5,8 @@ namespace Esp.Net.Meta
 {
     public interface IEventsObservationRegistrar
     {
-        int GetEventObservationCount<TEventType>(Guid modelId);
-        int GetEventObservationCount(Guid modelId, Type eventType);
-        IList<EventObservations> GetEventObservations(Guid modelId);
+        int GetEventObservationCount<TEventType>(object modelId);
+        int GetEventObservationCount(object modelId, Type eventType);
+        IList<EventObservations> GetEventObservations(object modelId);
     }
 }

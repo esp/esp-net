@@ -21,11 +21,11 @@ namespace Esp.Net
 {
     public interface IRouter : IModelSubject, IEventSubject, IEventPublisher
     {
-        void RegisterModel<TModel>(Guid modelId, TModel model);
-        void RegisterModel<TModel>(Guid modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor);
-        void RegisterModel<TModel>(Guid modelId, TModel model, IPostEventProcessor<TModel> postEventProcessor);
-        void RegisterModel<TModel>(Guid modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor, IPostEventProcessor<TModel> postEventProcessor);
-        void RemoveModel(Guid modelId);
-        IRouter<TModel> CreateModelRouter<TModel>(Guid modelId);
+        void RegisterModel<TModel>(object modelId, TModel model);
+        void RegisterModel<TModel>(object modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor);
+        void RegisterModel<TModel>(object modelId, TModel model, IPostEventProcessor<TModel> postEventProcessor);
+        void RegisterModel<TModel>(object modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor, IPostEventProcessor<TModel> postEventProcessor);
+        void RemoveModel(object modelId);
+        IRouter<TModel> CreateModelRouter<TModel>(object modelId);
     }
 }

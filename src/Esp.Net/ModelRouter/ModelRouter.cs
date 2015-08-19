@@ -21,10 +21,10 @@ namespace Esp.Net.ModelRouter
 {
     internal class ModelRouter<TModel> : IRouter<TModel>
     {
-        private readonly Guid _modelIid;
+        private readonly object _modelIid;
         private readonly IRouter _underlying;
 
-        public ModelRouter(Guid modelIid, IRouter underlying)
+        public ModelRouter(object modelIid, IRouter underlying)
         {
             _modelIid = modelIid;
             _underlying = underlying;
