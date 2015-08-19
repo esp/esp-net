@@ -17,7 +17,7 @@
 #if ESP_EXPERIMENTAL
 using System;
 
-namespace Esp.Net.Plugins.Workflow
+namespace Esp.Net.Workflow
 {
     internal class AyncResultsEvent<TResult> : IIdentifiableEvent
     {

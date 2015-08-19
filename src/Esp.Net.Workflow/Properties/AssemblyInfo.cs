@@ -8,3 +8,4 @@ using System.Runtime.CompilerServices;
 [assembly: NeutralResourcesLanguage("en")]
 
 [assembly: InternalsVisibleTo("Esp.Net.Tests")]
+[assembly: InternalsVisibleTo("Esp.Net")]
