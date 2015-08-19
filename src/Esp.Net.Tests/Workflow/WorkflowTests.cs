@@ -20,11 +20,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Esp.Net.Reactive;
-using Esp.Net.Workflow;
 using NUnit.Framework;
 using Shouldly;
 
-namespace Esp.Net.Plugins.Workflow
+namespace Esp.Net.Workflow
 {
     [TestFixture]
     public class WorkflowTests

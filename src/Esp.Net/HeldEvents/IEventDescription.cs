@@ -15,17 +15,15 @@
 #endregion
 
 #if ESP_EXPERIMENTAL
-namespace Esp.Net.Plugins.HeldEvents
-{
-    public interface IEventHoldingStrategy<in TModel, in TEvent> where TEvent : IIdentifiableEvent
-    {
-        bool ShouldHold(TModel model, TEvent @event, IEventContext context);
-        IEventDescription GetEventDescription(TModel model, TEvent @event);
-    }
+using System;
 
-    public interface IEventHoldingStrategy<in TModel, in TEvent, in TBaseEvent> : IEventHoldingStrategy<TModel, TEvent>
-        where TEvent : IIdentifiableEvent, TBaseEvent
+namespace Esp.Net.HeldEvents
+{
+    public interface IEventDescription
     {
+        Guid EventId { get; }
+        string Category { get; }
+        string Description { get; }
     }
 }
 #endif

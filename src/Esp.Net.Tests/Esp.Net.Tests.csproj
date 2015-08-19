@@ -66,8 +66,8 @@
     <Compile Include="BaseModelEventProcessorTests.cs" />
     <Compile Include="Disposables\EspDisposableTests.cs" />
     <Compile Include="Reactive\StubSubject.cs" />
-    <Compile Include="Plugins\Workflow\WorkflowTests.cs" />
-    <Compile Include="Plugins\HeldEvents\HeldEventTests.cs" />
+    <Compile Include="Workflow\WorkflowTests.cs" />
+    <Compile Include="HeldEvents\HeldEventTests.cs" />
     <Compile Include="Reactive\ReactiveTests.cs" />
     <Compile Include="Reactive\StubEventObservable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

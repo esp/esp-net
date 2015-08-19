@@ -26,6 +26,7 @@ namespace Esp.Net.Disposables
         {
             Empty = new EspDisposable(() => { /* Noop*/ });
         }
+        public bool IsDisposed { get; private set; }
 
         public static IDisposable Create(Action action)
         {
@@ -40,12 +41,13 @@ namespace Esp.Net.Disposables
             {
                 throw new ArgumentNullException("action", "Action must not be null.");
             }
-
             _action = action;
         }
 
         public void Dispose()
         {
+            if (IsDisposed) return;
+            IsDisposed = true;
             _action();
         }
     }

@@ -23,7 +23,7 @@ using Esp.Net.ModelRouter;
 using Esp.Net.Reactive;
 using Esp.Net.Utils;
 
-namespace Esp.Net.Plugins.HeldEvents
+namespace Esp.Net.HeldEvents
 {
     public static class RouterExt
     {

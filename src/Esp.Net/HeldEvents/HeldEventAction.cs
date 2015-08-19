@@ -15,15 +15,12 @@
 #endregion
 
 #if ESP_EXPERIMENTAL
-using System;
-
-namespace Esp.Net.Plugins.HeldEvents
+namespace Esp.Net.HeldEvents
 {
-    public interface IEventDescription
+    public enum HeldEventAction
     {
-        Guid EventId { get; }
-        string Category { get; }
-        string Description { get; }
+        Release,
+        Ignore
     }
 }
 #endif

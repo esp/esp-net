@@ -22,7 +22,7 @@ using Esp.Net.Reactive;
 using NUnit.Framework;
 using Shouldly;
 
-namespace Esp.Net.Plugins.HeldEvents
+namespace Esp.Net.HeldEvents
 {
     [TestFixture]
     public class HeldEventTests
