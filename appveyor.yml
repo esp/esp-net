@@ -10,9 +10,7 @@ nuget:
   disable_publish_on_pr: false
 
 before_build:
- - cd src
- - nuget restore
- - cd ..\
+ - .\tools\nuget.exe restore .\src\Esp.Net.sln
  - ps: ./tools/gitversion.exe /l console /output buildserver /updateAssemblyInfo
   
 build:
