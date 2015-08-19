@@ -20,7 +20,7 @@ using System.Reactive.Linq;
 using Esp.Net.Disposables;
 using Esp.Net.Reactive;
 
-namespace Esp.Net.Plugins.Workflow
+namespace Esp.Net.Workflow
 {
     public enum StepType
     {

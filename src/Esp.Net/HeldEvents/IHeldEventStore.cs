@@ -15,12 +15,13 @@
 #endregion
 
 #if ESP_EXPERIMENTAL
-namespace Esp.Net.Plugins.HeldEvents
+
+namespace Esp.Net.HeldEvents
 {
-    public enum HeldEventAction
+    public interface IHeldEventStore
     {
-        Release,
-        Ignore
+        void AddHeldEventDescription(IEventDescription description);
+        void RemoveHeldEventDescription(IEventDescription description);
     }
 }
 #endif

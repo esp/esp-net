@@ -1,4 +1,4 @@
-#region copyright
+﻿#region copyright
 // Copyright 2015 Keith Woods
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,19 +17,13 @@
 #if ESP_EXPERIMENTAL
 using System;
 
-namespace Esp.Net.Plugins.HeldEvents
+namespace Esp.Net.HeldEvents
 {
-    public class HeldEventActionEvent
+    public interface IEventDescription
     {
-        public HeldEventActionEvent(Guid eventId, HeldEventAction action)
-        {
-            Action = action;
-            EventId = eventId;
-        }
-
-        public HeldEventAction Action { get; private set; }
-
-        public Guid EventId { get; private set; }
+        Guid EventId { get; }
+        string Category { get; }
+        string Description { get; }
     }
 }
 #endif

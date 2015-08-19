@@ -13,6 +13,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Esp.Net.Workflow", "Esp.Net.Workflow\Esp.Net.Workflow.csproj", "{E9844144-0F47-40D3-BC35-6135AF535732}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{2C08EEBF-99F4-43AD-B87F-2B90DEB6F8DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2C08EEBF-99F4-43AD-B87F-2B90DEB6F8DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2C08EEBF-99F4-43AD-B87F-2B90DEB6F8DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E9844144-0F47-40D3-BC35-6135AF535732}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9844144-0F47-40D3-BC35-6135AF535732}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9844144-0F47-40D3-BC35-6135AF535732}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9844144-0F47-40D3-BC35-6135AF535732}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

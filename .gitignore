@@ -131,6 +131,9 @@ packages/
 # This line needs to be after the ignore of the build folder (and the packages folder if the line above has been uncommented)
 !packages/build/
 
+# nuget exe
+src/.nuget
+
 # Windows Azure Build Output
 csx/
 *.build.csdef

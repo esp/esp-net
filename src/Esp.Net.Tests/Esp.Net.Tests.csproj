@@ -12,6 +12,8 @@
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -42,6 +44,15 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Reactive.Core">
+      <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Interfaces">
+      <HintPath>..\packages\Rx-Interfaces.2.2.5\lib\net45\System.Reactive.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Linq">
+      <HintPath>..\packages\Rx-Linq.2.2.5\lib\net45\System.Reactive.Linq.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -55,8 +66,8 @@
     <Compile Include="BaseModelEventProcessorTests.cs" />
     <Compile Include="Disposables\EspDisposableTests.cs" />
     <Compile Include="Reactive\StubSubject.cs" />
-    <Compile Include="Plugins\Workflow\WorkflowTests.cs" />
-    <Compile Include="Plugins\HeldEvents\HeldEventTests.cs" />
+    <Compile Include="Workflow\WorkflowTests.cs" />
+    <Compile Include="HeldEvents\HeldEventTests.cs" />
     <Compile Include="Reactive\ReactiveTests.cs" />
     <Compile Include="Reactive\StubEventObservable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -66,6 +77,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Esp.Net.Workflow\Esp.Net.Workflow.csproj">
+      <Project>{e9844144-0f47-40d3-bc35-6135af535732}</Project>
+      <Name>Esp.Net.Workflow</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Esp.Net\Esp.Net.csproj">
       <Project>{2c08eebf-99f4-43ad-b87f-2b90deb6f8de}</Project>
       <Name>Esp.Net</Name>

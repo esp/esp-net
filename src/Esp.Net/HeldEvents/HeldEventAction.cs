@@ -1,4 +1,4 @@
-#region copyright
+﻿#region copyright
 // Copyright 2015 Keith Woods
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,21 +15,12 @@
 #endregion
 
 #if ESP_EXPERIMENTAL
-using System;
-
-namespace Esp.Net.Plugins.Workflow
+namespace Esp.Net.HeldEvents
 {
-    internal class AyncResultsEvent<TResult> : IIdentifiableEvent
+    public enum HeldEventAction
     {
-        public AyncResultsEvent(TResult results, Guid id)
-        {
-            Result = results;
-            Id = id;
-        }
-
-        public TResult Result { get; private set; }
-
-        public Guid Id { get; private set; }
+        Release,
+        Ignore
     }
 }
 #endif

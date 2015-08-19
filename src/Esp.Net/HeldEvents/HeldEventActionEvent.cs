@@ -1,4 +1,4 @@
-﻿#region copyright
+#region copyright
 // Copyright 2015 Keith Woods
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,17 +15,21 @@
 #endregion
 
 #if ESP_EXPERIMENTAL
-namespace Esp.Net.Plugins.HeldEvents
-{
-    public interface IEventHoldingStrategy<in TModel, in TEvent> where TEvent : IIdentifiableEvent
-    {
-        bool ShouldHold(TModel model, TEvent @event, IEventContext context);
-        IEventDescription GetEventDescription(TModel model, TEvent @event);
-    }
+using System;
 
-    public interface IEventHoldingStrategy<in TModel, in TEvent, in TBaseEvent> : IEventHoldingStrategy<TModel, TEvent>
-        where TEvent : IIdentifiableEvent, TBaseEvent
+namespace Esp.Net.HeldEvents
+{
+    public class HeldEventActionEvent
     {
+        public HeldEventActionEvent(Guid eventId, HeldEventAction action)
+        {
+            Action = action;
+            EventId = eventId;
+        }
+
+        public HeldEventAction Action { get; private set; }
+
+        public Guid EventId { get; private set; }
     }
 }
 #endif

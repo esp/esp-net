@@ -23,7 +23,7 @@ using Esp.Net.Reactive;
 using NUnit.Framework;
 using Shouldly;
 
-namespace Esp.Net.Plugins.Workflow
+namespace Esp.Net.Workflow
 {
     [TestFixture]
     public class WorkflowTests

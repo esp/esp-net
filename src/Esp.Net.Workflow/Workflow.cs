@@ -19,12 +19,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Reactive.Linq;
 using Esp.Net.Disposables;
 
 // TODO threading!! it's completely unsafe atm given the introduction of IObservable
 
-namespace Esp.Net.Plugins.Workflow
+namespace Esp.Net.Workflow
 {
     public interface IWorkflowInstanceContext
     {

@@ -1,21 +1,20 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>esp-net</id>
+    <id>esp-net-workflow-source</id>
     <version>$version$</version>
-    <title>esp-net</title>
+    <title>esp-net-workflow-source</title>
     <authors>Keith Woods</authors>
     <owners>Keith Woods</owners>
     <licenseUrl>https://github.com/esp/esp-net/LICENSE.txt</licenseUrl>
     <projectUrl>https://github.com/esp/esp-net</projectUrl>
     <iconUrl>https://raw.github.com/esp/esp-net/master/package_icon.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Evented State Processor (ESP) adds specific processing workflow around changes to a model's state</description>
+    <description>Source Only Package - Evented State Processor (ESP) adds specific processing workflow around changes to a model's state. This package adds functionality to integrate ESP with RX.</description>
     <copyright>Copyright Keith Woods 2015</copyright>
-    <tags>evented state processor reactive router event loop</tags>
+    <tags>evented state processor reactive router event loop rx</tags>
   </metadata>
   <files>
-    <!-- target taken from here based on the profile used in the project http://embed.plnkr.co/03ck2dCtnJogBKHJ9EjY/preview -->
-    <file src="bin\$target$\Esp.Net.dll" target="lib\portable-net45+sl5+netcore45+wpa81+wp8\Esp.Net.dll" />
+    <file src="**\*.cs" exclude="Properties\AssemblyInfo.cs" target="content\App_Packages\Esp.Net.Workflow.$version$" />
   </files>
 </package>

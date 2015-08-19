@@ -14,18 +14,18 @@
 // limitations under the License.
 #endregion
 
-#if ESP_LOCAL
-// ReSharper disable once CheckNamespace
-namespace System.Reactive.Linq
+#if ESP_EXPERIMENTAL
+namespace Esp.Net.HeldEvents
 {
-    internal class Unit
+    public interface IEventHoldingStrategy<in TModel, in TEvent> where TEvent : IIdentifiableEvent
     {
-        static Unit()
-        {
-            Default = new Unit();
-        }
+        bool ShouldHold(TModel model, TEvent @event, IEventContext context);
+        IEventDescription GetEventDescription(TModel model, TEvent @event);
+    }
 
-        public static Unit Default { get; private set; }
+    public interface IEventHoldingStrategy<in TModel, in TEvent, in TBaseEvent> : IEventHoldingStrategy<TModel, TEvent>
+        where TEvent : IIdentifiableEvent, TBaseEvent
+    {
     }
 }
 #endif

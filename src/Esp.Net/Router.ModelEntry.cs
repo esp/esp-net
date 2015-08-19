@@ -20,6 +20,7 @@ using System.Reflection;
 using Esp.Net.Meta;
 using Esp.Net.Reactive;
 using Esp.Net.Utils;
+using Microsoft.CSharp.RuntimeBinder;
 
 namespace Esp.Net
 {
@@ -232,7 +233,7 @@ namespace Esp.Net
                             subject = eventSubjects.CommittedSubject;
                             break;
                         default:
-                            throw new ArgumentOutOfRangeException("observationStage " + observationStage + " not supported", observationStage, null);
+                            throw new ArgumentOutOfRangeException(string.Format("observationStage {0} not supported", observationStage));
                     }
                     return subject.Observe(o);
                 });
@@ -242,25 +243,32 @@ namespace Esp.Net
             {
                 return () =>
                 {
-                    dynamic eventSubjects;
-                    if (_eventSubjects.TryGetValue(typeof(TEvent), out eventSubjects))
+                    try
                     {
-                        var eventContext = new EventContext();
-                        eventContext.CurrentStage = ObservationStage.Preview;
-                        eventSubjects.PreviewSubject.OnNext(_model, @event, eventContext);
-                        if (eventContext.IsCommitted) throw new InvalidOperationException(string.Format("Committing event [{0}] at the ObservationStage.Preview is invalid", @event.GetType().Name));
-                        if (!eventContext.IsCanceled && !IsRemoved)
+                        dynamic eventSubjects;
+                        if (_eventSubjects.TryGetValue(typeof(TEvent), out eventSubjects))
                         {
-                            eventContext.CurrentStage = ObservationStage.Normal;
-                            eventSubjects.NormalSubject.OnNext(_model, @event, eventContext);
-                            if (eventContext.IsCanceled) throw new InvalidOperationException(string.Format("Cancelling event [{0}] at the ObservationStage.Normal is invalid", @event.GetType().Name));
-                            if (eventContext.IsCommitted && !IsRemoved)
+                            var eventContext = new EventContext();
+                            eventContext.CurrentStage = ObservationStage.Preview;
+                            eventSubjects.PreviewSubject.OnNext(_model, @event, eventContext);
+                            if (eventContext.IsCommitted) throw new InvalidOperationException(string.Format("Committing event [{0}] at the ObservationStage.Preview is invalid", @event.GetType().Name));
+                            if (!eventContext.IsCanceled && !IsRemoved)
                             {
-                                eventContext.CurrentStage = ObservationStage.Committed;
-                                eventSubjects.CommittedSubject.OnNext(_model, @event, eventContext);
-                                if (eventContext.IsCanceled) throw new InvalidOperationException(string.Format("Cancelling event [{0}] at the ObservationStage.Committed is invalid", @event.GetType().Name));
+                                eventContext.CurrentStage = ObservationStage.Normal;
+                                eventSubjects.NormalSubject.OnNext(_model, @event, eventContext);
+                                if (eventContext.IsCanceled) throw new InvalidOperationException(string.Format("Cancelling event [{0}] at the ObservationStage.Normal is invalid", @event.GetType().Name));
+                                if (eventContext.IsCommitted && !IsRemoved)
+                                {
+                                    eventContext.CurrentStage = ObservationStage.Committed;
+                                    eventSubjects.CommittedSubject.OnNext(_model, @event, eventContext);
+                                    if (eventContext.IsCanceled) throw new InvalidOperationException(string.Format("Cancelling event [{0}] at the ObservationStage.Committed is invalid", @event.GetType().Name));
+                                }
                             }
                         }
+                    }
+                    catch (RuntimeBinderException ex)
+                    {
+                        throw new Exception(string.Format("Error dispatching event of type [{0}]. Is this event scoped internal? The Router uses the DLR to dispatch events not reflection, it can't dispatch internally scoped events without using a InternalsVisibleTo attribute.", @event.GetType().FullName), ex);
                     }
                 };
             }

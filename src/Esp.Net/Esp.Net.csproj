@@ -2,6 +2,7 @@
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
+    <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{2C08EEBF-99F4-43AD-B87F-2B90DEB6F8DE}</ProjectGuid>
@@ -9,20 +10,20 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Esp.Net</RootNamespace>
     <AssemblyName>Esp.Net</AssemblyName>
-    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
+    <DefaultLanguage>en-US</DefaultLanguage>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
-    <NuGetPackageImportStamp>522f72fb</NuGetPackageImportStamp>
+    <ProjectTypeGuids>{786C830F-07A1-408B-BD7F-6EE04809D6DB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <TargetFrameworkProfile>Profile344</TargetFrameworkProfile>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;ESP_EXPERIMENTAL, ESP_LOCAL</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;ESP_EXPERIMENTAL</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -31,88 +32,71 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
+    <!-- A reference to the entire .NET Framework is automatically included -->
+    <None Include="Esp.Net.nuspec" />
+    <None Include="Esp.Net.SourcePackage.nuspec" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\AssemblyInfoCommon.cs">
       <Link>Properties\AssemblyInfoCommon.cs</Link>
     </Compile>
     <Compile Include="BaseEventProcessor.cs" />
+    <Compile Include="Disposables\CollectionDisposable.cs" />
+    <Compile Include="Disposables\DictionaryDisposable.cs" />
+    <Compile Include="Disposables\DisposableBase.cs" />
+    <Compile Include="Disposables\EspDisposable.cs" />
+    <Compile Include="Disposables\EspSerialDisposable.cs" />
+    <Compile Include="EventContext.cs" />
+    <Compile Include="IClonable.cs" />
     <Compile Include="IEventContext.cs" />
+    <Compile Include="IEventPublisher.cs" />
     <Compile Include="IEventSubject.cs" />
+    <Compile Include="IIdentifiableEvent.cs" />
     <Compile Include="IModelSubject.cs" />
+    <Compile Include="IPostEventProcessor.cs" />
     <Compile Include="IPreEventProcessor.cs" />
     <Compile Include="IRouter.cs" />
     <Compile Include="IThreadGuard.cs" />
     <Compile Include="Meta\EventObservations.cs" />
+    <Compile Include="Meta\IEventObservationRegistrar.cs" />
     <Compile Include="Meta\IEventsObservationRegistrar.cs" />
     <Compile Include="Meta\ModelEventObservations.cs" />
+    <Compile Include="Meta\ModelsEventsObservations.cs" />
     <Compile Include="ModelChangedEvent.cs" />
     <Compile Include="ModelRouter\IEventPublisher.cs" />
     <Compile Include="ModelRouter\IEventSubject.cs" />
     <Compile Include="ModelRouter\IModelSubject.cs" />
     <Compile Include="ModelRouter\IRouter.cs" />
     <Compile Include="ModelRouter\ModelRouter.cs" />
-    <Compile Include="Meta\IEventObservationRegistrar.cs" />
-    <Compile Include="Meta\ModelsEventsObservations.cs" />
-    <Compile Include="IEventPublisher.cs" />
+    <Compile Include="ObservationStage.cs" />
     <Compile Include="ObserveBaseEventAttribute.cs" />
     <Compile Include="ObserveEventAttribute.cs" />
-    <Compile Include="Router.ModelEntry.cs" />
-    <Compile Include="Router.Guard.cs" />
-    <Compile Include="Router.State.cs" />
-    <Compile Include="Router.Status.cs" />
-    <Compile Include="Plugins\Workflow\AyncResultsEvent.cs" />
-    <Compile Include="EventContext.cs" />
-    <Compile Include="IPostEventProcessor.cs" />
-    <Compile Include="Utils\Guard.cs" />
-    <Compile Include="Plugins\HeldEvents\HeldEventAction.cs" />
-    <Compile Include="Plugins\HeldEvents\HeldEventActionEvent.cs" />
-    <Compile Include="Plugins\HeldEvents\IEventDescription.cs" />
-    <Compile Include="Plugins\HeldEvents\IEventHoldingStrategy.cs" />
-    <Compile Include="Plugins\HeldEvents\IHeldEventStore.cs" />
-    <Compile Include="IIdentifiableEvent.cs" />
-    <Compile Include="Plugins\HeldEvents\RouterExt.cs" />
-    <Compile Include="IClonable.cs" />
-    <Compile Include="Disposables\DictionaryDisposable.cs" />
-    <Compile Include="Disposables\DisposableBase.cs" />
-    <Compile Include="Disposables\EspSerialDisposable.cs" />
-    <Compile Include="ObservationStage.cs" />
-    <Compile Include="Plugins\Workflow\Workflow.cs" />
-    <Compile Include="Plugins\Workflow\Workflow.Steps.cs" />
-    <Compile Include="Reactive\ModelObservable.cs" />
-    <Compile Include="Reactive\ModelObserver.cs" />
-    <Compile Include="Reactive\ModelSubject.cs" />
-    <Compile Include="Utils\ReflectionHelper.cs" />
-    <Compile Include="Plugins\RxBridge\Observable.cs" />
-    <Compile Include="Plugins\RxBridge\EspObserver.cs" />
-    <Compile Include="Plugins\RxBridge\ObservableExt.cs" />
+    <Compile Include="HeldEvents\HeldEventAction.cs" />
+    <Compile Include="HeldEvents\HeldEventActionEvent.cs" />
+    <Compile Include="HeldEvents\IEventDescription.cs" />
+    <Compile Include="HeldEvents\IEventHoldingStrategy.cs" />
+    <Compile Include="HeldEvents\IHeldEventStore.cs" />
+    <Compile Include="HeldEvents\RouterExt.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Disposables\EspDisposable.cs" />
-    <Compile Include="Disposables\CollectionDisposable.cs" />
     <Compile Include="Reactive\EventObservable.cs" />
     <Compile Include="Reactive\EventObserver.cs" />
     <Compile Include="Reactive\EventSubject.cs" />
+    <Compile Include="Reactive\ModelObservable.cs" />
+    <Compile Include="Reactive\ModelObserver.cs" />
+    <Compile Include="Reactive\ModelSubject.cs" />
     <Compile Include="Router.cs" />
+    <Compile Include="Router.Guard.cs" />
+    <Compile Include="Router.ModelEntry.cs" />
+    <Compile Include="Router.State.cs" />
+    <Compile Include="Router.Status.cs" />
     <Compile Include="ThreadGuard.cs" />
-    <Compile Include="Plugins\RxBridge\Unit.cs" />
+    <Compile Include="Utils\Guard.cs" />
+    <Compile Include="Utils\ReflectionExt.cs" />
+    <Compile Include="Utils\ReflectionHelper.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="Esp.Net.SourcePackage.nuspec" />
-    <None Include="Esp.Net.nuspec">
-      <SubType>Designer</SubType>
-    </None>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
