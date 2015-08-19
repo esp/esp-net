@@ -22,5 +22,13 @@ after_build:
   - cmd: .\tools\nuget.exe pack .\src\Esp.Net\Esp.Net.nuspec -version "%GitVersion_NuGetVersion%" -prop "target=%CONFIGURATION%"
   - cmd: ECHO nuget pack .\src\Esp.Net\Esp.Net.SourcePackage.nuspec -version "%GitVersion_NuGetVersion%"
   - cmd: .\tools\nuget.exe pack .\src\Esp.Net\Esp.Net.SourcePackage.nuspec -version "%GitVersion_NuGetVersion%"
+  
+  - cmd: ECHO nuget pack .\src\Esp.Net.Workflow\Esp.Net.Workflow.nuspec -version "%GitVersion_NuGetVersion%" -prop "target=%CONFIGURATION%"
+  - cmd: .\tools\nuget.exe pack .\src\Esp.Net.Workflow\Esp.Net.Workflow.nuspec -version "%GitVersion_NuGetVersion%" -prop "target=%CONFIGURATION%"
+  - cmd: ECHO nuget pack .\src\Esp.Net.Workflow\Esp.Net.Workflow.SourcePackage.nuspec -version "%GitVersion_NuGetVersion%"
+  - cmd: .\tools\nuget.exe pack .\src\Esp.Net.Workflow\Esp.Net.Workflow.SourcePackage.nuspec -version "%GitVersion_NuGetVersion%"  
+  
   - cmd: appveyor PushArtifact "esp-net.%GitVersion_NuGetVersion%.nupkg"
   - cmd: appveyor PushArtifact "esp-net-source.%GitVersion_NuGetVersion%.nupkg"
+  - cmd: appveyor PushArtifact "esp-net-workflow.%GitVersion_NuGetVersion%.nupkg"
+  - cmd: appveyor PushArtifact "esp-net-workflow-source.%GitVersion_NuGetVersion%.nupkg"
