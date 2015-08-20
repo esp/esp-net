@@ -27,5 +27,6 @@ namespace Esp.Net
         void RegisterModel<TModel>(object modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor, IPostEventProcessor<TModel> postEventProcessor);
         void RemoveModel(object modelId);
         IRouter<TModel> CreateModelRouter<TModel>(object modelId);
+        IRouter<TSubModel> CreateModelRouter<TModel, TSubModel>(object modelId, Func<TModel, TSubModel> subModelSelector);
     }
 }

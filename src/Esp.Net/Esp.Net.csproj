@@ -70,6 +70,7 @@
     <Compile Include="ModelRouter\IModelSubject.cs" />
     <Compile Include="ModelRouter\IRouter.cs" />
     <Compile Include="ModelRouter\ModelRouter.cs" />
+    <Compile Include="ModelRouter\SubModelRouter.cs" />
     <Compile Include="ObservationStage.cs" />
     <Compile Include="ObserveBaseEventAttribute.cs" />
     <Compile Include="ObserveEventAttribute.cs" />

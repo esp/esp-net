@@ -176,6 +176,12 @@ namespace Esp.Net
             return new ModelRouter<TModel>(modelId, this);
         }
 
+        public IRouter<TSubModel> CreateModelRouter<TModel, TSubModel>(object modelId, Func<TModel, TSubModel> subModelSelector)
+        { 
+            _routerGuard.EnsureValid();
+            return new SubModelRouter<TModel, TSubModel>(modelId, this, subModelSelector);
+        }
+
         private void PurgeEventQueues()
         {
             if (_state.CurrentStatus == Status.Idle)

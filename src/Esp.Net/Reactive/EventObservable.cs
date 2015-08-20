@@ -111,6 +111,19 @@ namespace Esp.Net.Reactive
                 }
             );
         }
+
+        public static IEventObservable<TSubModel, TEvent, TContext> Select<TModel, TSubModel, TEvent, TContext>(this IEventObservable<TModel, TEvent, TContext> source, Func<TModel, TSubModel> subModelSelector)
+        {
+            return Create<TSubModel, TEvent, TContext>(
+                o =>
+                {
+                    return source.Observe(
+                        (m, e, c) => o.OnNext(subModelSelector(m), e, c),
+                        o.OnCompleted
+                    );
+                }
+            );
+        }
     }
 
     internal class EventObservable<TModel, TEvent, TContext> : IEventObservable<TModel, TEvent, TContext>
