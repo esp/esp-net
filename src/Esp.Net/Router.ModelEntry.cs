@@ -59,9 +59,10 @@ namespace Esp.Net
             private readonly TModel _model;
             private readonly IPreEventProcessor<TModel> _preEventProcessor;
             private readonly IPostEventProcessor<TModel> _postEventProcessor;
-            private readonly RouterGuard _routerGuard;
+            private readonly State _state;
             private readonly IEventObservationRegistrar _eventObservationRegistrar;
             private readonly IModelChangedEventPublisher _modelChangedEventPublisher;
+            private readonly IRouterDispatcher _routerDispatcher;
             private readonly Queue<dynamic> _eventDispatchQueue = new Queue<dynamic>();
             private readonly Dictionary<Type, dynamic> _eventSubjects = new Dictionary<Type, dynamic>();
             private readonly ModelSubject<TModel> _modelUpdateSubject = new ModelSubject<TModel>();
@@ -72,17 +73,19 @@ namespace Esp.Net
                 TModel model, 
                 IPreEventProcessor<TModel> preEventProcessor, 
                 IPostEventProcessor<TModel> postEventProcessor, 
-                RouterGuard routerGuard,
+                State state,
                 IEventObservationRegistrar eventObservationRegistrar,
-                IModelChangedEventPublisher modelChangedEventPublisher)
+                IModelChangedEventPublisher modelChangedEventPublisher,
+                IRouterDispatcher routerDispatcher)
             {
                 Id = id;
                 _model = model;
                 _preEventProcessor = preEventProcessor;
                 _postEventProcessor = postEventProcessor;
-                _routerGuard = routerGuard;
+                _state = state;
                 _eventObservationRegistrar = eventObservationRegistrar;
                 _modelChangedEventPublisher = modelChangedEventPublisher;
+                _routerDispatcher = routerDispatcher;
             }
 
             public object Id { get; private set; }
@@ -160,7 +163,8 @@ namespace Esp.Net
             {
                 return ModelObservable.Create<TModel>(o =>
                 {
-                    _routerGuard.EnsureValid();
+                    _state.ThrowIfHalted();
+                    _routerDispatcher.EnsureAccess();
                     return _modelUpdateSubject.Observe(o);
                 });
             }
@@ -192,7 +196,8 @@ namespace Esp.Net
                 Guard.Requires<ArgumentException>(typeof(TBaseEvent).IsAssignableFrom(subEventType), "Event type {0} must derive from {1}", subEventType, typeof(TBaseEvent));
                 return EventObservable.Create<TModel, TBaseEvent, IEventContext>(o =>
                 {
-                    _routerGuard.EnsureValid();
+                    _state.ThrowIfHalted();
+                    _routerDispatcher.EnsureAccess();
                     var getEventStreamMethod = GetEventObservableMethodInfo.MakeGenericMethod(subEventType);
                     dynamic observable = getEventStreamMethod.Invoke(this, new object[] { observationStage });
                     return (IDisposable)observable.Observe(o);
@@ -209,7 +214,8 @@ namespace Esp.Net
             {
                 return EventObservable.Create<TModel, TEvent, IEventContext>(o =>
                 {
-                    _routerGuard.EnsureValid();
+                    _state.ThrowIfHalted();
+                    _routerDispatcher.EnsureAccess();
                     EventSubjects<TEvent> eventSubjects;
                     if (!_eventSubjects.ContainsKey(typeof(TEvent)))
                     {

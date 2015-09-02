@@ -28,7 +28,7 @@ namespace Esp.Net
     public class RouterTests
     {
         private Router _router;
-        private StubThreadGuard _threadGuard;
+        private StubRouterDispatcher _routerDispatcher;
 
         private TestModel _model1;
         private StubModelProcessor _model1PreEventProcessor;
@@ -53,8 +53,8 @@ namespace Esp.Net
         [SetUp]
         public virtual void SetUp()
         {
-            _threadGuard = new StubThreadGuard();
-            _router = new Router(_threadGuard);
+            _routerDispatcher = new StubRouterDispatcher();
+            _router = new Router(_routerDispatcher);
 
             _model1 = new TestModel();
             _model1PreEventProcessor = new StubModelProcessor();
@@ -890,7 +890,7 @@ namespace Esp.Net
             public override void SetUp()
             {
                 base.SetUp();
-                _threadGuard.HasAccess = false;
+                _routerDispatcher.HasAccess = false;
             }
 
             [Test]
@@ -926,9 +926,9 @@ namespace Esp.Net
             public void ShouldThrowIfGetModelObservableCalledOnInvalidThread()
             {
                 Assert.Throws<InvalidOperationException>(() => _router.GetModelObservable<TestModel>(_model1.Id));
-                _threadGuard.HasAccess = true;
+                _routerDispatcher.HasAccess = true;
                 var obs = _router.GetModelObservable<TestModel>(_model1.Id);
-                _threadGuard.HasAccess = false;
+                _routerDispatcher.HasAccess = false;
                 Assert.Throws<InvalidOperationException>(() => obs.Observe(m => { }));
             }
 
@@ -936,9 +936,9 @@ namespace Esp.Net
             public void ShouldThrowIfGetEventObservableCalledOnInvalidThread()
             {
                 Assert.Throws<InvalidOperationException>(() => _router.GetEventObservable<TestModel, Event1>(_model1.Id));
-                _threadGuard.HasAccess = true;
+                _routerDispatcher.HasAccess = true;
                 var obs = _router.GetEventObservable<TestModel, Event1>(_model1.Id);
-                _threadGuard.HasAccess = false;
+                _routerDispatcher.HasAccess = false;
                 Assert.Throws<InvalidOperationException>(() => obs.Observe((m, e) => { }));
             }
         }
@@ -1332,21 +1332,6 @@ namespace Esp.Net
             public void RegisterAction(Action<TestModel> action)
             {
                 _actions.Add(action);
-            }
-        }
-
-        public class StubThreadGuard : IThreadGuard
-        {
-            public StubThreadGuard()
-            {
-                HasAccess = true;
-            }
-
-            public bool HasAccess { get; set; }
-
-            public bool CheckAccess()
-            {
-                return HasAccess;
             }
         }
     }

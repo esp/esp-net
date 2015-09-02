@@ -22,12 +22,12 @@ namespace Esp.Net.Meta
 {
     internal class ModelsEventsObservations : IEventsObservationRegistrar
     {
-        private readonly IThreadGuard _threadGuard;
+        private readonly IRouterDispatcher _routerDispatcher;
         private readonly Dictionary<object, ModelEventObservations> _modelRegistries;
 
-        public ModelsEventsObservations(IThreadGuard threadGuard)
+        public ModelsEventsObservations(IRouterDispatcher routerDispatcher)
         {
-            _threadGuard = threadGuard;
+            _routerDispatcher = routerDispatcher;
             _modelRegistries = new Dictionary<object    , ModelEventObservations>();
         }
 
@@ -45,21 +45,21 @@ namespace Esp.Net.Meta
 
         int IEventsObservationRegistrar.GetEventObservationCount<TEventType>(object modelId)
         {
-            Guard.Requires<InvalidOperationException>(_threadGuard.CheckAccess(), "Invalid thread access");
+            Guard.Requires<InvalidOperationException>(_routerDispatcher.CheckAccess(), "Invalid thread access");
             ModelEventObservations eventObservations = GetEventRegistrations(modelId);
             return eventObservations.GetEventObservationCount<TEventType>();
         }
 
         int IEventsObservationRegistrar.GetEventObservationCount(object modelId, Type eventType)
         {
-            Guard.Requires<InvalidOperationException>(_threadGuard.CheckAccess(), "Invalid thread access");
+            Guard.Requires<InvalidOperationException>(_routerDispatcher.CheckAccess(), "Invalid thread access");
             ModelEventObservations eventObservations = GetEventRegistrations(modelId);
             return eventObservations.GetEventObservationCount(eventType);
         }
 
         IList<EventObservations> IEventsObservationRegistrar.GetEventObservations(object modelId)
         {
-            Guard.Requires<InvalidOperationException>(_threadGuard.CheckAccess(), "Invalid thread access");
+            Guard.Requires<InvalidOperationException>(_routerDispatcher.CheckAccess(), "Invalid thread access");
             ModelEventObservations eventObservations = GetEventRegistrations(modelId);
             return eventObservations.GetEventObservations();
         }

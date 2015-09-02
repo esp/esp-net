@@ -26,19 +26,19 @@ namespace Esp.Net
 {
     public partial class Router : IRouter
     {
+        private readonly IRouterDispatcher _routerDispatcher;
         private readonly Dictionary<object, IModelEntry> _modelsById = new Dictionary<object, IModelEntry>();
         private readonly State _state = new State();
-        private readonly RouterGuard _routerGuard;
         private readonly ModelsEventsObservations _modelsEventsObservations;
         private static readonly MethodInfo PublishEventMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router), "PublishEvent", 1, 2);
         private static readonly MethodInfo ExecuteEventMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router), "ExecuteEvent", 1, 2);
         private static readonly MethodInfo BroadcastEventMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router), "BroadcastEvent", 1, 1);
 
-        public Router(IThreadGuard threadGuard)
+        public Router(IRouterDispatcher routerDispatcher)
         {
-            Guard.Requires<ArgumentNullException>(threadGuard != null, "threadGuard can not be null");
-            _routerGuard = new RouterGuard(_state, threadGuard);
-            _modelsEventsObservations = new ModelsEventsObservations(threadGuard);
+            _routerDispatcher = routerDispatcher;
+            Guard.Requires<ArgumentNullException>(routerDispatcher != null, "routerDispatcher can not be null");
+            _modelsEventsObservations = new ModelsEventsObservations(routerDispatcher);
         }
 
         public IEventsObservationRegistrar EventsObservationRegistrar
@@ -70,23 +70,26 @@ namespace Esp.Net
         {
             Guard.Requires<ArgumentNullException>(modelId != null, "modelId can not be null");
             Guard.Requires<ArgumentNullException>(model != null, "model can not be null");
-            _routerGuard.EnsureValid();
+            _state.ThrowIfHalted();
+            _routerDispatcher.EnsureAccess();
             Guard.Requires<ArgumentException>(!_modelsById.ContainsKey(modelId), "modelId {0} already registered", modelId);
             var entry = new ModelEntry<TModel>(
                 modelId, 
                 model, 
                 preEventProcessor, 
                 postEventProcessor, 
-                _routerGuard,
+                _state,
                 _modelsEventsObservations.CreateForModel(modelId),
-                new ModelChangedEventPublisher(this)
+                new ModelChangedEventPublisher(this),
+                _routerDispatcher
             );
             _modelsById.Add(modelId, entry);
         }
 
         public void RemoveModel(object modelId)
         {
-            _routerGuard.EnsureValid();
+            _state.ThrowIfHalted();
+            _routerDispatcher.EnsureAccess();
             IModelEntry modelEntry;
             if (!_modelsById.TryGetValue(modelId, out modelEntry)) throw new ArgumentException(string.Format("Model with id {0} not registered", modelId));
             _modelsById.Remove(modelId);
@@ -95,7 +98,8 @@ namespace Esp.Net
 
         public void PublishEvent<TEvent>(object modelId, TEvent @event)
         {
-            _routerGuard.EnsureValid();
+            _state.ThrowIfHalted();
+            _routerDispatcher.EnsureAccess();
             var modelEntry = _modelsById[modelId];
             modelEntry.TryEnqueue(@event);
             PurgeEventQueues();
@@ -103,14 +107,16 @@ namespace Esp.Net
 
         public void PublishEvent(object modelId, object @event)
         {
-            _routerGuard.EnsureValid();
+            _state.ThrowIfHalted();
+            _routerDispatcher.EnsureAccess();
             var publishEventMethod = PublishEventMethodInfo.MakeGenericMethod(@event.GetType());
             publishEventMethod.Invoke(this, new object[] { modelId, @event });
         }
 
         public void ExecuteEvent<TEvent>(object modelId, TEvent @event)
         {
-            _routerGuard.EnsureValid();
+            _state.ThrowIfHalted();
+            _routerDispatcher.EnsureAccess();
             _state.MoveToExecuting(modelId);
             var modelEntry = _modelsById[modelId];
             modelEntry.ExecuteEvent(@event);
@@ -119,14 +125,16 @@ namespace Esp.Net
 
         public void ExecuteEvent(object modelId, object @event)
         {
-            _routerGuard.EnsureValid();
+            _state.ThrowIfHalted();
+            _routerDispatcher.EnsureAccess();
             var executeEventMethod = ExecuteEventMethodInfo.MakeGenericMethod(@event.GetType());
             executeEventMethod.Invoke(this, new object[] { modelId, @event });
         }
 
         public void BroadcastEvent<TEvent>(TEvent @event)
         {
-            _routerGuard.EnsureValid();
+            _state.ThrowIfHalted();
+            _routerDispatcher.EnsureAccess();
             foreach (IModelEntry modelEntry in _modelsById.Values)
             {
                 modelEntry.TryEnqueue(@event);
@@ -136,7 +144,8 @@ namespace Esp.Net
 
         public void BroadcastEvent(object @event)
         {
-            _routerGuard.EnsureValid();
+            _state.ThrowIfHalted();
+            _routerDispatcher.EnsureAccess();
             var publishEventMethod = BroadcastEventMethodInfo.MakeGenericMethod(@event.GetType());
             publishEventMethod.Invoke(this, new object[] { @event });
         }
@@ -144,41 +153,47 @@ namespace Esp.Net
         public IModelObservable<TModel> GetModelObservable<TModel>(object modelId)
         {
             Guard.Requires<ArgumentNullException>(modelId != null, "modelId can not be null");
-            _routerGuard.EnsureValid();
+            _state.ThrowIfHalted();
+            _routerDispatcher.EnsureAccess();
             IModelEntry<TModel> entry = GetModelEntry<TModel>(modelId);
             return entry.GetModelObservable();
         }
 
         public IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TModel, TEvent>(object modelId, ObservationStage observationStage = ObservationStage.Normal)
         {
-            _routerGuard.EnsureValid();
+            _state.ThrowIfHalted();
+            _routerDispatcher.EnsureAccess();
             IModelEntry<TModel> entry = GetModelEntry<TModel>(modelId);
             return entry.GetEventObservable<TEvent>(observationStage);
         }
 
         public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TSubEventType, TBaseEvent>(object modelId, ObservationStage observationStage = ObservationStage.Normal) where TSubEventType : TBaseEvent
         {
-            _routerGuard.EnsureValid();
+            _state.ThrowIfHalted();
+            _routerDispatcher.EnsureAccess();
             IModelEntry<TModel> entry = GetModelEntry<TModel>(modelId);
             return entry.GetEventObservable<TSubEventType, TBaseEvent>(observationStage);
         }
 
         public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TBaseEvent>(object modelId, Type subEventType, ObservationStage observationStage = ObservationStage.Normal)
         {
-            _routerGuard.EnsureValid();
+            _state.ThrowIfHalted();
+            _routerDispatcher.EnsureAccess();
             IModelEntry<TModel> entry = GetModelEntry<TModel>(modelId);
             return entry.GetEventObservable<TBaseEvent>(subEventType, observationStage);
         }
 
         public IRouter<TModel> CreateModelRouter<TModel>(object modelId)
         {
-            _routerGuard.EnsureValid();
+            _state.ThrowIfHalted();
+            _routerDispatcher.EnsureAccess();
             return new ModelRouter<TModel>(modelId, this);
         }
 
         public IRouter<TSubModel> CreateModelRouter<TModel, TSubModel>(object modelId, Func<TModel, TSubModel> subModelSelector)
-        { 
-            _routerGuard.EnsureValid();
+        {
+            _state.ThrowIfHalted();
+            _routerDispatcher.EnsureAccess();
             return new SubModelRouter<TModel, TSubModel>(modelId, this, subModelSelector);
         }
 

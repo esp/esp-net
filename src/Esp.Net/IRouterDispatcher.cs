@@ -14,10 +14,14 @@
 // limitations under the License.
 #endregion
 
+using System;
+
 namespace Esp.Net
 {
-    public interface IThreadGuard
+    public interface IRouterDispatcher
     {
         bool CheckAccess();
+        void EnsureAccess();
+        void Dispatch(Action action);
     }
 }

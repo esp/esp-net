@@ -135,7 +135,7 @@ namespace Esp.Net.HeldEvents
         public void SetUp()
         {
             _model = new TestModel();
-            _router = new Router(ThreadGuard.Default);
+            _router = new Router(new StubRouterDispatcher());
             _router.RegisterModel(_model.Id, _model);
             _model.HoldAllEvents = true;
         }

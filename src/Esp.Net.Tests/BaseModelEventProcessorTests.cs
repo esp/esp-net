@@ -32,7 +32,7 @@ namespace Esp.Net
         [SetUp]
         public void SetUp()
         {
-            var router = new Router(ThreadGuard.Default);
+            var router = new Router(new StubRouterDispatcher());
             var modelId = Guid.NewGuid();
             router.RegisterModel(modelId, new TestModel());
             _router = router.CreateModelRouter<TestModel>(modelId);

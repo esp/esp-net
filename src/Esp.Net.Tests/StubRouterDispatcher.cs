@@ -14,24 +14,32 @@
 // limitations under the License.
 #endregion
 
+using System;
+
 namespace Esp.Net
 {
-    public class ThreadGuard : IThreadGuard
+    public class StubRouterDispatcher : IRouterDispatcher
     {
-        public static IThreadGuard Default { get; private set; }
-
-        static ThreadGuard()
+        public StubRouterDispatcher()
         {
-            Default  = new ThreadGuard();
+            HasAccess = true;
         }
 
-        private ThreadGuard()
-        {
-        }
-        
+        public bool HasAccess { get; set; }
+
         public bool CheckAccess()
         {
-            return true;
+            return HasAccess;
+        }
+
+        public void EnsureAccess()
+        {
+
+        }
+
+        public void Dispatch(Action action)
+        {
+            throw new NotImplementedException();
         }
     }
 }

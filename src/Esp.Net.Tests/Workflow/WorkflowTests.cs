@@ -57,7 +57,7 @@ namespace Esp.Net.Workflow
         public void SetUp()
         {
             _model = new TestModel();
-            _router = new Router(ThreadGuard.Default);
+            _router = new Router(new StubRouterDispatcher());
             _router.RegisterModel(_model.Id, _model);
             _stringSubject = new StubSubject<string>();
             _intSubject = new StubSubject<int>();

@@ -58,7 +58,7 @@
     <Compile Include="IPostEventProcessor.cs" />
     <Compile Include="IPreEventProcessor.cs" />
     <Compile Include="IRouter.cs" />
-    <Compile Include="IThreadGuard.cs" />
+    <Compile Include="IRouterDispatcher.cs" />
     <Compile Include="Meta\EventObservations.cs" />
     <Compile Include="Meta\IEventObservationRegistrar.cs" />
     <Compile Include="Meta\IEventsObservationRegistrar.cs" />
@@ -88,11 +88,9 @@
     <Compile Include="Reactive\ModelObserver.cs" />
     <Compile Include="Reactive\ModelSubject.cs" />
     <Compile Include="Router.cs" />
-    <Compile Include="Router.Guard.cs" />
     <Compile Include="Router.ModelEntry.cs" />
     <Compile Include="Router.State.cs" />
     <Compile Include="Router.Status.cs" />
-    <Compile Include="ThreadGuard.cs" />
     <Compile Include="Utils\Guard.cs" />
     <Compile Include="Utils\ReflectionExt.cs" />
     <Compile Include="Utils\ReflectionHelper.cs" />
