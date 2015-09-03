@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Note NewThreadRouterDispatcher is based on EventLoopScheduler from rx.
-// That licence is here https://github.com/Reactive-Extensions/Rx.NET/blob/master/Rx.NET/Source/license.txt
+// Note NewThreadRouterDispatcher is based on EventLoopScheduler from rx. However it is much cut down and notion of time has been removed.
+// That license is here https://github.com/Reactive-Extensions/Rx.NET/blob/master/Rx.NET/Source/license.txt
 // also copied below: 
 //
 // Copyright(c) Microsoft Open Technologies, Inc.All rights reserved.
@@ -43,25 +43,14 @@ namespace Esp.Net
     public class NewThreadRouterDispatcher : IRouterDispatcher
     {
         private static int _threadNameCounter;
-
         private readonly Func<ThreadStart, Thread> _threadFactory;
-
-        private Thread _thread;
-
         private readonly object _gate = new object();
-
         private readonly SemaphoreSlim _evt = new SemaphoreSlim(0);
-
-        private readonly Queue<Action> _dispatchQueue = new Queue<Action>();
-
+        private readonly Queue<Action> _actionDispatchQueue = new Queue<Action>();
+        private Thread _thread;
         private bool _disposed;
 
-        public static IRouterDispatcher Create()
-        {
-            return new NewThreadRouterDispatcher();
-        }
-
-        private NewThreadRouterDispatcher()
+        public NewThreadRouterDispatcher()
             : this(a => new Thread(a) { Name = "Router Dispatcher " + Interlocked.Increment(ref _threadNameCounter), IsBackground = true })
         {
         }
@@ -90,18 +79,28 @@ namespace Esp.Net
 
         public void Dispatch(Action action)
         {
-            if (action == null)
-                throw new ArgumentNullException("action");
+            if (action == null) throw new ArgumentNullException("action");
 
             lock (_gate)
             {
-                if (_disposed)
-                    throw new ObjectDisposedException("");
+                if (_disposed) throw new ObjectDisposedException(string.Empty);
 
-                _dispatchQueue.Enqueue(action);
+                _actionDispatchQueue.Enqueue(action);
                 _evt.Release();
 
                 EnsureThread();
+            }
+        }
+
+        public void Dispose()
+        {
+            lock (_gate)
+            {
+                if (!_disposed)
+                {
+                    _disposed = true;
+                    _evt.Release();
+                }
             }
         }
 
@@ -111,7 +110,7 @@ namespace Esp.Net
             {
                 _evt.Wait();
 
-                var ready = default(Action[]);
+                var readyActions = default(Action[]);
 
                 lock (_gate)
                 {
@@ -127,20 +126,20 @@ namespace Esp.Net
                     //
                     if (_disposed)
                     {
-                        ((IDisposable)_evt).Dispose();
+                        _evt.Dispose();
                         return;
                     }
 
-                    if (_dispatchQueue.Count > 0)
+                    if (_actionDispatchQueue.Count > 0)
                     {
-                        ready = _dispatchQueue.ToArray();
-                        _dispatchQueue.Clear();
+                        readyActions = _actionDispatchQueue.ToArray();
+                        _actionDispatchQueue.Clear();
                     }
                 }
 
-                if (ready != null)
+                if (readyActions != null)
                 {
-                    foreach (var item in ready)
+                    foreach (var item in readyActions)
                     {
                         item.Invoke();
                     }
@@ -154,18 +153,6 @@ namespace Esp.Net
             {
                 _thread = _threadFactory(Run);
                 _thread.Start();
-            }
-        }
-
-        public void Dispose()
-        {
-            lock (_gate)
-            {
-                if (!_disposed)
-                {
-                    _disposed = true;
-                    _evt.Release();
-                }
             }
         }
     }

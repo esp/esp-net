@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Esp.Net.Meta;
 using Esp.Net.ModelRouter;
@@ -33,11 +34,12 @@ namespace Esp.Net
         private static readonly MethodInfo PublishEventMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router), "PublishEvent", 1, 2);
         private static readonly MethodInfo ExecuteEventMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router), "ExecuteEvent", 1, 2);
         private static readonly MethodInfo BroadcastEventMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router), "BroadcastEvent", 1, 1);
+        private object _gate = new object();
 
         public Router(IRouterDispatcher routerDispatcher)
         {
-            _routerDispatcher = routerDispatcher;
             Guard.Requires<ArgumentNullException>(routerDispatcher != null, "routerDispatcher can not be null");
+            _routerDispatcher = routerDispatcher;
             _modelsEventsObservations = new ModelsEventsObservations(routerDispatcher);
         }
 
@@ -71,42 +73,64 @@ namespace Esp.Net
             Guard.Requires<ArgumentNullException>(modelId != null, "modelId can not be null");
             Guard.Requires<ArgumentNullException>(model != null, "model can not be null");
             _state.ThrowIfHalted();
-            _routerDispatcher.EnsureAccess();
-            Guard.Requires<ArgumentException>(!_modelsById.ContainsKey(modelId), "modelId {0} already registered", modelId);
             var entry = new ModelEntry<TModel>(
-                modelId, 
-                model, 
-                preEventProcessor, 
-                postEventProcessor, 
+                modelId,
+                model,
+                preEventProcessor,
+                postEventProcessor,
                 _state,
                 _modelsEventsObservations.CreateForModel(modelId),
                 new ModelChangedEventPublisher(this),
                 _routerDispatcher
             );
-            _modelsById.Add(modelId, entry);
+            lock (_gate)
+            {
+                Guard.Requires<ArgumentException>(!_modelsById.ContainsKey(modelId), "modelId {0} already registered", modelId);
+                _modelsById.Add(modelId, entry);
+            }
         }
 
         public void RemoveModel(object modelId)
         {
+            if (!_routerDispatcher.CheckAccess())
+            {
+                _state.ThrowIfHalted();
+                _routerDispatcher.Dispatch(() => RemoveModel(modelId));
+                return;
+            }
             _state.ThrowIfHalted();
-            _routerDispatcher.EnsureAccess();
             IModelEntry modelEntry;
-            if (!_modelsById.TryGetValue(modelId, out modelEntry)) throw new ArgumentException(string.Format("Model with id {0} not registered", modelId));
-            _modelsById.Remove(modelId);
+            lock (_gate)
+            {
+                if (!_modelsById.TryGetValue(modelId, out modelEntry)) throw new ArgumentException(string.Format("Model with id {0} not registered", modelId));
+                _modelsById.Remove(modelId);
+            }
             modelEntry.OnRemoved();
         }
 
         public void PublishEvent<TEvent>(object modelId, TEvent @event)
         {
+            if (!_routerDispatcher.CheckAccess())
+            {
+                _state.ThrowIfHalted();
+                _routerDispatcher.Dispatch(() => PublishEvent(modelId, @event));
+                return;
+            }
             _state.ThrowIfHalted();
             _routerDispatcher.EnsureAccess();
-            var modelEntry = _modelsById[modelId];
+            IModelEntry modelEntry = GetModelEntry(modelId);
             modelEntry.TryEnqueue(@event);
             PurgeEventQueues();
         }
 
         public void PublishEvent(object modelId, object @event)
         {
+            if (!_routerDispatcher.CheckAccess())
+            {
+                _state.ThrowIfHalted();
+                _routerDispatcher.Dispatch(() => PublishEvent(modelId, @event));
+                return;
+            }
             _state.ThrowIfHalted();
             _routerDispatcher.EnsureAccess();
             var publishEventMethod = PublishEventMethodInfo.MakeGenericMethod(@event.GetType());
@@ -118,7 +142,7 @@ namespace Esp.Net
             _state.ThrowIfHalted();
             _routerDispatcher.EnsureAccess();
             _state.MoveToExecuting(modelId);
-            var modelEntry = _modelsById[modelId];
+            IModelEntry modelEntry = GetModelEntry(modelId);
             modelEntry.ExecuteEvent(@event);
             _state.EndExecuting();
         }
@@ -133,9 +157,21 @@ namespace Esp.Net
 
         public void BroadcastEvent<TEvent>(TEvent @event)
         {
+            if (!_routerDispatcher.CheckAccess())
+            {
+                _state.ThrowIfHalted();
+                _routerDispatcher.Dispatch(() => BroadcastEvent(@event));
+                return;
+            }
             _state.ThrowIfHalted();
             _routerDispatcher.EnsureAccess();
-            foreach (IModelEntry modelEntry in _modelsById.Values)
+
+            IModelEntry[] modelEntries;
+            lock (_gate)
+            {
+                modelEntries = _modelsById.Values.ToArray();
+            }
+            foreach (IModelEntry modelEntry in modelEntries)
             {
                 modelEntry.TryEnqueue(@event);
             }
@@ -144,6 +180,11 @@ namespace Esp.Net
 
         public void BroadcastEvent(object @event)
         {
+            if (!_routerDispatcher.CheckAccess())
+            {
+                _routerDispatcher.Dispatch(() => BroadcastEvent(@event));
+                return;
+            }
             _state.ThrowIfHalted();
             _routerDispatcher.EnsureAccess();
             var publishEventMethod = BroadcastEventMethodInfo.MakeGenericMethod(@event.GetType());
@@ -162,7 +203,6 @@ namespace Esp.Net
         public IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TModel, TEvent>(object modelId, ObservationStage observationStage = ObservationStage.Normal)
         {
             _state.ThrowIfHalted();
-            _routerDispatcher.EnsureAccess();
             IModelEntry<TModel> entry = GetModelEntry<TModel>(modelId);
             return entry.GetEventObservable<TEvent>(observationStage);
         }
@@ -170,7 +210,6 @@ namespace Esp.Net
         public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TSubEventType, TBaseEvent>(object modelId, ObservationStage observationStage = ObservationStage.Normal) where TSubEventType : TBaseEvent
         {
             _state.ThrowIfHalted();
-            _routerDispatcher.EnsureAccess();
             IModelEntry<TModel> entry = GetModelEntry<TModel>(modelId);
             return entry.GetEventObservable<TSubEventType, TBaseEvent>(observationStage);
         }
@@ -178,7 +217,6 @@ namespace Esp.Net
         public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TBaseEvent>(object modelId, Type subEventType, ObservationStage observationStage = ObservationStage.Normal)
         {
             _state.ThrowIfHalted();
-            _routerDispatcher.EnsureAccess();
             IModelEntry<TModel> entry = GetModelEntry<TModel>(modelId);
             return entry.GetEventObservable<TBaseEvent>(subEventType, observationStage);
         }
@@ -186,14 +224,12 @@ namespace Esp.Net
         public IRouter<TModel> CreateModelRouter<TModel>(object modelId)
         {
             _state.ThrowIfHalted();
-            _routerDispatcher.EnsureAccess();
             return new ModelRouter<TModel>(modelId, this);
         }
 
         public IRouter<TSubModel> CreateModelRouter<TModel, TSubModel>(object modelId, Func<TModel, TSubModel> subModelSelector)
         {
             _state.ThrowIfHalted();
-            _routerDispatcher.EnsureAccess();
             return new SubModelRouter<TModel, TSubModel>(modelId, this, subModelSelector);
         }
 
@@ -247,12 +283,15 @@ namespace Esp.Net
         private IModelEntry GetNextModelEntryWithEvents()
         {
             IModelEntry modelEntry = null;
-            foreach (IModelEntry entry in _modelsById.Values)
+            lock (_gate)
             {
-                if (entry.HadEvents)
+                foreach (IModelEntry entry in _modelsById.Values)
                 {
-                    modelEntry = entry;
-                    break;
+                    if (entry.HadEvents)
+                    {
+                        modelEntry = entry;
+                        break;
+                    }
                 }
             }
             return modelEntry;
@@ -261,9 +300,12 @@ namespace Esp.Net
         private IModelEntry<TModel> GetModelEntry<TModel>(object modelId)
         {
             IModelEntry entry;
-            if (!_modelsById.TryGetValue(modelId, out entry))
+            lock (_gate)
             {
-                throw new InvalidOperationException(string.Format("Model with id [{0}] isn't registered", modelId));
+                if (!_modelsById.TryGetValue(modelId, out entry))
+                {
+                    throw new InvalidOperationException(string.Format("Model with id [{0}] isn't registered", modelId));
+                }
             }
             IModelEntry<TModel> result;
             try
@@ -272,9 +314,22 @@ namespace Esp.Net
             }
             catch (InvalidCastException)
             {
-                throw new InvalidOperationException(string.Format("Model with id [{0}] is not registered against model of type [{1}]. Please ensure you're using the same model type that was registered against this id.", modelId, typeof(TModel).FullName));
+                throw new InvalidOperationException(
+                    string.Format(
+                        "Model with id [{0}] is not registered against model of type [{1}]. Please ensure you're using the same model type that was registered against this id.",
+                        modelId, typeof (TModel).FullName));
             }
             return result;
+        }
+
+        private IModelEntry GetModelEntry(object modelId)
+        {
+            IModelEntry modelEntry;
+            lock (_gate)
+            {
+                if (!_modelsById.TryGetValue(modelId, out modelEntry)) throw new ArgumentException(string.Format("Model with id {0} not registered", modelId));
+            }
+            return modelEntry;
         }
 
         // Having this type and IModelChangedEventPublisher is a bit of a 'roundabout' way of 

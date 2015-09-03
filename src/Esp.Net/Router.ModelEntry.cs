@@ -164,7 +164,7 @@ namespace Esp.Net
                 return ModelObservable.Create<TModel>(o =>
                 {
                     _state.ThrowIfHalted();
-                    _routerDispatcher.EnsureAccess();
+                    _routerDispatcher.EnsureAccess(); // TODO schedule onto correct thread
                     return _modelUpdateSubject.Observe(o);
                 });
             }
@@ -197,7 +197,7 @@ namespace Esp.Net
                 return EventObservable.Create<TModel, TBaseEvent, IEventContext>(o =>
                 {
                     _state.ThrowIfHalted();
-                    _routerDispatcher.EnsureAccess();
+                    _routerDispatcher.EnsureAccess();  // TODO schedule onto correct thread
                     var getEventStreamMethod = GetEventObservableMethodInfo.MakeGenericMethod(subEventType);
                     dynamic observable = getEventStreamMethod.Invoke(this, new object[] { observationStage });
                     return (IDisposable)observable.Observe(o);
@@ -215,7 +215,7 @@ namespace Esp.Net
                 return EventObservable.Create<TModel, TEvent, IEventContext>(o =>
                 {
                     _state.ThrowIfHalted();
-                    _routerDispatcher.EnsureAccess();
+                    _routerDispatcher.EnsureAccess();  // TODO schedule onto correct thread
                     EventSubjects<TEvent> eventSubjects;
                     if (!_eventSubjects.ContainsKey(typeof(TEvent)))
                     {
