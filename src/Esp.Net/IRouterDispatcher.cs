@@ -18,7 +18,7 @@ using System;
 
 namespace Esp.Net
 {
-    public interface IRouterDispatcher
+    public interface IRouterDispatcher : IDisposable
     {
         bool CheckAccess();
         void EnsureAccess();

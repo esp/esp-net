@@ -41,5 +41,10 @@ namespace Esp.Net
         {
             throw new NotImplementedException();
         }
+
+        public void Dispose()
+        {
+            
+        }
     }
 }
