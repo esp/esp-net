@@ -23,6 +23,7 @@ namespace Esp.Net.Reactive
     internal class ModelSubject<T> : IModelObservable<T>, IModelObserver<T>
     {
         readonly List<IModelObserver<T>> _observers = new List<IModelObserver<T>>();
+        private readonly object _gate = new object();
         private bool _hasCompleted = false;
 
         public void OnNext(T item)
@@ -62,8 +63,17 @@ namespace Esp.Net.Reactive
 
         public IDisposable Observe(IModelObserver<T> observer)
         {
-            _observers.Add(observer);
-            return EspDisposable.Create(() => _observers.Remove(observer));
+            lock (_gate)
+            {
+                _observers.Add(observer);
+            }
+            return EspDisposable.Create(() =>
+            {
+                lock (_gate)
+                {
+                    _observers.Remove(observer);
+                }
+            });
         }
     }
 }

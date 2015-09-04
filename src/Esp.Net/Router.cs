@@ -45,7 +45,7 @@ namespace Esp.Net
         {
             Guard.Requires<ArgumentNullException>(routerDispatcher != null, "routerDispatcher can not be null");
             _routerDispatcher = routerDispatcher;
-            _modelsEventsObservations = new ModelsEventsObservations(routerDispatcher);
+            _modelsEventsObservations = new ModelsEventsObservations();
         }
 
         public IEventsObservationRegistrar EventsObservationRegistrar
