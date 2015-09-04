@@ -34,7 +34,12 @@ namespace Esp.Net
         private static readonly MethodInfo PublishEventMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router), "PublishEvent", 1, 2);
         private static readonly MethodInfo ExecuteEventMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router), "ExecuteEvent", 1, 2);
         private static readonly MethodInfo BroadcastEventMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router), "BroadcastEvent", 1, 1);
-        private object _gate = new object();
+        private readonly object _gate = new object();
+
+        public Router()
+            : this(new CurrentThreadDispatcher())
+        {
+        }
 
         public Router(IRouterDispatcher routerDispatcher)
         {
