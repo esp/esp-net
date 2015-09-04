@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Esp.Net.Meta;
 using Esp.Net.Reactive;
@@ -66,6 +67,7 @@ namespace Esp.Net
             private readonly Queue<dynamic> _eventDispatchQueue = new Queue<dynamic>();
             private readonly Dictionary<Type, dynamic> _eventSubjects = new Dictionary<Type, dynamic>();
             private readonly ModelSubject<TModel> _modelUpdateSubject = new ModelSubject<TModel>();
+            private readonly object _gate = new object();
             private static readonly MethodInfo GetEventObservableMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(ModelEntry<TModel>), "GetEventObservable", 1, 1);
 
             public ModelEntry(
@@ -96,7 +98,10 @@ namespace Esp.Net
 
             public void TryEnqueue<TEvent>(TEvent @event)
             {
-                if (!_eventSubjects.ContainsKey(typeof (TEvent))) return;
+                lock (_gate)
+                {
+                    if (!_eventSubjects.ContainsKey(typeof (TEvent))) return;
+                }
                 if (typeof (ModelChangedEvent<TModel>).IsAssignableFrom(typeof (TEvent)))
                 {
                     var message = string.Format("The event stream observing event ModelChangedEvent<{0}> against model of type [{0}] is unsupported. Observing a ModelChangedEvent<T> where T is the same as the target models type is not supported.", typeof(TModel).Name);
@@ -144,7 +149,12 @@ namespace Esp.Net
             public void OnRemoved()
             {
                 IsRemoved = true;
-                foreach (dynamic eventSubjects in _eventSubjects.Values)
+                dynamic[] eventSubjectss;
+                lock (_gate)
+                {
+                    eventSubjectss = _eventSubjects.Values.ToArray();
+                }
+                foreach (dynamic eventSubjects in eventSubjectss)
                 {
                     eventSubjects.PreviewSubject.OnCompleted();
                     eventSubjects.NormalSubject.OnCompleted();
@@ -164,7 +174,6 @@ namespace Esp.Net
                 return ModelObservable.Create<TModel>(o =>
                 {
                     _state.ThrowIfHalted();
-                    _routerDispatcher.EnsureAccess(); // TODO schedule onto correct thread
                     return _modelUpdateSubject.Observe(o);
                 });
             }
@@ -196,8 +205,6 @@ namespace Esp.Net
                 Guard.Requires<ArgumentException>(typeof(TBaseEvent).IsAssignableFrom(subEventType), "Event type {0} must derive from {1}", subEventType, typeof(TBaseEvent));
                 return EventObservable.Create<TModel, TBaseEvent, IEventContext>(o =>
                 {
-                    _state.ThrowIfHalted();
-                    _routerDispatcher.EnsureAccess();  // TODO schedule onto correct thread
                     var getEventStreamMethod = GetEventObservableMethodInfo.MakeGenericMethod(subEventType);
                     dynamic observable = getEventStreamMethod.Invoke(this, new object[] { observationStage });
                     return (IDisposable)observable.Observe(o);
@@ -215,16 +222,18 @@ namespace Esp.Net
                 return EventObservable.Create<TModel, TEvent, IEventContext>(o =>
                 {
                     _state.ThrowIfHalted();
-                    _routerDispatcher.EnsureAccess();  // TODO schedule onto correct thread
                     EventSubjects<TEvent> eventSubjects;
-                    if (!_eventSubjects.ContainsKey(typeof(TEvent)))
+                    lock (_gate)
                     {
-                        eventSubjects = new EventSubjects<TEvent>(_eventObservationRegistrar);
-                        _eventSubjects[typeof(TEvent)] = eventSubjects;
-                    }
-                    else
-                    {
-                        eventSubjects = (EventSubjects<TEvent>)_eventSubjects[typeof(TEvent)];
+                        if (!_eventSubjects.ContainsKey(typeof (TEvent)))
+                        {
+                            eventSubjects = new EventSubjects<TEvent>(_eventObservationRegistrar);
+                            _eventSubjects[typeof (TEvent)] = eventSubjects;
+                        }
+                        else
+                        {
+                            eventSubjects = (EventSubjects<TEvent>) _eventSubjects[typeof (TEvent)];
+                        }
                     }
                     EventSubject<TModel, TEvent, IEventContext> subject;
                     switch (observationStage)
@@ -252,7 +261,11 @@ namespace Esp.Net
                     try
                     {
                         dynamic eventSubjects;
-                        if (_eventSubjects.TryGetValue(typeof(TEvent), out eventSubjects))
+                        lock (_gate)
+                        {
+                            _eventSubjects.TryGetValue(typeof(TEvent), out eventSubjects);
+                        }
+                        if (eventSubjects != null)
                         {
                             var eventContext = new EventContext();
                             eventContext.CurrentStage = ObservationStage.Preview;

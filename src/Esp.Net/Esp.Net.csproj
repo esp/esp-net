@@ -43,6 +43,7 @@
       <Link>Properties\AssemblyInfoCommon.cs</Link>
     </Compile>
     <Compile Include="BaseEventProcessor.cs" />
+    <Compile Include="CurrentThreadDispatcher.cs" />
     <Compile Include="Disposables\CollectionDisposable.cs" />
     <Compile Include="Disposables\DictionaryDisposable.cs" />
     <Compile Include="Disposables\DisposableBase.cs" />
