@@ -17,5 +17,8 @@
   <files>
 	<!-- target taken from here based on the profile used in the project http://embed.plnkr.co/03ck2dCtnJogBKHJ9EjY/preview -->
     <file src="bin\$target$\Esp.Net.Dispatchers.dll" target="lib\portable-net4+netcore45\Esp.Net.Dispatchers.dll" />
+    <file src="bin\$target$\Esp.Net.Dispatchers.pdb" target="lib\portable-net4+netcore45\Esp.Net.Dispatchers.pdb" />
+    <file src="bin\$target$\Esp.Net.Dispatchers.xml" target="lib\portable-net4+netcore45\Esp.Net.Dispatchers.xml" />
+    <file src="**\*.cs" target="src" />
   </files>
 </package>
