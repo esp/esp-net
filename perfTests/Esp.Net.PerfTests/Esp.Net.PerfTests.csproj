@@ -7,8 +7,8 @@
     <ProjectGuid>{4BAC0302-3A28-400D-B3E1-34D417F3FBAB}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Exp.Net.PerfTests</RootNamespace>
-    <AssemblyName>Exp.Net.PerfTests</AssemblyName>
+    <RootNamespace>Esp.Net.PerfTests</RootNamespace>
+    <AssemblyName>Esp.Net.PerfTests</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
