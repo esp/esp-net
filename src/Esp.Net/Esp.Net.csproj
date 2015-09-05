@@ -52,10 +52,7 @@
     <Compile Include="EventContext.cs" />
     <Compile Include="IClonable.cs" />
     <Compile Include="IEventContext.cs" />
-    <Compile Include="IEventPublisher.cs" />
-    <Compile Include="IEventSubject.cs" />
     <Compile Include="IIdentifiableEvent.cs" />
-    <Compile Include="IModelSubject.cs" />
     <Compile Include="IPostEventProcessor.cs" />
     <Compile Include="IPreEventProcessor.cs" />
     <Compile Include="IRouter.cs" />
@@ -66,12 +63,8 @@
     <Compile Include="Meta\ModelEventObservations.cs" />
     <Compile Include="Meta\ModelsEventsObservations.cs" />
     <Compile Include="ModelChangedEvent.cs" />
-    <Compile Include="ModelRouter\IEventPublisher.cs" />
-    <Compile Include="ModelRouter\IEventSubject.cs" />
-    <Compile Include="ModelRouter\IModelSubject.cs" />
-    <Compile Include="ModelRouter\IRouter.cs" />
-    <Compile Include="ModelRouter\ModelRouter.cs" />
-    <Compile Include="ModelRouter\SubModelRouter.cs" />
+    <Compile Include="ModelRouter.cs" />
+    <Compile Include="SubModelRouter.cs" />
     <Compile Include="ObservationStage.cs" />
     <Compile Include="ObserveBaseEventAttribute.cs" />
     <Compile Include="ObserveEventAttribute.cs" />
