@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using NUnit.Framework;
 using Shouldly;
 
@@ -46,6 +47,25 @@ namespace Esp.Net
                     throw new Exception("Boom");
                 });
                 AssertPublishEventThrows();
+            }
+
+            [Test]
+            public void TerminalErrorHandlerGetInvokedOnHaltingException()
+            {
+                List<Tuple<int, Exception>> received = new List<Tuple<int, Exception>>();
+                _router.RegisterTerminalErrorHandler(ex => received.Add(Tuple.Create(1, ex)));
+                _router.RegisterTerminalErrorHandler(ex => received.Add(Tuple.Create(2, ex)));
+                var exception = new Exception("Boom");
+                _model1Controller.RegisterAction(m =>
+                {
+                    throw exception;
+                });
+                AssertPublishEventThrows();
+                received.Count.ShouldBe(2);
+                received[0].Item1.ShouldBe(1);
+                received[0].Item2.ShouldBe(exception);
+                received[1].Item1.ShouldBe(2);
+                received[1].Item2.ShouldBe(exception);
             }
 
             private void AssertPublishEventThrows()

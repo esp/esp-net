@@ -26,14 +26,16 @@ namespace Esp.Net
 {
     public partial class Router : IRouter
     {
-        private readonly IRouterDispatcher _routerDispatcher;
-        private readonly Dictionary<object, IModelEntry> _modelsById = new Dictionary<object, IModelEntry>();
-        private readonly State _state = new State();
-        private readonly ModelsEventsObservations _modelsEventsObservations;
         private static readonly MethodInfo PublishEventMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router), "PublishEvent", 1, 2);
         private static readonly MethodInfo ExecuteEventMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router), "ExecuteEvent", 1, 2);
         private static readonly MethodInfo BroadcastEventMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router), "BroadcastEvent", 1, 1);
+
         private readonly object _gate = new object();
+        private readonly State _state = new State();
+        private readonly IRouterDispatcher _routerDispatcher;
+        private readonly ModelsEventsObservations _modelsEventsObservations;
+        private readonly Dictionary<object, IModelEntry> _modelsById = new Dictionary<object, IModelEntry>();
+        private readonly List<Action<Exception>> _terminalErrorHandlers = new List<Action<Exception>>();
 
         public Router()
             : this(new CurrentThreadDispatcher())
@@ -198,6 +200,14 @@ namespace Esp.Net
             }
         }
 
+        public void RegisterTerminalErrorHandler(Action<Exception> onHaltingError)
+        {
+            lock (_gate)
+            {
+                _terminalErrorHandlers.Add(onHaltingError);
+            }
+        }
+
         public IModelObservable<TModel> GetModelObservable<TModel>(object modelId)
         {
             Guard.Requires<ArgumentNullException>(modelId != null, "modelId can not be null");
@@ -274,6 +284,15 @@ namespace Esp.Net
                 catch (Exception ex)
                 {
                     _state.MoveToHalted(ex);
+                    Action<Exception>[] terminalErrorHandlers;
+                    lock (_gate)
+                    {
+                        terminalErrorHandlers = _terminalErrorHandlers.ToArray();
+                    }
+                    foreach (Action<Exception> terminalErrorHandler in terminalErrorHandlers)
+                    {
+                        terminalErrorHandler(ex); 
+                    }
                     throw;
                 }
             }

@@ -44,6 +44,8 @@ namespace Esp.Net
 
         void BroadcastEvent<TEvent>(TEvent @event);
         void BroadcastEvent(object @event);
+
+        void RegisterTerminalErrorHandler(Action<Exception> onHaltingError);
     }
 
     public interface IRouter<out TModel>
