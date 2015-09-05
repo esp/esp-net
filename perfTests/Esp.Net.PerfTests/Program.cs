@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading;
-using Esp.Net;
 
-namespace Exp.Net.PerfTests
+namespace Esp.Net.PerfTests
 {
     class Program
     {
