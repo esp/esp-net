@@ -1,9 +1,6 @@
 environment:
   nuget_version: 0.2.14
 
-assembly_info:
-  patch: false
-
 platform: Any CPU
 configuration: Release
 
