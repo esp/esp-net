@@ -34,8 +34,5 @@ after_build:
   - cmd: nuget pack .\src\Esp.Net.Dispatchers\Esp.Net.Dispatchers.nuspec -version "%nuget_version%" -prop "target=%CONFIGURATION%" -Symbols
   - cmd: nuget pack .\src\Esp.Net.Dispatchers\Esp.Net.Dispatchers.SourcePackage.nuspec -version "%nuget_version%"  
 
-test:
-  assemblies: src\Esp.Net.Tests\bin\Release\Esp.Net.Tests.dll
-
 artifacts:
 - path: '*.nupkg'
