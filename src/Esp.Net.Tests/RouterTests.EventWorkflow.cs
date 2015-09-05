@@ -205,10 +205,10 @@ namespace Esp.Net
                 }
 
                 [Test]
-                public void CanConcatEventStreams()
+                public void CanMergeEventStreams()
                 {
                     var receivedEvents = new List<BaseEvent>();
-                    var stream = EventObservable.Concat(
+                    var stream = EventObservable.Merge(
                         _router.GetEventObservable<TestModel, BaseEvent>(_model1.Id, typeof(Event1)),
                         _router.GetEventObservable<TestModel, BaseEvent>(_model1.Id, typeof(Event2)),
                         _router.GetEventObservable<TestModel, BaseEvent>(_model1.Id, typeof(Event3))

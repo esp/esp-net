@@ -47,13 +47,13 @@ namespace Esp.Net
 
         protected void ObserveEvent<TEventBase>(Action<TModel, TEventBase> observer, params IEventObservable<TModel, TEventBase, IEventContext>[] observables)
         {
-            var stream = EventObservable.Concat(observables);
+            var stream = EventObservable.Merge(observables);
             AddDisposable(stream.Observe(observer));
         }
 
         protected void ObserveEvent<TEventBase>(Action<TModel, TEventBase, IEventContext> observer, params IEventObservable<TModel, TEventBase, IEventContext>[] observables)
         {
-            var stream = EventObservable.Concat(observables);
+            var stream = EventObservable.Merge(observables);
             AddDisposable(stream.Observe(observer));
         }
 
@@ -104,7 +104,7 @@ namespace Esp.Net
                 }
                 eventObservables[i] = Router.GetEventObservable<TBaseEvent>(baseEventAttribute.EventType, baseEventAttribute.Stage);
             }
-            var eventObservable = EventObservable.Concat(eventObservables);
+            var eventObservable = EventObservable.Merge(eventObservables);
             ObserveEvent(method, baseEventType, eventObservable);
         }
 

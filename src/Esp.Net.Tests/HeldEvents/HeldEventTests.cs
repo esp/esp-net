@@ -262,7 +262,7 @@ namespace Esp.Net.HeldEvents
             List<BaseEvent> receivedBarEvents = new List<BaseEvent>();
             IEventObservable<TestModel, BaseEvent, IEventContext> fooEventStream = _router.GetEventObservable(_model.Id, new HoldBaseEventsBasedOnModelStrategy<FooEvent, BaseEvent>());
             IEventObservable<TestModel, BaseEvent, IEventContext> barEventStream = _router.GetEventObservable(_model.Id, new HoldBaseEventsBasedOnModelStrategy<BarEvent, BaseEvent>());
-            var stream = EventObservable.Concat(fooEventStream, barEventStream);
+            var stream = EventObservable.Merge(fooEventStream, barEventStream);
             stream.Observe((model, baseEvent, context) =>
             {
                 receivedBarEvents.Add(baseEvent);

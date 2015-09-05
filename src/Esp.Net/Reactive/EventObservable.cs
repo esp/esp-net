@@ -15,6 +15,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using Esp.Net.Disposables;
 
 namespace Esp.Net.Reactive
@@ -43,7 +44,17 @@ namespace Esp.Net.Reactive
             return new EventObservable<TModel, TEvent, TContext>(subscribe1);
         }
 
-        public static IEventObservable<TModel, TEvent, TContext> Concat<TModel, TEvent, TContext>(params IEventObservable<TModel, TEvent, TContext>[] sources)
+        public static IEventObservable<TModel, TEvent, TContext> Merge<TModel, TEvent, TContext>(params IEventObservable<TModel, TEvent, TContext>[] sources)
+        {
+            return MergeInternal(sources);
+        }
+
+        public static IEventObservable<TModel, TEvent, TContext> Merge<TModel, TEvent, TContext>(IEnumerable<IEventObservable<TModel, TEvent, TContext>> sources)
+        {
+            return MergeInternal(sources);
+        }
+
+        private static IEventObservable<TModel, TEvent, TContext> MergeInternal<TModel, TEvent, TContext>(IEnumerable<IEventObservable<TModel, TEvent, TContext>> sources)
         {
             return Create<TModel, TEvent, TContext>(
                 o =>
