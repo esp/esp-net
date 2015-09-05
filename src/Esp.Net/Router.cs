@@ -97,6 +97,8 @@ namespace Esp.Net
 
         public void RemoveModel(object modelId)
         {
+            // we need to schedule the call to remove onto the dispatcher as various subjects
+            // will complete as part of this operation.
             if (!_routerDispatcher.CheckAccess())
             {
                 _state.ThrowIfHalted();
@@ -122,7 +124,6 @@ namespace Esp.Net
                 return;
             }
             _state.ThrowIfHalted();
-            _routerDispatcher.EnsureAccess();
             IModelEntry modelEntry = GetModelEntry(modelId);
             modelEntry.TryEnqueue(@event);
             PurgeEventQueues();
@@ -130,16 +131,15 @@ namespace Esp.Net
 
         public void PublishEvent(object modelId, object @event)
         {
-            if (!_routerDispatcher.CheckAccess())
-            {
-                _state.ThrowIfHalted();
-                _routerDispatcher.Dispatch(() => PublishEvent(modelId, @event));
-                return;
-            }
-            _state.ThrowIfHalted();
-            _routerDispatcher.EnsureAccess();
             var publishEventMethod = PublishEventMethodInfo.MakeGenericMethod(@event.GetType());
-            publishEventMethod.Invoke(this, new object[] { modelId, @event });
+            try
+            {
+                publishEventMethod.Invoke(this, new object[] { modelId, @event });
+            }
+            catch (TargetInvocationException ex)
+            {
+                throw ex.InnerException;
+            }
         }
 
         public void ExecuteEvent<TEvent>(object modelId, TEvent @event)
@@ -154,10 +154,15 @@ namespace Esp.Net
 
         public void ExecuteEvent(object modelId, object @event)
         {
-            _state.ThrowIfHalted();
-            _routerDispatcher.EnsureAccess();
             var executeEventMethod = ExecuteEventMethodInfo.MakeGenericMethod(@event.GetType());
-            executeEventMethod.Invoke(this, new object[] { modelId, @event });
+            try
+            {
+                executeEventMethod.Invoke(this, new object[] { modelId, @event });
+            }
+            catch (TargetInvocationException ex)
+            {
+                throw ex.InnerException;
+            }
         }
 
         public void BroadcastEvent<TEvent>(TEvent @event)
@@ -169,8 +174,6 @@ namespace Esp.Net
                 return;
             }
             _state.ThrowIfHalted();
-            _routerDispatcher.EnsureAccess();
-
             IModelEntry[] modelEntries;
             lock (_gate)
             {
@@ -185,22 +188,21 @@ namespace Esp.Net
 
         public void BroadcastEvent(object @event)
         {
-            if (!_routerDispatcher.CheckAccess())
-            {
-                _routerDispatcher.Dispatch(() => BroadcastEvent(@event));
-                return;
-            }
-            _state.ThrowIfHalted();
-            _routerDispatcher.EnsureAccess();
             var publishEventMethod = BroadcastEventMethodInfo.MakeGenericMethod(@event.GetType());
-            publishEventMethod.Invoke(this, new object[] { @event });
+            try
+            {
+                publishEventMethod.Invoke(this, new object[] { @event });
+            }
+            catch (TargetInvocationException ex)
+            {
+                throw ex.InnerException;
+            }
         }
 
         public IModelObservable<TModel> GetModelObservable<TModel>(object modelId)
         {
             Guard.Requires<ArgumentNullException>(modelId != null, "modelId can not be null");
             _state.ThrowIfHalted();
-            _routerDispatcher.EnsureAccess();
             IModelEntry<TModel> entry = GetModelEntry<TModel>(modelId);
             return entry.GetModelObservable();
         }

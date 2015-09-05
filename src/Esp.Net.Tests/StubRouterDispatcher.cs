@@ -15,11 +15,14 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 
 namespace Esp.Net
 {
     public class StubRouterDispatcher : IRouterDispatcher
     {
+        private readonly List<Action> _actions = new List<Action>();
+
         public StubRouterDispatcher()
         {
             HasAccess = true;
@@ -27,24 +30,47 @@ namespace Esp.Net
 
         public bool HasAccess { get; set; }
 
+        public bool IsDisposed { get; set; }
+
+        public int QueuedActionCount { get { return _actions.Count; } }
+
         public bool CheckAccess()
         {
+            ThrowIfDisposed();
             return HasAccess;
         }
 
         public void EnsureAccess()
         {
-
+            ThrowIfDisposed();
+            if (!HasAccess) throw new InvalidOperationException("Invalid access");
         }
 
         public void Dispatch(Action action)
         {
-            throw new NotImplementedException();
+            ThrowIfDisposed();
+            _actions.Add(action);
         }
 
         public void Dispose()
         {
-            
+            IsDisposed = true;
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if(IsDisposed) throw new ObjectDisposedException(string.Empty);
+        }
+
+        public void InvokeDispatchedActions(int numberToInvoke)
+        {
+            var oldHasAccess = HasAccess;
+            HasAccess = true;
+            for (int i = 0; i < numberToInvoke || i < _actions.Count - 1; i++)
+            {
+                _actions[i]();
+            }
+            HasAccess = oldHasAccess;
         }
     }
 }

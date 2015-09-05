@@ -66,6 +66,16 @@
     <Compile Include="BaseModelEventProcessorTests.cs" />
     <Compile Include="Disposables\EspDisposableTests.cs" />
     <Compile Include="Reactive\StubSubject.cs" />
+    <Compile Include="RouterTests.RemoveModel.cs" />
+    <Compile Include="RouterTests.EventWorkflow.cs" />
+    <Compile Include="RouterTests.EventObservationDisposal.cs" />
+    <Compile Include="RouterTests.ErrorFlows.cs" />
+    <Compile Include="RouterTests.ModelObservation.cs" />
+    <Compile Include="RouterTests.ModelRouter.cs" />
+    <Compile Include="RouterTests.ModelSubRouter.cs" />
+    <Compile Include="RouterTests.RouterDispatcher.cs" />
+    <Compile Include="RouterTests.ErrorFlow.Halting.cs" />
+    <Compile Include="RouterTests.Ctor.cs" />
     <Compile Include="StubRouterDispatcher.cs" />
     <Compile Include="Workflow\WorkflowTests.cs" />
     <Compile Include="HeldEvents\HeldEventTests.cs" />
@@ -76,6 +86,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <Compile Include="RouterTests.RegisterModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Esp.Net.Workflow\Esp.Net.Workflow.csproj">
