@@ -16,19 +16,17 @@
 
 using System;
 using System.Collections.Generic;
-using Esp.Net.Utils;
 
 namespace Esp.Net.Meta
 {
     internal class ModelsEventsObservations : IEventsObservationRegistrar
     {
-        private readonly IThreadGuard _threadGuard;
         private readonly Dictionary<object, ModelEventObservations> _modelRegistries;
+        private readonly object _gate = new object();
 
-        public ModelsEventsObservations(IThreadGuard threadGuard)
+        public ModelsEventsObservations()
         {
-            _threadGuard = threadGuard;
-            _modelRegistries = new Dictionary<object    , ModelEventObservations>();
+            _modelRegistries = new Dictionary<object, ModelEventObservations>();
         }
 
         public void IncrementRegistration<TEvent>(object modelId)
@@ -45,21 +43,18 @@ namespace Esp.Net.Meta
 
         int IEventsObservationRegistrar.GetEventObservationCount<TEventType>(object modelId)
         {
-            Guard.Requires<InvalidOperationException>(_threadGuard.CheckAccess(), "Invalid thread access");
             ModelEventObservations eventObservations = GetEventRegistrations(modelId);
             return eventObservations.GetEventObservationCount<TEventType>();
         }
 
         int IEventsObservationRegistrar.GetEventObservationCount(object modelId, Type eventType)
         {
-            Guard.Requires<InvalidOperationException>(_threadGuard.CheckAccess(), "Invalid thread access");
             ModelEventObservations eventObservations = GetEventRegistrations(modelId);
             return eventObservations.GetEventObservationCount(eventType);
         }
 
         IList<EventObservations> IEventsObservationRegistrar.GetEventObservations(object modelId)
         {
-            Guard.Requires<InvalidOperationException>(_threadGuard.CheckAccess(), "Invalid thread access");
             ModelEventObservations eventObservations = GetEventRegistrations(modelId);
             return eventObservations.GetEventObservations();
         }
@@ -67,10 +62,13 @@ namespace Esp.Net.Meta
         private ModelEventObservations GetEventRegistrations(object modelId)
         {
             ModelEventObservations eventObservations;
-            if (!_modelRegistries.TryGetValue(modelId, out eventObservations))
+            lock (_gate)
             {
-                eventObservations = new ModelEventObservations();
-                _modelRegistries.Add(modelId, eventObservations);
+                if (!_modelRegistries.TryGetValue(modelId, out eventObservations))
+                {
+                    eventObservations = new ModelEventObservations();
+                    _modelRegistries.Add(modelId, eventObservations);
+                }
             }
             return eventObservations;
         }

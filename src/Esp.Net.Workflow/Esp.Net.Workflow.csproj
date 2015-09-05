@@ -26,6 +26,7 @@
     <DefineConstants>TRACE;DEBUG;ESP_EXPERIMENTAL</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\Esp.Net.Workflow.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -34,10 +35,11 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Release\Esp.Net.Workflow.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\AssemblyInfoCommon.cs">
-      <Link>Properties\AssemblyInfoCommon.cs</Link>
+    <Compile Include="..\AssemblyInfo.Common.cs">
+      <Link>Properties\AssemblyInfo.Common.cs</Link>
     </Compile>
     <Compile Include="AyncResultsEvent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -65,7 +67,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Esp.Net.Workflow.nuspec" />
+    <None Include="Esp.Net.Workflow.nuspec">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Esp.Net.Workflow.SourcePackage.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>

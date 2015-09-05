@@ -60,12 +60,24 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\AssemblyInfoCommon.cs">
-      <Link>Properties\AssemblyInfoCommon.cs</Link>
+    <Compile Include="..\AssemblyInfo.Common.cs">
+      <Link>Properties\AssemblyInfo.Common.cs</Link>
     </Compile>
     <Compile Include="BaseModelEventProcessorTests.cs" />
+    <Compile Include="Dispatchers\NewThreadRouterDispatcherTests.cs" />
     <Compile Include="Disposables\EspDisposableTests.cs" />
     <Compile Include="Reactive\StubSubject.cs" />
+    <Compile Include="RouterTests.RemoveModel.cs" />
+    <Compile Include="RouterTests.EventWorkflow.cs" />
+    <Compile Include="RouterTests.EventObservationDisposal.cs" />
+    <Compile Include="RouterTests.ErrorFlows.cs" />
+    <Compile Include="RouterTests.ModelObservation.cs" />
+    <Compile Include="RouterTests.ModelRouter.cs" />
+    <Compile Include="RouterTests.ModelSubRouter.cs" />
+    <Compile Include="RouterTests.RouterDispatcher.cs" />
+    <Compile Include="RouterTests.ErrorFlow.Halting.cs" />
+    <Compile Include="RouterTests.Ctor.cs" />
+    <Compile Include="StubRouterDispatcher.cs" />
     <Compile Include="Workflow\WorkflowTests.cs" />
     <Compile Include="HeldEvents\HeldEventTests.cs" />
     <Compile Include="Reactive\ReactiveTests.cs" />
@@ -75,8 +87,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <Compile Include="RouterTests.RegisterModel.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Esp.Net.Dispatchers\Esp.Net.Dispatchers.csproj">
+      <Project>{769ECEB6-57D8-47B9-8E5F-651F003F609A}</Project>
+      <Name>Esp.Net.Dispatchers</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Esp.Net.Workflow\Esp.Net.Workflow.csproj">
       <Project>{e9844144-0f47-40d3-bc35-6135af535732}</Project>
       <Name>Esp.Net.Workflow</Name>

@@ -24,6 +24,7 @@
     <DefineConstants>TRACE;DEBUG;ESP_EXPERIMENTAL</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\Esp.Net.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -32,6 +33,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Release\Esp.Net.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <!-- A reference to the entire .NET Framework is automatically included -->
@@ -39,10 +41,11 @@
     <None Include="Esp.Net.SourcePackage.nuspec" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\AssemblyInfoCommon.cs">
-      <Link>Properties\AssemblyInfoCommon.cs</Link>
+    <Compile Include="..\AssemblyInfo.Common.cs">
+      <Link>Properties\AssemblyInfo.Common.cs</Link>
     </Compile>
     <Compile Include="BaseEventProcessor.cs" />
+    <Compile Include="CurrentThreadDispatcher.cs" />
     <Compile Include="Disposables\CollectionDisposable.cs" />
     <Compile Include="Disposables\DictionaryDisposable.cs" />
     <Compile Include="Disposables\DisposableBase.cs" />
@@ -51,26 +54,19 @@
     <Compile Include="EventContext.cs" />
     <Compile Include="IClonable.cs" />
     <Compile Include="IEventContext.cs" />
-    <Compile Include="IEventPublisher.cs" />
-    <Compile Include="IEventSubject.cs" />
     <Compile Include="IIdentifiableEvent.cs" />
-    <Compile Include="IModelSubject.cs" />
     <Compile Include="IPostEventProcessor.cs" />
     <Compile Include="IPreEventProcessor.cs" />
     <Compile Include="IRouter.cs" />
-    <Compile Include="IThreadGuard.cs" />
+    <Compile Include="IRouterDispatcher.cs" />
     <Compile Include="Meta\EventObservations.cs" />
     <Compile Include="Meta\IEventObservationRegistrar.cs" />
     <Compile Include="Meta\IEventsObservationRegistrar.cs" />
     <Compile Include="Meta\ModelEventObservations.cs" />
     <Compile Include="Meta\ModelsEventsObservations.cs" />
     <Compile Include="ModelChangedEvent.cs" />
-    <Compile Include="ModelRouter\IEventPublisher.cs" />
-    <Compile Include="ModelRouter\IEventSubject.cs" />
-    <Compile Include="ModelRouter\IModelSubject.cs" />
-    <Compile Include="ModelRouter\IRouter.cs" />
-    <Compile Include="ModelRouter\ModelRouter.cs" />
-    <Compile Include="ModelRouter\SubModelRouter.cs" />
+    <Compile Include="ModelRouter.cs" />
+    <Compile Include="SubModelRouter.cs" />
     <Compile Include="ObservationStage.cs" />
     <Compile Include="ObserveBaseEventAttribute.cs" />
     <Compile Include="ObserveEventAttribute.cs" />
@@ -88,11 +84,9 @@
     <Compile Include="Reactive\ModelObserver.cs" />
     <Compile Include="Reactive\ModelSubject.cs" />
     <Compile Include="Router.cs" />
-    <Compile Include="Router.Guard.cs" />
     <Compile Include="Router.ModelEntry.cs" />
     <Compile Include="Router.State.cs" />
     <Compile Include="Router.Status.cs" />
-    <Compile Include="ThreadGuard.cs" />
     <Compile Include="Utils\Guard.cs" />
     <Compile Include="Utils\ReflectionExt.cs" />
     <Compile Include="Utils\ReflectionHelper.cs" />

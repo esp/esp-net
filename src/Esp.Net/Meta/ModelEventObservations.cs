@@ -23,36 +23,51 @@ namespace Esp.Net.Meta
     internal class ModelEventObservations
     {
         private readonly Dictionary<Type, EventObservations> _eventObservations = new Dictionary<Type, EventObservations>();
+        private readonly object _gate = new object();
 
         public void IncrementRegistration<TEventType>()
         {
-            EventObservations eventObservations = GetEventObservations(typeof(TEventType));
-            eventObservations.NumberOfObservers++;
+            lock (_gate)
+            {
+                EventObservations eventObservations = GetEventObservations(typeof (TEventType));
+                eventObservations.NumberOfObservers++;
+            }
         }
 
         public void DecrementRegistration<TEventType>()
         {
-            EventObservations eventObservations = GetEventObservations(typeof(TEventType));
-            eventObservations.NumberOfObservers--;
+            lock (_gate)
+            {
+                EventObservations eventObservations = GetEventObservations(typeof (TEventType));
+                eventObservations.NumberOfObservers--;
+            }
         }
 
         public int GetEventObservationCount<TEventType>()
         {
-            return GetEventObservationCount(typeof(TEventType));
+            lock (_gate)
+                return GetEventObservationCount(typeof(TEventType));
         }
 
         public int GetEventObservationCount(Type eventType)
         {
-            EventObservations eventObservations = GetEventObservations(eventType);
-            return eventObservations.NumberOfObservers;
+            lock (_gate)
+            {
+                EventObservations eventObservations = GetEventObservations(eventType);
+                return eventObservations.NumberOfObservers;
+            }
         }
 
         public IList<EventObservations> GetEventObservations()
         {
-            var results = _eventObservations
-                .Values
-                .Select(v => new EventObservations(v.EventType, v.NumberOfObservers))
-                .ToList();
+            List<EventObservations> results;
+            lock (_gate)
+            {
+                results = _eventObservations
+                    .Values
+                    .Select(v => new EventObservations(v.EventType, v.NumberOfObservers))
+                    .ToList();
+            }
             return new ReadOnlyCollection<EventObservations>(results);
         }
 

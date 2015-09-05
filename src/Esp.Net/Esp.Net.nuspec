@@ -17,5 +17,8 @@
   <files>
     <!-- target taken from here based on the profile used in the project http://embed.plnkr.co/03ck2dCtnJogBKHJ9EjY/preview -->
     <file src="bin\$target$\Esp.Net.dll" target="lib\portable-net45+sl5+netcore45+wpa81+wp8\Esp.Net.dll" />
+    <file src="bin\$target$\Esp.Net.pdb" target="lib\portable-net45+sl5+netcore45+wpa81+wp8\Esp.Net.pdb" />
+    <file src="bin\$target$\Esp.Net.xml" target="lib\portable-net45+sl5+netcore45+wpa81+wp8\Esp.Net.xml" />
+    <file src="**\*.cs" target="src" />
   </files>
 </package>

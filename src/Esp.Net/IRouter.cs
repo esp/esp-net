@@ -15,18 +15,53 @@
 #endregion
 
 using System;
-using Esp.Net.ModelRouter;
+using Esp.Net.Reactive;
 
 namespace Esp.Net
 {
-    public interface IRouter : IModelSubject, IEventSubject, IEventPublisher
+    public interface IRouter
     {
         void RegisterModel<TModel>(object modelId, TModel model);
         void RegisterModel<TModel>(object modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor);
         void RegisterModel<TModel>(object modelId, TModel model, IPostEventProcessor<TModel> postEventProcessor);
         void RegisterModel<TModel>(object modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor, IPostEventProcessor<TModel> postEventProcessor);
+
         void RemoveModel(object modelId);
+
         IRouter<TModel> CreateModelRouter<TModel>(object modelId);
         IRouter<TSubModel> CreateModelRouter<TModel, TSubModel>(object modelId, Func<TModel, TSubModel> subModelSelector);
+    
+        IModelObservable<TModel> GetModelObservable<TModel>(object modelId);
+  
+        IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TModel, TEvent>(object modelId, ObservationStage observationStage = ObservationStage.Normal);
+        IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TBaseEvent>(object modelId, Type subEventType, ObservationStage observationStage = ObservationStage.Normal);
+  
+        void PublishEvent<TEvent>(object modelId, TEvent @event);
+        void PublishEvent(object modelId, object @event);
+
+        void ExecuteEvent<TEvent>(object modelId, TEvent @event);
+        void ExecuteEvent(object modelId, object @event);
+
+        void BroadcastEvent<TEvent>(TEvent @event);
+        void BroadcastEvent(object @event);
+
+        void RegisterTerminalErrorHandler(Action<Exception> onHaltingError);
+    }
+
+    public interface IRouter<out TModel>
+    {
+        IModelObservable<TModel> GetModelObservable();
+
+        IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal);
+        IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal);
+
+        void PublishEvent<TEvent>(TEvent @event);
+        void PublishEvent(object @event);
+
+        void ExecuteEvent<TEvent>(TEvent @event);
+        void ExecuteEvent(object @event);
+
+        void BroadcastEvent<TEvent>(TEvent @event);
+        void BroadcastEvent(object @event);
     }
 }

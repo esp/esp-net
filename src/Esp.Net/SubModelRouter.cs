@@ -17,37 +17,34 @@
 using System;
 using Esp.Net.Reactive;
 
-namespace Esp.Net.ModelRouter
+namespace Esp.Net
 {
-    internal class ModelRouter<TModel> : IRouter<TModel>
+    internal class SubModelRouter<TModel, TSubModel> : IRouter<TSubModel>
     {
+        private readonly Func<TModel, TSubModel> _selector;
         private readonly object _modelIid;
         private readonly IRouter _underlying;
 
-        public ModelRouter(object modelIid, IRouter underlying)
+        public SubModelRouter(object modelIid, IRouter underlying, Func<TModel, TSubModel> selector)
         {
             _modelIid = modelIid;
             _underlying = underlying;
+            _selector = selector;
         }
 
-        public IModelObservable<TModel> GetModelObservable()
+        public IModelObservable<TSubModel> GetModelObservable()
         {
-            return _underlying.GetModelObservable<TModel>(_modelIid);
+            return _underlying.GetModelObservable<TModel>(_modelIid).Select(_selector);
         }
 
-        public IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal)
+        public IEventObservable<TSubModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal)
         {
-            return _underlying.GetEventObservable<TModel, TEvent>(_modelIid, observationStage);
+            return _underlying.GetEventObservable<TModel, TEvent>(_modelIid, observationStage).Select(_selector);
         }
 
-        public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TSubEventType, TBaseEvent>(ObservationStage observationStage = ObservationStage.Normal) where TSubEventType : TBaseEvent
+        public IEventObservable<TSubModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal)
         {
-            return _underlying.GetEventObservable<TModel, TSubEventType, TBaseEvent>(_modelIid, observationStage);
-        }
-
-        public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal)
-        {
-            return _underlying.GetEventObservable<TModel, TBaseEvent>(_modelIid, eventType, observationStage);
+            return _underlying.GetEventObservable<TModel, TBaseEvent>(_modelIid, eventType, observationStage).Select(_selector);
         }
 
         public void PublishEvent<TEvent>(TEvent @event)

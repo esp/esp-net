@@ -1,5 +1,4 @@
-extensions: .cs 
-#region copyright
+﻿#region copyright
 // Copyright 2015 Keith Woods
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,3 +13,15 @@ extensions: .cs
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #endregion
+
+using System.Resources;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+
+[assembly: AssemblyTitle("Esp.Net.Dispatchers")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: NeutralResourcesLanguage("en")]
+
+[assembly: InternalsVisibleTo("Esp.Net.Tests")]
+[assembly: InternalsVisibleTo("Esp.Net")]

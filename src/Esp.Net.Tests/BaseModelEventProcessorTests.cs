@@ -17,7 +17,6 @@
 
 using System;
 using System.Collections.Generic;
-using Esp.Net.ModelRouter;
 using NUnit.Framework;
 using Shouldly;
 
@@ -32,7 +31,7 @@ namespace Esp.Net
         [SetUp]
         public void SetUp()
         {
-            var router = new Router(ThreadGuard.Default);
+            var router = new Router(new StubRouterDispatcher());
             var modelId = Guid.NewGuid();
             router.RegisterModel(modelId, new TestModel());
             _router = router.CreateModelRouter<TestModel>(modelId);

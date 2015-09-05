@@ -14,17 +14,14 @@
 // limitations under the License.
 #endregion
 
-namespace Esp.Net.ModelRouter
+using System;
+
+namespace Esp.Net
 {
-    public interface IEventPublisher
+    public interface IRouterDispatcher : IDisposable
     {
-        void PublishEvent<TEvent>(TEvent @event);
-        void PublishEvent(object @event);
-
-        void ExecuteEvent<TEvent>(TEvent @event);
-        void ExecuteEvent(object @event);
-
-        void BroadcastEvent<TEvent>(TEvent @event);
-        void BroadcastEvent(object @event);
+        bool CheckAccess();
+        void EnsureAccess();
+        void Dispatch(Action action);
     }
 }

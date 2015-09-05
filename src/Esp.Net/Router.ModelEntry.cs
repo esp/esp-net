@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Esp.Net.Meta;
 using Esp.Net.Reactive;
@@ -45,7 +46,6 @@ namespace Esp.Net
         {
             IModelObservable<TModel> GetModelObservable();
             IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal);
-            IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TSubEventType, TBaseEvent>(ObservationStage observationStage = ObservationStage.Normal) where TSubEventType : TBaseEvent;
             IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type subEventType, ObservationStage observationStage = ObservationStage.Normal);
         }
 
@@ -59,12 +59,14 @@ namespace Esp.Net
             private readonly TModel _model;
             private readonly IPreEventProcessor<TModel> _preEventProcessor;
             private readonly IPostEventProcessor<TModel> _postEventProcessor;
-            private readonly RouterGuard _routerGuard;
+            private readonly State _state;
             private readonly IEventObservationRegistrar _eventObservationRegistrar;
             private readonly IModelChangedEventPublisher _modelChangedEventPublisher;
+            private readonly IRouterDispatcher _routerDispatcher;
             private readonly Queue<dynamic> _eventDispatchQueue = new Queue<dynamic>();
             private readonly Dictionary<Type, dynamic> _eventSubjects = new Dictionary<Type, dynamic>();
             private readonly ModelSubject<TModel> _modelUpdateSubject = new ModelSubject<TModel>();
+            private readonly object _gate = new object();
             private static readonly MethodInfo GetEventObservableMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(ModelEntry<TModel>), "GetEventObservable", 1, 1);
 
             public ModelEntry(
@@ -72,17 +74,19 @@ namespace Esp.Net
                 TModel model, 
                 IPreEventProcessor<TModel> preEventProcessor, 
                 IPostEventProcessor<TModel> postEventProcessor, 
-                RouterGuard routerGuard,
+                State state,
                 IEventObservationRegistrar eventObservationRegistrar,
-                IModelChangedEventPublisher modelChangedEventPublisher)
+                IModelChangedEventPublisher modelChangedEventPublisher,
+                IRouterDispatcher routerDispatcher)
             {
                 Id = id;
                 _model = model;
                 _preEventProcessor = preEventProcessor;
                 _postEventProcessor = postEventProcessor;
-                _routerGuard = routerGuard;
+                _state = state;
                 _eventObservationRegistrar = eventObservationRegistrar;
                 _modelChangedEventPublisher = modelChangedEventPublisher;
+                _routerDispatcher = routerDispatcher;
             }
 
             public object Id { get; private set; }
@@ -93,7 +97,10 @@ namespace Esp.Net
 
             public void TryEnqueue<TEvent>(TEvent @event)
             {
-                if (!_eventSubjects.ContainsKey(typeof (TEvent))) return;
+                lock (_gate)
+                {
+                    if (!_eventSubjects.ContainsKey(typeof (TEvent))) return;
+                }
                 if (typeof (ModelChangedEvent<TModel>).IsAssignableFrom(typeof (TEvent)))
                 {
                     var message = string.Format("The event stream observing event ModelChangedEvent<{0}> against model of type [{0}] is unsupported. Observing a ModelChangedEvent<T> where T is the same as the target models type is not supported.", typeof(TModel).Name);
@@ -141,7 +148,12 @@ namespace Esp.Net
             public void OnRemoved()
             {
                 IsRemoved = true;
-                foreach (dynamic eventSubjects in _eventSubjects.Values)
+                dynamic[] eventSubjectss;
+                lock (_gate)
+                {
+                    eventSubjectss = _eventSubjects.Values.ToArray();
+                }
+                foreach (dynamic eventSubjects in eventSubjectss)
                 {
                     eventSubjects.PreviewSubject.OnCompleted();
                     eventSubjects.NormalSubject.OnCompleted();
@@ -160,23 +172,9 @@ namespace Esp.Net
             {
                 return ModelObservable.Create<TModel>(o =>
                 {
-                    _routerGuard.EnsureValid();
+                    _state.ThrowIfHalted();
                     return _modelUpdateSubject.Observe(o);
                 });
-            }
-
-            /// <summary>
-            /// Returns an event IEventObservable typed against TBaseEvent for the sub event of eventType. This is useful when you combine mutiple events into a single stream 
-            /// and care little for the high level type of the event.
-            /// </summary>
-            /// <typeparam name="TSubEventType"></typeparam>
-            /// <typeparam name="TBaseEvent"></typeparam>
-            /// <param name="observationStage"></param>
-            /// <returns></returns>
-            public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TSubEventType, TBaseEvent>(ObservationStage observationStage = ObservationStage.Normal)
-                where TSubEventType : TBaseEvent
-            {
-                return GetEventObservable<TBaseEvent>(typeof(TSubEventType));
             }
 
             /// <summary>
@@ -192,10 +190,16 @@ namespace Esp.Net
                 Guard.Requires<ArgumentException>(typeof(TBaseEvent).IsAssignableFrom(subEventType), "Event type {0} must derive from {1}", subEventType, typeof(TBaseEvent));
                 return EventObservable.Create<TModel, TBaseEvent, IEventContext>(o =>
                 {
-                    _routerGuard.EnsureValid();
                     var getEventStreamMethod = GetEventObservableMethodInfo.MakeGenericMethod(subEventType);
-                    dynamic observable = getEventStreamMethod.Invoke(this, new object[] { observationStage });
-                    return (IDisposable)observable.Observe(o);
+                    try
+                    {
+                        dynamic observable = getEventStreamMethod.Invoke(this, new object[] { observationStage });
+                        return (IDisposable)observable.Observe(o);
+                    }
+                    catch (RuntimeBinderException ex)
+                    {
+                        throw new Exception(string.Format("Error observing event of type [{0}]. Is this event scoped as private or internal? The Router uses the DLR to dispatch/observe events not reflection, it can't dispatch/observe internally scoped events without using a InternalsVisibleTo attribute.", subEventType.FullName), ex);
+                    }
                 });
             }
 
@@ -209,16 +213,19 @@ namespace Esp.Net
             {
                 return EventObservable.Create<TModel, TEvent, IEventContext>(o =>
                 {
-                    _routerGuard.EnsureValid();
+                    _state.ThrowIfHalted();
                     EventSubjects<TEvent> eventSubjects;
-                    if (!_eventSubjects.ContainsKey(typeof(TEvent)))
+                    lock (_gate)
                     {
-                        eventSubjects = new EventSubjects<TEvent>(_eventObservationRegistrar);
-                        _eventSubjects[typeof(TEvent)] = eventSubjects;
-                    }
-                    else
-                    {
-                        eventSubjects = (EventSubjects<TEvent>)_eventSubjects[typeof(TEvent)];
+                        if (!_eventSubjects.ContainsKey(typeof (TEvent)))
+                        {
+                            eventSubjects = new EventSubjects<TEvent>(_eventObservationRegistrar);
+                            _eventSubjects[typeof (TEvent)] = eventSubjects;
+                        }
+                        else
+                        {
+                            eventSubjects = (EventSubjects<TEvent>) _eventSubjects[typeof (TEvent)];
+                        }
                     }
                     EventSubject<TModel, TEvent, IEventContext> subject;
                     switch (observationStage)
@@ -246,7 +253,11 @@ namespace Esp.Net
                     try
                     {
                         dynamic eventSubjects;
-                        if (_eventSubjects.TryGetValue(typeof(TEvent), out eventSubjects))
+                        lock (_gate)
+                        {
+                            _eventSubjects.TryGetValue(typeof(TEvent), out eventSubjects);
+                        }
+                        if (eventSubjects != null)
                         {
                             var eventContext = new EventContext();
                             eventContext.CurrentStage = ObservationStage.Preview;
@@ -268,7 +279,7 @@ namespace Esp.Net
                     }
                     catch (RuntimeBinderException ex)
                     {
-                        throw new Exception(string.Format("Error dispatching event of type [{0}]. Is this event scoped internal? The Router uses the DLR to dispatch events not reflection, it can't dispatch internally scoped events without using a InternalsVisibleTo attribute.", @event.GetType().FullName), ex);
+                        throw new Exception(string.Format("Error dispatching event of type [{0}]. Is this event scoped as private or internal? The Router uses the DLR to dispatch/observe events not reflection, it can't dispatch/observe internally scoped events without using a InternalsVisibleTo attribute.", @event.GetType().FullName), ex);
                     }
                 };
             }

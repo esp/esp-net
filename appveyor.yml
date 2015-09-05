@@ -1,5 +1,5 @@
-assembly_info:
-  patch: false
+environment:
+  nuget_version: 0.3.0
 
 platform: Any CPU
 configuration: Release
@@ -9,26 +9,30 @@ nuget:
   project_feed: true
   disable_publish_on_pr: false
 
+assembly_info:
+  patch: true
+  file: src\AssemblyInfo.Common.cs
+  assembly_version: '$(nuget_version)'
+  assembly_file_version: '$(nuget_version)'
+  assembly_informational_version: '$(APPVEYOR_REPO_COMMIT)'
+
 before_build:
- - .\tools\nuget.exe restore .\src\Esp.Net.sln
- - ps: ./tools/gitversion.exe /l console /output buildserver /updateAssemblyInfo
+ - nuget restore .\src\Esp.Net.sln
   
 build:
   project: src\Esp.Net.sln
   verbosity: detailed
 
 after_build:
-  - cmd: ECHO nuget pack .\src\Esp.Net\Esp.Net.nuspec -version "%GitVersion_NuGetVersion%" -prop "target=%CONFIGURATION%"
-  - cmd: .\tools\nuget.exe pack .\src\Esp.Net\Esp.Net.nuspec -version "%GitVersion_NuGetVersion%" -prop "target=%CONFIGURATION%"
-  - cmd: ECHO nuget pack .\src\Esp.Net\Esp.Net.SourcePackage.nuspec -version "%GitVersion_NuGetVersion%"
-  - cmd: .\tools\nuget.exe pack .\src\Esp.Net\Esp.Net.SourcePackage.nuspec -version "%GitVersion_NuGetVersion%"
-  
-  - cmd: ECHO nuget pack .\src\Esp.Net.Workflow\Esp.Net.Workflow.nuspec -version "%GitVersion_NuGetVersion%" -prop "target=%CONFIGURATION%"
-  - cmd: .\tools\nuget.exe pack .\src\Esp.Net.Workflow\Esp.Net.Workflow.nuspec -version "%GitVersion_NuGetVersion%" -prop "target=%CONFIGURATION%"
-  - cmd: ECHO nuget pack .\src\Esp.Net.Workflow\Esp.Net.Workflow.SourcePackage.nuspec -version "%GitVersion_NuGetVersion%"
-  - cmd: .\tools\nuget.exe pack .\src\Esp.Net.Workflow\Esp.Net.Workflow.SourcePackage.nuspec -version "%GitVersion_NuGetVersion%"  
-  
-  - cmd: appveyor PushArtifact "esp-net.%GitVersion_NuGetVersion%.nupkg"
-  - cmd: appveyor PushArtifact "esp-net-source.%GitVersion_NuGetVersion%.nupkg"
-  - cmd: appveyor PushArtifact "esp-net-workflow.%GitVersion_NuGetVersion%.nupkg"
-  - cmd: appveyor PushArtifact "esp-net-workflow-source.%GitVersion_NuGetVersion%.nupkg"
+  - cmd: nuget pack .\src\Esp.Net\Esp.Net.nuspec -version "%nuget_version%" -prop "target=%CONFIGURATION%"
+  - cmd: nuget pack .\src\Esp.Net\Esp.Net.nuspec -version "%nuget_version%" -prop "target=%CONFIGURATION%" -Symbols
+  - cmd: nuget pack .\src\Esp.Net\Esp.Net.SourcePackage.nuspec -version "%nuget_version%"
+  - cmd: nuget pack .\src\Esp.Net.Workflow\Esp.Net.Workflow.nuspec -version "%nuget_version%" -prop "target=%CONFIGURATION%"
+  - cmd: nuget pack .\src\Esp.Net.Workflow\Esp.Net.Workflow.nuspec -version "%nuget_version%" -prop "target=%CONFIGURATION%" -Symbols
+  - cmd: nuget pack .\src\Esp.Net.Workflow\Esp.Net.Workflow.SourcePackage.nuspec -version "%nuget_version%"  
+  - cmd: nuget pack .\src\Esp.Net.Dispatchers\Esp.Net.Dispatchers.nuspec -version "%nuget_version%" -prop "target=%CONFIGURATION%"
+  - cmd: nuget pack .\src\Esp.Net.Dispatchers\Esp.Net.Dispatchers.nuspec -version "%nuget_version%" -prop "target=%CONFIGURATION%" -Symbols
+  - cmd: nuget pack .\src\Esp.Net.Dispatchers\Esp.Net.Dispatchers.SourcePackage.nuspec -version "%nuget_version%"  
+
+artifacts:
+- path: '*.nupkg'

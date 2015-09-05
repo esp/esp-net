@@ -17,7 +17,6 @@
 #if ESP_EXPERIMENTAL
 using System;
 using System.Collections.Generic;
-using Esp.Net.ModelRouter;
 using Esp.Net.Reactive;
 using NUnit.Framework;
 using Shouldly;
@@ -135,7 +134,7 @@ namespace Esp.Net.HeldEvents
         public void SetUp()
         {
             _model = new TestModel();
-            _router = new Router(ThreadGuard.Default);
+            _router = new Router(new StubRouterDispatcher());
             _router.RegisterModel(_model.Id, _model);
             _model.HoldAllEvents = true;
         }
@@ -263,7 +262,7 @@ namespace Esp.Net.HeldEvents
             List<BaseEvent> receivedBarEvents = new List<BaseEvent>();
             IEventObservable<TestModel, BaseEvent, IEventContext> fooEventStream = _router.GetEventObservable(_model.Id, new HoldBaseEventsBasedOnModelStrategy<FooEvent, BaseEvent>());
             IEventObservable<TestModel, BaseEvent, IEventContext> barEventStream = _router.GetEventObservable(_model.Id, new HoldBaseEventsBasedOnModelStrategy<BarEvent, BaseEvent>());
-            var stream = EventObservable.Concat(fooEventStream, barEventStream);
+            var stream = EventObservable.Merge(fooEventStream, barEventStream);
             stream.Observe((model, baseEvent, context) =>
             {
                 receivedBarEvents.Add(baseEvent);

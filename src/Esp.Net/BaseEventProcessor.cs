@@ -18,7 +18,6 @@ using System;
 using System.Linq;
 using System.Reflection;
 using Esp.Net.Disposables;
-using Esp.Net.ModelRouter;
 using Esp.Net.Reactive;
 using Esp.Net.Utils;
 
@@ -26,7 +25,7 @@ namespace Esp.Net
 {
     public abstract class BaseModelEventProcessor<TModel> : DisposableBase
     {
-        private static readonly MethodInfo GetEventObservableMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof (IEventSubject<TModel>), "GetEventObservable", 1, 1);
+        private static readonly MethodInfo GetEventObservableMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof (IRouter<TModel>), "GetEventObservable", 1, 1);
         private static readonly MethodInfo ObserveBaseEventsMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof (BaseModelEventProcessor<TModel>), "ObserveBaseEvents", 1, 2, BindingFlags.Instance | BindingFlags.NonPublic);
 
         protected BaseModelEventProcessor(IRouter<TModel> router)
@@ -48,13 +47,13 @@ namespace Esp.Net
 
         protected void ObserveEvent<TEventBase>(Action<TModel, TEventBase> observer, params IEventObservable<TModel, TEventBase, IEventContext>[] observables)
         {
-            var stream = EventObservable.Concat(observables);
+            var stream = EventObservable.Merge(observables);
             AddDisposable(stream.Observe(observer));
         }
 
         protected void ObserveEvent<TEventBase>(Action<TModel, TEventBase, IEventContext> observer, params IEventObservable<TModel, TEventBase, IEventContext>[] observables)
         {
-            var stream = EventObservable.Concat(observables);
+            var stream = EventObservable.Merge(observables);
             AddDisposable(stream.Observe(observer));
         }
 
@@ -105,7 +104,7 @@ namespace Esp.Net
                 }
                 eventObservables[i] = Router.GetEventObservable<TBaseEvent>(baseEventAttribute.EventType, baseEventAttribute.Stage);
             }
-            var eventObservable = EventObservable.Concat(eventObservables);
+            var eventObservable = EventObservable.Merge(eventObservables);
             ObserveEvent(method, baseEventType, eventObservable);
         }
 

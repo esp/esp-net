@@ -106,11 +106,11 @@ namespace Esp.Net.Reactive
         }
 
         [Test]
-        public void CanConcatEventStreams()
+        public void CanMergeEventStreams()
         {
             var subject1 = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
             var subject2 = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
-            var stream = EventObservable.Concat(subject1, subject2);
+            var stream = EventObservable.Merge(subject1, subject2);
             List<int> received = new List<int>();
             stream.Observe((m, e, c) => received.Add(e));
             subject1.OnNext(_model, 1, _eventContext);

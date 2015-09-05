@@ -90,6 +90,14 @@ namespace Esp.Net
                 }
                 CurrentStatus = Status.EventProcessorDispatch;
             }
+
+            public void ThrowIfHalted()
+            {
+                if (CurrentStatus == Status.Halted)
+                {
+                    throw new Exception("Router halted due to previous error", HaltingException);
+                }
+            }
         }
     }
 }
