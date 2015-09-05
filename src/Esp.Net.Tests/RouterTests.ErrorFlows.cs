@@ -1,5 +1,6 @@
 ﻿using System;
 using NUnit.Framework;
+using Shouldly;
 
 namespace Esp.Net
 {
@@ -55,6 +56,27 @@ namespace Esp.Net
                     _router.PublishEvent(_model1.Id, event1);
                 });
             }
+
+            [Test]
+            public void ObservingAPrivateEventThrowsAnInvalidOperationException()
+            {
+                var ex = Assert.Throws<Exception>(() =>
+                {
+                    _router.GetEventObservable<TestModel, PrivateBaseEvent>(_model1.Id, typeof(PrivateEvent)).Observe((model, ev) => { });
+                });
+                ex.Message.ShouldContain("Is this event scoped as private or internal");
+            }
+
+            [Test]
+            public void PublishingAPrivateEventThrowsAnInvalidOperationException()
+            {
+                _router.GetEventObservable<TestModel, PrivateEvent>(_model1.Id).Observe((model, ev) => { });
+                var ex = Assert.Throws<Exception>(() => _router.PublishEvent(_model1.Id, new PrivateEvent()));
+                ex.Message.ShouldContain("Is this event scoped as private or internal");
+            }
+
+            private class PrivateEvent : PrivateBaseEvent { }
+            private class PrivateBaseEvent { }
         }
     }
 }

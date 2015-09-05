@@ -46,7 +46,6 @@ namespace Esp.Net
         {
             IModelObservable<TModel> GetModelObservable();
             IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal);
-            IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TSubEventType, TBaseEvent>(ObservationStage observationStage = ObservationStage.Normal) where TSubEventType : TBaseEvent;
             IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type subEventType, ObservationStage observationStage = ObservationStage.Normal);
         }
 
@@ -179,20 +178,6 @@ namespace Esp.Net
             }
 
             /// <summary>
-            /// Returns an event IEventObservable typed against TBaseEvent for the sub event of eventType. This is useful when you combine mutiple events into a single stream 
-            /// and care little for the high level type of the event.
-            /// </summary>
-            /// <typeparam name="TSubEventType"></typeparam>
-            /// <typeparam name="TBaseEvent"></typeparam>
-            /// <param name="observationStage"></param>
-            /// <returns></returns>
-            public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TSubEventType, TBaseEvent>(ObservationStage observationStage = ObservationStage.Normal)
-                where TSubEventType : TBaseEvent
-            {
-                return GetEventObservable<TBaseEvent>(typeof(TSubEventType));
-            }
-
-            /// <summary>
             /// Returns an event IEventObservable typed against TBaseEvent for the sub event of subEventType. This is useful when you combine mutiple events into a single stream 
             /// and care little for the high level type of the event.
             /// </summary>
@@ -206,8 +191,15 @@ namespace Esp.Net
                 return EventObservable.Create<TModel, TBaseEvent, IEventContext>(o =>
                 {
                     var getEventStreamMethod = GetEventObservableMethodInfo.MakeGenericMethod(subEventType);
-                    dynamic observable = getEventStreamMethod.Invoke(this, new object[] { observationStage });
-                    return (IDisposable)observable.Observe(o);
+                    try
+                    {
+                        dynamic observable = getEventStreamMethod.Invoke(this, new object[] { observationStage });
+                        return (IDisposable)observable.Observe(o);
+                    }
+                    catch (RuntimeBinderException ex)
+                    {
+                        throw new Exception(string.Format("Error observing event of type [{0}]. Is this event scoped as private or internal? The Router uses the DLR to dispatch/observe events not reflection, it can't dispatch/observe internally scoped events without using a InternalsVisibleTo attribute.", subEventType.FullName), ex);
+                    }
                 });
             }
 
@@ -287,7 +279,7 @@ namespace Esp.Net
                     }
                     catch (RuntimeBinderException ex)
                     {
-                        throw new Exception(string.Format("Error dispatching event of type [{0}]. Is this event scoped internal? The Router uses the DLR to dispatch events not reflection, it can't dispatch internally scoped events without using a InternalsVisibleTo attribute.", @event.GetType().FullName), ex);
+                        throw new Exception(string.Format("Error dispatching event of type [{0}]. Is this event scoped as private or internal? The Router uses the DLR to dispatch/observe events not reflection, it can't dispatch/observe internally scoped events without using a InternalsVisibleTo attribute.", @event.GetType().FullName), ex);
                     }
                 };
             }

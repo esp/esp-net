@@ -199,17 +199,6 @@ namespace Esp.Net
                 }
 
                 [Test]
-                public void CanObserveEventsByBaseTypeUsingGenericTypeOverload()
-                {
-                    var receivedEventCount = 0;
-                    _router
-                        .GetEventObservable<TestModel, Event1, BaseEvent>(_model1.Id)
-                        .Observe((m, e) => receivedEventCount++);
-                    _router.PublishEvent(_model1.Id, new Event1());
-                    receivedEventCount.ShouldBe(1);
-                }
-
-                [Test]
                 public void ThrowsIfSubTypeDoesntDeriveFromBase()
                 {
                     Assert.Throws<ArgumentException>(() => _router.GetEventObservable<TestModel, BaseEvent>(_model1.Id, typeof(string)));

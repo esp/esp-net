@@ -213,13 +213,6 @@ namespace Esp.Net
             return entry.GetEventObservable<TEvent>(observationStage);
         }
 
-        public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TSubEventType, TBaseEvent>(object modelId, ObservationStage observationStage = ObservationStage.Normal) where TSubEventType : TBaseEvent
-        {
-            _state.ThrowIfHalted();
-            IModelEntry<TModel> entry = GetModelEntry<TModel>(modelId);
-            return entry.GetEventObservable<TSubEventType, TBaseEvent>(observationStage);
-        }
-
         public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TBaseEvent>(object modelId, Type subEventType, ObservationStage observationStage = ObservationStage.Normal)
         {
             _state.ThrowIfHalted();

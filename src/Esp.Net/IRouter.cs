@@ -25,14 +25,15 @@ namespace Esp.Net
         void RegisterModel<TModel>(object modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor);
         void RegisterModel<TModel>(object modelId, TModel model, IPostEventProcessor<TModel> postEventProcessor);
         void RegisterModel<TModel>(object modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor, IPostEventProcessor<TModel> postEventProcessor);
+
         void RemoveModel(object modelId);
+
         IRouter<TModel> CreateModelRouter<TModel>(object modelId);
         IRouter<TSubModel> CreateModelRouter<TModel, TSubModel>(object modelId, Func<TModel, TSubModel> subModelSelector);
     
         IModelObservable<TModel> GetModelObservable<TModel>(object modelId);
   
         IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TModel, TEvent>(object modelId, ObservationStage observationStage = ObservationStage.Normal);
-        IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TSubEventType, TBaseEvent>(object modelId, ObservationStage observationStage = ObservationStage.Normal) where TSubEventType : TBaseEvent;
         IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TBaseEvent>(object modelId, Type subEventType, ObservationStage observationStage = ObservationStage.Normal);
   
         void PublishEvent<TEvent>(object modelId, TEvent @event);
@@ -50,7 +51,6 @@ namespace Esp.Net
         IModelObservable<TModel> GetModelObservable();
 
         IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal);
-        IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TSubEventType, TBaseEvent>(ObservationStage observationStage = ObservationStage.Normal) where TSubEventType : TBaseEvent;
         IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal);
 
         void PublishEvent<TEvent>(TEvent @event);

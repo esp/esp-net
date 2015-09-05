@@ -42,11 +42,6 @@ namespace Esp.Net
             return _underlying.GetEventObservable<TModel, TEvent>(_modelIid, observationStage).Select(_selector);
         }
 
-        public IEventObservable<TSubModel, TBaseEvent, IEventContext> GetEventObservable<TSubEventType, TBaseEvent>(ObservationStage observationStage = ObservationStage.Normal) where TSubEventType : TBaseEvent
-        {
-            return _underlying.GetEventObservable<TModel, TSubEventType, TBaseEvent>(_modelIid, observationStage).Select(_selector);
-        }
-
         public IEventObservable<TSubModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal)
         {
             return _underlying.GetEventObservable<TModel, TBaseEvent>(_modelIid, eventType, observationStage).Select(_selector);
