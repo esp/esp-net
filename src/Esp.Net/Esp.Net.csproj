@@ -39,8 +39,8 @@
     <None Include="Esp.Net.SourcePackage.nuspec" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\AssemblyInfoCommon.cs">
-      <Link>Properties\AssemblyInfoCommon.cs</Link>
+    <Compile Include="..\AssemblyInfo.Common.cs">
+      <Link>Properties\AssemblyInfo.Common.cs</Link>
     </Compile>
     <Compile Include="BaseEventProcessor.cs" />
     <Compile Include="CurrentThreadDispatcher.cs" />
