@@ -16,8 +16,8 @@
 
 #if ESP_EXPERIMENTAL
 using System;
-
-namespace Esp.Net.HeldEvents
+// ReSharper disable once CheckNamespace
+namespace Esp.Net
 {
     public interface IEventDescription
     {

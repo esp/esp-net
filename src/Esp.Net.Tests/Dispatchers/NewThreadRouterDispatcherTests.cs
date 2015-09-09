@@ -97,32 +97,6 @@ namespace Esp.Net.Dispatchers
         }
 
         [Test]
-        public void DispatchQueuesSubsequentActionPostedOnOtherThread()
-        {
-            AutoResetEvent gate = new AutoResetEvent(false);
-            List<int> processed = new List<int>();
-            Action action = () =>
-            {
-                processed.Add(1);
-                gate.Set();
-                gate.WaitOne();
-            };
-            _dispatcher.Dispatch(action);
-            _dispatcher.Dispatch(() => processed.Add(2));
-            gate.WaitOne();
-            processed.ShouldBe(new int[] { 1 });
-            _dispatcher.Dispatch(() => processed.Add(3));
-            _dispatcher.Dispatch(() =>
-            {
-                processed.Add(4);
-                gate.Set();
-            });
-            gate.Set();
-            gate.WaitOne();
-            processed.ShouldBe(new int[] { 1, 2, 3, 4 });
-        }
-
-        [Test]
         public void DisposingFromDispatcherThreadStopFurtherProcessing()
         {
             AutoResetEvent gate = new AutoResetEvent(false);

@@ -41,7 +41,6 @@ namespace Esp.Net
         [Test]
         public void ObserveAttributeObservesEventsWithModelAndEventAndEventContextSignature()
         {
-            _stubEventProcessor.ObserveEvents();
             _router.PublishEvent(new FooEvent());
             _stubEventProcessor.FooEvents.Count.ShouldBe(1);
             _stubEventProcessor.BarEvents.Count.ShouldBe(0);
@@ -54,7 +53,6 @@ namespace Esp.Net
         [Test]
         public void ObserveAttributeObservesEventsWithModelAndEventSignature()
         {
-            _stubEventProcessor.ObserveEvents(); 
             _router.PublishEvent(new EventForNoContext());
             _stubEventProcessor.EventForNoContexts.Count.ShouldBe(1);
         }
@@ -82,7 +80,6 @@ namespace Esp.Net
         [Test]
         public void ObserveAttributeObservesEventsAtCorrectStage()
         {
-            _stubEventProcessor.ObserveEvents();
             _router.PublishEvent(new WorkflowTestEvent());
             _stubEventProcessor.WorkflowTestEvents.Count.ShouldBe(3);
             _stubEventProcessor.WorkflowTestEvents[0].Item3.ShouldBe(ObservationStage.Preview);
@@ -93,7 +90,6 @@ namespace Esp.Net
         [Test]
         public void ObserveBaseEventFoo()
         {
-            _stubEventProcessor.ObserveEvents();
             _router.PublishEvent(new FooEvent());
             _router.PublishEvent(new BarEvent());
             _router.PublishEvent(new BazEvent());
@@ -134,16 +130,17 @@ namespace Esp.Net
         {
         }
 
-        public class StubEventProcessor : BaseModelEventProcessor<TestModel>
+        public class StubEventProcessor 
         {
             public StubEventProcessor(IRouter<TestModel> router)
-                : base(router)
             {
                 FooEvents = new List<Tuple<TestModel, FooEvent, IEventContext>>();
                 BarEvents = new List<Tuple<TestModel, BarEvent, IEventContext>>();
                 EventForNoContexts = new List<Tuple<TestModel, EventForNoContext>>();
                 WorkflowTestEvents = new List<Tuple<TestModel, WorkflowTestEvent, ObservationStage>>();
                 BaseEvents = new List<Tuple<TestModel, BaseEvent, ObservationStage>>();
+
+                router.ObserveEventsOn(this);
             }
 
             public List<Tuple<TestModel, FooEvent, IEventContext>> FooEvents { get; private set; }
@@ -213,45 +210,63 @@ namespace Esp.Net
         }
 
         // ReSharper disable InconsistentNaming
-        public class StubEventProcessorWithIncorrectSignatures_IncorrectParamaterCount : BaseModelEventProcessor<TestModel>
-        { 
+        public class StubEventProcessorWithIncorrectSignatures_IncorrectParamaterCount 
+        {
+            private readonly IRouter<TestModel> _router;
+
             public StubEventProcessorWithIncorrectSignatures_IncorrectParamaterCount(IRouter<TestModel> router)
-                : base(router)
             {
-                
+                _router = router;
             }
 
             [ObserveEvent(typeof(FooEvent))]
             public void ObserveFooEvent()
             {
             }
+
+            public void ObserveEvents()
+            {
+                _router.ObserveEventsOn(this);
+            }
         }
 
-        public class StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes1 : BaseModelEventProcessor<TestModel>
+        public class StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes1 
         {
-            public StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes1(IRouter<TestModel> router)
-                : base(router)
-            {
+            private readonly IRouter<TestModel> _router;
 
+            public StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes1(IRouter<TestModel> router)
+            {
+                _router = router;
             }
 
             [ObserveEvent(typeof(FooEvent))]
             public void ObserveFooEvent(TestModel model, int somethingWrong)
             {
             }
+
+            public void ObserveEvents()
+            {
+                _router.ObserveEventsOn(this);
+            }
         }
 
-        public class StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes2 : BaseModelEventProcessor<TestModel>
+        public class StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes2
         {
-            public StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes2(IRouter<TestModel> router)
-                : base(router)
-            {
+            private readonly IRouter<TestModel> _router;
 
+            public StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes2(IRouter<TestModel> router)
+            {
+                _router = router;
             }
 
             [ObserveEvent(typeof(FooEvent))]
             public void ObserveFooEvent(TestModel model, FooEvent e, string somethinElse)
             {
+            }
+
+            public void ObserveEvents()
+            {
+                _router.ObserveEventsOn(this);
             }
         }
         // ReSharper restore InconsistentNaming

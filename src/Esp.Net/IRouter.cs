@@ -15,7 +15,6 @@
 #endregion
 
 using System;
-using Esp.Net.Reactive;
 
 namespace Esp.Net
 {

@@ -16,10 +16,10 @@
 
 using System;
 using System.Collections.Generic;
-using Esp.Net.Disposables;
 using Esp.Net.Meta;
 
-namespace Esp.Net.Reactive
+// ReSharper disable once CheckNamespace
+namespace Esp.Net
 {
     internal class EventSubject<TModel, TEvent, TContext> : IEventObservable<TModel, TEvent, TContext>, IEventObserver<TModel, TEvent, TContext>
     {

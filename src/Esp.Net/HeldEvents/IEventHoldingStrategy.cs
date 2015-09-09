@@ -15,7 +15,8 @@
 #endregion
 
 #if ESP_EXPERIMENTAL
-namespace Esp.Net.HeldEvents
+// ReSharper disable once CheckNamespace
+namespace Esp.Net
 {
     public interface IEventHoldingStrategy<in TModel, in TEvent> where TEvent : IIdentifiableEvent
     {
