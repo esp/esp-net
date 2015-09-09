@@ -17,6 +17,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reflection;
+using Esp.Net.Utils;
 using NUnit.Framework;
 using Shouldly;
 
@@ -69,7 +71,9 @@ namespace Esp.Net
         [Test]
         public void ObserveAttribute_ObservesEventsWithHandler_Context()
         {
-            _router.PublishEvent(new EventsForHandlerWith_Context_Evt());
+      //      MethodInfo ObserveEventsMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(RouterExt.EventObservationRegistrar<TestModel, StubEventProcessor>), "ObserveEvents", 1, 2, BindingFlags.Instance | BindingFlags.NonPublic);
+
+        _router.PublishEvent(new EventsForHandlerWith_Context_Evt());
             _stubEventProcessor.EventsWith_Context.Count.ShouldBe(1);
         }
 

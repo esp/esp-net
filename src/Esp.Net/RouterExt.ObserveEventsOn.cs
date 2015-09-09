@@ -29,9 +29,8 @@ namespace Esp.Net
             return eventObservationRegistrar;
         }
 
-        private class EventObservationRegistrar<TModel, TEventProcessor> : DisposableBase
+        public class EventObservationRegistrar<TModel, TEventProcessor> : DisposableBase
         {
-            private static readonly MethodInfo GetEventObservableMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(IRouter<TModel>), "GetEventObservable", 1, 1);
             private static readonly MethodInfo ObserveBaseEventsMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(EventObservationRegistrar<TModel, TEventProcessor>), "ObserveBaseEvents", 1, 2, BindingFlags.Instance | BindingFlags.NonPublic);
 
             private readonly TEventProcessor _eventProcessor;
@@ -41,16 +40,6 @@ namespace Esp.Net
             {
                 _eventProcessor = eventProcessor;
                 _router = router;
-            }
-
-            private void ObserveEvent<TEvent>(Action<TModel, TEvent, IEventContext> observer, ObservationStage stage = ObservationStage.Normal)
-            {
-                AddDisposable(_router.GetEventObservable<TEvent>(stage).Observe(observer));
-            }
-
-            private void ObserveEvent<TEvent>(Action<TModel, TEvent> observer, ObservationStage stage = ObservationStage.Normal)
-            {
-                AddDisposable(_router.GetEventObservable<TEvent>(stage).Observe(observer));
             }
 
             private void ObserveEvent<TEventBase>(Action<TModel, TEventBase> observer, params IEventObservable<TModel, TEventBase, IEventContext>[] observables)
@@ -91,13 +80,11 @@ namespace Esp.Net
 
             private void ObserveEvents(MethodInfo method, ObserveEventAttribute observeEventAttribute)
             {
-                var getEventObservableMethod = GetEventObservableMethodInfo.MakeGenericMethod(observeEventAttribute.EventType);
-                object eventObservable = getEventObservableMethod.Invoke(_router, new object[] { observeEventAttribute.Stage });
-                EnsureObserveEventSignatureCorrect(method, observeEventAttribute.EventType);
-                ObserveEvent(method, observeEventAttribute.EventType, eventObservable);
-            }
 
-            private void ObserveBaseEvents<TBaseEvent>(MethodInfo method, ObserveBaseEventAttribute[] observeEventAttributes)
+           
+        }
+
+        private void ObserveBaseEvents<TBaseEvent>(MethodInfo method, ObserveBaseEventAttribute[] observeEventAttributes)
             {
                 var eventObservables = new IEventObservable<TModel, TBaseEvent, IEventContext>[observeEventAttributes.Length];
                 Type baseEventType = typeof(TBaseEvent);
@@ -128,6 +115,17 @@ namespace Esp.Net
             {
                 ParameterInfo[] parameters = method.GetParameters();
                 bool signatureCorrect = false;
+                if (parameters.Length == 0)
+                {
+                    signatureCorrect = true;
+                }
+                if (parameters.Length == 1)
+                {
+                    signatureCorrect =
+                         parameters[0].ParameterType == typeof(TModel) ||
+                         parameters[0].ParameterType == eventType ||
+                         parameters[0].ParameterType == typeof(IEventContext);
+                }
                 if (parameters.Length == 2)
                 {
                     signatureCorrect =
@@ -159,25 +157,44 @@ namespace Esp.Net
             private ObserveDelegate CreateObserveDelegate(MethodInfo method, Type eventType)
             {
                 ParameterInfo[] parameters = method.GetParameters();
-                Delegate @delegate = null;
                 Type actionType;
-                if (parameters.Length == 2)
+                if (parameters.Length == 0)
                 {
-                    actionType =
-                        typeof(Action<,>).MakeGenericType(new Type[] { typeof(TModel), eventType });
-                    @delegate = Delegate.CreateDelegate(actionType, _eventProcessor, method);
+                    actionType = typeof(Action);
+                }
+                else if (parameters.Length == 1)
+                {
+                    if (parameters[0].ParameterType == typeof (TModel))
+                    {
+                        actionType = typeof(Action<>).MakeGenericType(new Type[] { typeof(TModel) });
+                    }
+                    else if (parameters[0].ParameterType == eventType)
+                    {
+                        actionType = typeof(Action<>).MakeGenericType(new Type[] { eventType });
+                    }
+                    else if (parameters[0].ParameterType == typeof (IEventContext))
+                    {
+                        actionType = typeof(Action<>).MakeGenericType(new Type[] { typeof(IEventContext) });
+                    }
+                    else
+                    {
+                        throw new Exception();
+                    }
+                }
+                else if (parameters.Length == 2)
+                {
+                    actionType = typeof(Action<,>).MakeGenericType(new Type[] { typeof(TModel), eventType });
                 }
                 else if (parameters.Length == 3)
                 {
-                    actionType =
-                        typeof(Action<,,>).MakeGenericType(new Type[]
+                    actionType = typeof(Action<,,>).MakeGenericType(new Type[]
                         {typeof (TModel), eventType, typeof (IEventContext)});
-                    @delegate = Delegate.CreateDelegate(actionType, _eventProcessor, method);
                 }
                 else
                 {
                     throw new NotSupportedException();
                 }
+                var @delegate = Delegate.CreateDelegate(actionType, _eventProcessor, method);
                 return new ObserveDelegate(@delegate, actionType);
             }
 
