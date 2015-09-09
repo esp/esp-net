@@ -119,7 +119,7 @@ namespace Esp.Net
             private void ObserveEvent(MethodInfo method, Type baseEventType, object eventObservable)
             {
                 ObserveDelegate observeDelegate = CreateObserveDelegate(method, baseEventType);
-                var observeMethod = eventObservable.GetType().GetMethod("Observe", new Type[] { observeDelegate.ActoinType });
+                var observeMethod = eventObservable.GetType().GetMethod("Observe", new Type[] { observeDelegate.ActionType });
                 var disposable = observeMethod.Invoke(eventObservable, new[] { observeDelegate.Delegate });
                 AddDisposable((IDisposable)disposable);
             }
@@ -183,15 +183,15 @@ namespace Esp.Net
 
             private class ObserveDelegate
             {
-                public ObserveDelegate(Delegate @delegate, Type actoinType)
+                public ObserveDelegate(Delegate @delegate, Type actionType)
                 {
                     Delegate = @delegate;
-                    ActoinType = actoinType;
+                    ActionType = actionType;
                 }
 
                 public Delegate Delegate { get; private set; }
 
-                public Type ActoinType { get; private set; }
+                public Type ActionType { get; private set; }
             }
         }
     }
