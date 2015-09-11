@@ -14,7 +14,9 @@
 // limitations under the License.
 #endregion
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using Esp.Net.Utils;
 
@@ -33,6 +35,8 @@ namespace Esp.Net
         {
             private static readonly MethodInfo ObserveBaseEventsMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(EventObservationRegistrar<TModel, TEventProcessor>), "ObserveBaseEvents", 1, 2, BindingFlags.Instance | BindingFlags.NonPublic);
 
+            private static readonly MethodInfo GetEventObservableMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(IRouter<TModel>), "GetEventObservable", 1, 1);
+
             private readonly TEventProcessor _eventProcessor;
             private readonly IRouter<TModel> _router;
 
@@ -42,21 +46,8 @@ namespace Esp.Net
                 _router = router;
             }
 
-            private void ObserveEvent<TEventBase>(Action<TModel, TEventBase> observer, params IEventObservable<TModel, TEventBase, IEventContext>[] observables)
-            {
-                var stream = EventObservable.Merge(observables);
-                AddDisposable(stream.Observe(observer));
-            }
-
-            private void ObserveEvent<TEventBase>(Action<TModel, TEventBase, IEventContext> observer, params IEventObservable<TModel, TEventBase, IEventContext>[] observables)
-            {
-                var stream = EventObservable.Merge(observables);
-                AddDisposable(stream.Observe(observer));
-            }
-
             public void ObserveEvents()
             {
-                // TODO all this functionality this should be weaved in rather than using reflection
                 var methodsWithAttributes =
                     from methodInfo in typeof(TEventProcessor).GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
                     let observeEventAttribute = methodInfo.GetCustomAttribute<ObserveEventAttribute>(true)
@@ -78,13 +69,63 @@ namespace Esp.Net
                 }
             }
 
-            private void ObserveEvents(MethodInfo method, ObserveEventAttribute observeEventAttribute)
+            private void ObserveEvents(MethodInfo eventProcessorObserveMethod, ObserveEventAttribute observeEventAttribute)
             {
+                // Here we create an action to pass to IEventObservable.Observe(action).
+                // The body of this action will be another action calls the observe method (eventProcessorObserveMethod) on our _eventProcessor. 
+                // The body action can support a number of different signatures. 
+                // in summary we create one of these 4 supported targets: 
+                //  Action<TModel, TEvent, IEventContext> observeDelegate = (m, e, c) => eventProcessorObserve(m);
+                //  Action<TModel, TEvent, IEventContext> observeDelegate = (m, e, c) => eventProcessorObserve(e);
+                //  Action<TModel, TEvent, IEventContext> observeDelegate = (m, e, c) => eventProcessorObserve(c);
+                //  Action<TModel, TEvent, IEventContext> observeDelegate = (m, e, c) => eventProcessorObserve();
+                //
+                // We then pass observeDelegate to our router:
+                //  IDisposable disposable = _router.GetEventObservable<TEvent>().Observe(observeDelegate);
+                //
+                // Moving forward we should support passing interfaces the model implements if the observe target ask for it, i.e. 
+                //  Action<TModel, TEvent, IEventContext> observeDelegate = (ISomethingImplementedByTModel m, TEvent e, IEventContext c) => eventProcessorObserve(m);
 
-           
-        }
+                EnsureObserveEventSignatureCorrect(eventProcessorObserveMethod, observeEventAttribute.EventType);
 
-        private void ObserveBaseEvents<TBaseEvent>(MethodInfo method, ObserveBaseEventAttribute[] observeEventAttributes)
+                ParameterInfo[] parameters = eventProcessorObserveMethod.GetParameters();
+
+                ParameterExpression model = Expression.Parameter(typeof(TModel), "model");
+                ParameterExpression @event  = Expression.Parameter(observeEventAttribute.EventType, "@event");
+                ParameterExpression context = Expression.Parameter(typeof(IEventContext), "context");
+
+                ParameterExpression[] args = new ParameterExpression[parameters.Length];
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    var parameterInfo = parameters[i];
+                    if (parameterInfo.ParameterType == typeof(TModel))
+                    {
+                        args[i] = model;
+                    }
+                    else if (parameterInfo.ParameterType == observeEventAttribute.EventType)
+                    {
+                        args[i] = @event;
+
+                    }
+                    else if (parameterInfo.ParameterType == typeof(IEventContext))
+                    {
+                        args[i] = context;
+                    }
+                }
+
+                MethodCallExpression onEventReceivedMethod = Expression.Call(Expression.Constant(_eventProcessor), eventProcessorObserveMethod, args);
+
+                Delegate observeDelegate = Expression.Lambda(onEventReceivedMethod, new ParameterExpression[] { model, @event, context }).Compile();
+
+                var getEventObservableMethod = GetEventObservableMethodInfo.MakeGenericMethod(observeEventAttribute.EventType);
+                object eventObservable = getEventObservableMethod.Invoke(_router, new object[] { observeEventAttribute.Stage });
+
+                var observeMethod = eventObservable.GetType().GetMethod("Observe", new Type[] { observeDelegate.GetType()});
+                var disposable = observeMethod.Invoke(eventObservable, new[] { observeDelegate });
+                AddDisposable((IDisposable)disposable);
+            }
+
+            private void ObserveBaseEvents<TBaseEvent>(MethodInfo method, ObserveBaseEventAttribute[] observeEventAttributes)
             {
                 var eventObservables = new IEventObservable<TModel, TBaseEvent, IEventContext>[observeEventAttributes.Length];
                 Type baseEventType = typeof(TBaseEvent);
@@ -114,11 +155,7 @@ namespace Esp.Net
             private void EnsureObserveEventSignatureCorrect(MethodInfo method, Type eventType)
             {
                 ParameterInfo[] parameters = method.GetParameters();
-                bool signatureCorrect = false;
-                if (parameters.Length == 0)
-                {
-                    signatureCorrect = true;
-                }
+                bool signatureCorrect = parameters.Length == 0;
                 if (parameters.Length == 1)
                 {
                     signatureCorrect =
@@ -149,7 +186,7 @@ namespace Esp.Net
                         typeof(IEventContext).FullName,
                         method.DeclaringType.FullName,
                         method.Name
-                        );
+                    );
                     throw new InvalidOperationException(message);
                 }
             }

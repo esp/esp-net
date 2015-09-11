@@ -17,8 +17,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Reflection;
-using Esp.Net.Utils;
 using NUnit.Framework;
 using Shouldly;
 
@@ -71,9 +69,7 @@ namespace Esp.Net
         [Test]
         public void ObserveAttribute_ObservesEventsWithHandler_Context()
         {
-      //      MethodInfo ObserveEventsMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(RouterExt.EventObservationRegistrar<TestModel, StubEventProcessor>), "ObserveEvents", 1, 2, BindingFlags.Instance | BindingFlags.NonPublic);
-
-        _router.PublishEvent(new EventsForHandlerWith_Context_Evt());
+            _router.PublishEvent(new EventsForHandlerWith_Context_Evt());
             _stubEventProcessor.EventsWith_Context.Count.ShouldBe(1);
         }
 
@@ -182,6 +178,12 @@ namespace Esp.Net
             public List<Tuple<TestModel, WorkflowTestEvent, ObservationStage>> WorkflowTestEvents { get; private set; }
             public List<Tuple<TestModel, BaseEvent, ObservationStage>> BaseEvents { get; private set; }
 
+            [ObserveEvent(typeof(EventsForHandlerWith_Model_Evt))]
+            public void ObserveObservesEventsWith_Model_Evt(TestModel model)
+            {
+                EventsWith_Model.Add(model);
+            }
+
             [ObserveEvent(typeof(FooEvent))]
             public void ObserveFooEvent(TestModel model, FooEvent e, IEventContext context)
             {
@@ -206,11 +208,11 @@ namespace Esp.Net
                 EventsWith_Model_Event.Add(Tuple.Create(model, e));
             }
 
-            [ObserveEvent(typeof(EventsForHandlerWith_Model_Evt))]
-            public void ObserveObservesEventsWith_Model_Evt(TestModel model)
-            {
-                EventsWith_Model.Add(model);
-            }
+//            [ObserveEvent(typeof(EventsForHandlerWith_Model_Evt))]
+//            public void ObserveObservesEventsWith_Model_Evt(TestModel model)
+//            {
+//                EventsWith_Model.Add(model);
+//            }
 
             [ObserveEvent(typeof(EventsForHandlerWith_Event_Evt))]
             public void ObserveObservesEventsWith_Event_Evt(EventsForHandlerWith_Event_Evt e)
@@ -281,7 +283,7 @@ namespace Esp.Net
             }
 
             [ObserveEvent(typeof(FooEvent))]
-            public void ObserveFooEvent()
+            public void ObserveFooEvent(TestModel m, FooEvent e, IEventContext c, int b)
             {
             }
 
