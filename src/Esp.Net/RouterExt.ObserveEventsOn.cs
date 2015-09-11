@@ -166,8 +166,9 @@ namespace Esp.Net
                 if (parameters.Length == 2)
                 {
                     signatureCorrect =
-                        parameters[0].ParameterType == typeof(TModel) &&
-                        parameters[1].ParameterType == eventType;
+                        (parameters[0].ParameterType == typeof(TModel) && parameters[1].ParameterType == eventType) ||
+                        (parameters[0].ParameterType == eventType && parameters[1].ParameterType == typeof(IEventContext)) ||
+                        (parameters[0].ParameterType == typeof(TModel) && parameters[1].ParameterType == typeof(IEventContext));
                 }
                 else if (parameters.Length == 3)
                 {
