@@ -19,4 +19,9 @@ namespace Esp.Net
     {
         void Process(TModel model);
     }
+
+    public interface IPreEventProcessor
+    {
+        void Process();
+    }
 }

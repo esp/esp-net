@@ -20,4 +20,9 @@ namespace Esp.Net
     {
         void Process(TModel model);
     }
+
+    public interface IPostEventProcessor
+    {
+        void Process();
+    }
 }

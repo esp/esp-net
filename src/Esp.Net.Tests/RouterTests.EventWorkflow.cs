@@ -93,6 +93,18 @@ namespace Esp.Net
                 _model1Controller.ReceivedModels.Count.ShouldBe(0);
             }
 
+            [Test]
+            public void PreAndPostProcessorOnModelInvokedDuringEventWorkflow()
+            {
+                _router.GetEventObservable<TestModel5, Event1>(_model5.Id).Observe((m, e) => { /* noop */});
+                _router.PublishEvent(_model5.Id, new Event1());
+                _model5.PreProcessorInvocationCount.ShouldBe(1);
+                _model5.PostProcessorInvocationCount.ShouldBe(1);
+                _router.PublishEvent(_model5.Id, new Event1());
+                _model5.PreProcessorInvocationCount.ShouldBe(2);
+                _model5.PostProcessorInvocationCount.ShouldBe(2);
+            }
+
             public class SubsequentEvents : RouterTests
             {
                 [Test]

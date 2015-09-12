@@ -85,8 +85,7 @@ namespace Esp.Net
                 postEventProcessor,
                 _state,
                 _modelsEventsObservations.CreateForModel(modelId),
-                new ModelChangedEventPublisher(this),
-                _routerDispatcher
+                new ModelChangedEventPublisher(this)
             );
             lock (_gate)
             {

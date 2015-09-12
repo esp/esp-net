@@ -57,11 +57,12 @@ namespace Esp.Net
         {
             private readonly TModel _model;
             private readonly IPreEventProcessor<TModel> _preEventProcessor;
+            private readonly IPreEventProcessor _modelAsPreEventProcessor;
             private readonly IPostEventProcessor<TModel> _postEventProcessor;
+            private readonly IPostEventProcessor _modelAsPostEventProcessor;
             private readonly State _state;
             private readonly IEventObservationRegistrar _eventObservationRegistrar;
             private readonly IModelChangedEventPublisher _modelChangedEventPublisher;
-            private readonly IRouterDispatcher _routerDispatcher;
             private readonly Queue<dynamic> _eventDispatchQueue = new Queue<dynamic>();
             private readonly Dictionary<Type, dynamic> _eventSubjects = new Dictionary<Type, dynamic>();
             private readonly ModelSubject<TModel> _modelUpdateSubject = new ModelSubject<TModel>();
@@ -75,17 +76,18 @@ namespace Esp.Net
                 IPostEventProcessor<TModel> postEventProcessor, 
                 State state,
                 IEventObservationRegistrar eventObservationRegistrar,
-                IModelChangedEventPublisher modelChangedEventPublisher,
-                IRouterDispatcher routerDispatcher)
+                IModelChangedEventPublisher modelChangedEventPublisher
+            )
             {
                 Id = id;
                 _model = model;
                 _preEventProcessor = preEventProcessor;
+                _modelAsPreEventProcessor = model as IPreEventProcessor;
                 _postEventProcessor = postEventProcessor;
+                _modelAsPostEventProcessor = model as IPostEventProcessor;
                 _state = state;
                 _eventObservationRegistrar = eventObservationRegistrar;
                 _modelChangedEventPublisher = modelChangedEventPublisher;
-                _routerDispatcher = routerDispatcher;
             }
 
             public object Id { get; private set; }
@@ -128,11 +130,13 @@ namespace Esp.Net
             public void RunPreProcessor()
             {
                 if (_preEventProcessor != null) _preEventProcessor.Process(_model);
+                if (_modelAsPreEventProcessor != null) _modelAsPreEventProcessor.Process();
             }
 
             public void RunPostProcessor()
             {
                 if (_postEventProcessor != null) _postEventProcessor.Process(_model);
+                if (_modelAsPostEventProcessor != null) _modelAsPostEventProcessor.Process();
             }
 
             public void DispatchModel()
