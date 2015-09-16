@@ -1,0 +1,48 @@
+﻿<UserControl x:Class="Esp.Net.Examples.ReactiveModel.ClientApp.UI.RfqScreen.ClientRfqScreenView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             d:DataContext="{d:DesignInstance rfqScreen:ClientRfqScreenViewModel, IsDesignTimeCreatable=True}"
+             xmlns:ui1="clr-namespace:Esp.Net.Examples.ReactiveModel.Common.UI"
+             xmlns:rfqScreen="clr-namespace:Esp.Net.Examples.ReactiveModel.ClientApp.UI.RfqScreen"
+             mc:Ignorable="d" >
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <ui1:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />        
+    </UserControl.Resources>
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Label Content="Currency Order" FontSize="20" Foreground="{StaticResource Heading1ForegroundBrush}" />
+        <StackPanel Grid.Row="1" >
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Quote Id: " />
+                <Label Content="{Binding QuoteId}" />
+            </StackPanel>            
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Status: " />
+                <Label Content="{Binding Status}" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="CurrencyPair: " />
+                <ComboBox x:Name="CurrencyPairs" ItemsSource="{Binding CurrencyPair.Items}" Width="100" IsEnabled="{Binding CurrencyPair.IsEnabled}" SelectedValue="{Binding CurrencyPair.Value}" DisplayMemberPath="IsoCode"></ComboBox>
+                <Label Content="Notional (" />
+                <Label Content="{Binding ElementName=CurrencyPairs, Path=SelectedValue.Base, FallbackValue=CCY}" />
+                <Label Content="): " />
+                <TextBox Text="{Binding Notional.Value, TargetNullValue={x:Static sys:String.Empty}, Mode=TwoWay}" IsEnabled="{Binding Notional.IsEnabled}" Width="100" />
+            </StackPanel>
+            <Label Content="{Binding OrderSummary}" Visibility="{Binding QuotingButtonsVisible, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
+            <Label Content="{Binding RfqSummary}" Visibility="{Binding QuotingButtonsVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
+            <StackPanel Orientation="Horizontal">
+                <Button Margin="3" Command="{Binding RequestQuote}" Visibility="{Binding IsRequestQuoteButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}">Request Quote</Button>
+                <Button Margin="3" Command="{Binding AcceptQuoteCommand}" Visibility="{Binding QuotingButtonsVisible, Converter={StaticResource BooleanToVisibilityConverter}}">Accept Quote</Button>
+                <Button Margin="3" Command="{Binding RejectQuoteCommand}" Visibility="{Binding QuotingButtonsVisible, Converter={StaticResource BooleanToVisibilityConverter}}">Reject Quote</Button>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</UserControl>
