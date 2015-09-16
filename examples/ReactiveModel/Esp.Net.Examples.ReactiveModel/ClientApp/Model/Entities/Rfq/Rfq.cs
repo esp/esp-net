@@ -49,7 +49,7 @@ namespace Esp.Net.Examples.ReactiveModel.ClientApp.Model.Entities.Rfq
         }
 
         [ObserveEvent(typeof(RequestQuoteEvent))]
-        private void OnPlaceOrderEvent(OrderScreen model)
+        private void OnRequestQuoteEvent(OrderScreen model)
         {
             Log.DebugFormat("Beginning RFQ");
             _quoteId = Guid.NewGuid();

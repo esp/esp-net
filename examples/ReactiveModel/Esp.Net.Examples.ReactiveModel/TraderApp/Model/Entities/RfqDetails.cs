@@ -68,14 +68,14 @@ namespace Esp.Net.Examples.ReactiveModel.TraderApp.Model.Entities
         }
 
         [ObserveEvent(typeof(RfqRateChangedEvent))]
-        private void OnRfqPriceChangedEvent(RfqRateChangedEvent e)
+        private void OnRfqRateChangedEvent(RfqRateChangedEvent e)
         {
             if(e.RfqCorrelationId != _quoteId) return;
             _rate.Value = e.Rate;
         }
 
         [ObserveEvent(typeof(ClientAcceptedQuoteEvent))]
-        private void OnRfqQuoteAcceptedEvent(ClientAcceptedQuoteEvent e)
+        private void OnClientAcceptedQuoteEvent(ClientAcceptedQuoteEvent e)
         {
             if(e.QuoteId != _quoteId) return;
             _quoteStatus = QuoteStatus.Booked;

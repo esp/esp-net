@@ -87,6 +87,5 @@ namespace Esp.Net.Examples.ReactiveModel.ClientApp.Model.Entities
         {
             _referenceDataDisposable.Disposable = _referenceDataGateway.BeginGetReferenceData();
         }
-
     }
 }

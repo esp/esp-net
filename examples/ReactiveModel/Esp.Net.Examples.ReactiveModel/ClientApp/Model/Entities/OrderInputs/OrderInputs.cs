@@ -34,7 +34,7 @@ namespace Esp.Net.Examples.ReactiveModel.ClientApp.Model.Entities.OrderInputs
         }
 
         [ObserveEvent(typeof(NotionalChangedEvent))]
-        private void OnQuantityChangedEvent(NotionalChangedEvent e)
+        private void OnNotionalChangedEvent(NotionalChangedEvent e)
         {
             Log.DebugFormat("Setting notional to {0}", e.Notional);
             _notional.Value = e.Notional;
