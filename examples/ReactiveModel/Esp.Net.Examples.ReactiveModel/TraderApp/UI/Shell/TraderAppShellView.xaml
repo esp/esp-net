@@ -1,0 +1,11 @@
+﻿<Window x:Class="Esp.Net.Examples.ReactiveModel.TraderApp.UI.Shell.TraderAppShellView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:rfqScreen="clr-namespace:Esp.Net.Examples.ReactiveModel.TraderApp.UI.RfqScreen"
+        Background="{StaticResource TransparentBrush}"
+        mc:Ignorable="d"    
+        Title="Trader Terminal" Height="300" Width="600">
+    <rfqScreen:TraderRfqScreenView DataContext="{Binding TraderRfqScreenViewModel, Mode=OneWay}" />
+</Window>
