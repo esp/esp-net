@@ -15,7 +15,8 @@
 #endregion
 using System;
 
-namespace Esp.Net.Disposables
+// ReSharper disable once CheckNamespace
+namespace Esp.Net
 {
     public abstract class DisposableBase : IDisposable
     {

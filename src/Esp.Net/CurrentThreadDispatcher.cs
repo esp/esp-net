@@ -34,7 +34,15 @@ namespace Esp.Net
 
         public void Dispatch(Action action)
         {
-            EnsureAccess();
+            if (!CheckAccess())
+                throw new InvalidOperationException(
+                    string.Format(
+                        "The dispatcher [{0}] can not marshal a dispatch call onto the thread with id {1}. If you want to access the router from any thread uses a dispatcher that supports multi threaded applications. Alternatively ensure that you're always on the same thread that created the Router (which his thread with id {1})",
+                        GetType().FullName,
+                        _threadId
+                    )
+                );
+
             if (!_isDisposed)
             {
                 action();

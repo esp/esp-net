@@ -16,7 +16,8 @@
 
 using System;
 
-namespace Esp.Net.Disposables
+// ReSharper disable once CheckNamespace
+namespace Esp.Net
 {
     public class EspDisposable : IDisposable
     {
