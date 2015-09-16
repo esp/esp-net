@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{4BAC0302-3A28-400D-B3E1-34D417F3FBAB}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Exp.Net.PerfTests</RootNamespace>
+    <AssemblyName>Exp.Net.PerfTests</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="App_Packages\Esp.Net.0.4.4\CurrentThreadDispatcher.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Disposables\CollectionDisposable.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Disposables\DictionaryDisposable.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Disposables\DisposableBase.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Disposables\EspDisposable.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Disposables\EspSerialDisposable.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\EventContext.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\HeldEvents\HeldEventAction.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\HeldEvents\HeldEventActionEvent.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\HeldEvents\IEventDescription.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\HeldEvents\IEventHoldingStrategy.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\HeldEvents\IHeldEventStore.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\IClonable.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\IEventContext.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\IIdentifiableEvent.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\IPostEventProcessor.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\IPreEventProcessor.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\IRouter.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\IRouterDispatcher.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Meta\EventObservations.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Meta\IEventObservationRegistrar.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Meta\IEventsObservationRegistrar.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Meta\ModelEventObservations.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Meta\ModelsEventsObservations.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\ModelChangedEvent.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\ModelRouter.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\ObservationStage.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\ObserveBaseEventAttribute.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\ObserveEventAttribute.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Reactive\EventObservable.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Reactive\EventObserver.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Reactive\EventSubject.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Reactive\ModelObservable.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Reactive\ModelObserver.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Reactive\ModelSubject.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Router.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Router.ModelEntry.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Router.State.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Router.Status.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\RouterExt.HeldEvents.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\RouterExt.ObserveEventsOn.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\SubModelRouter.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Utils\Guard.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Utils\ReflectionExt.cs" />
+    <Compile Include="App_Packages\Esp.Net.0.4.4\Utils\ReflectionHelper.cs" />
+    <Compile Include="App_Packages\Esp.Net.Dispatchers.0.4.4\NewThreadRouterDispatcher.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
