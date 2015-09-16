@@ -1,0 +1,263 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{E9BC9DDF-A98B-4A4E-B043-E45C774ADAA8}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Esp.Net.Examples.ReactiveModel</RootNamespace>
+    <AssemblyName>Esp.Net.Examples.ReactiveModel</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <WarningLevel>4</WarningLevel>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>Esp.Net.Examples.ReactiveModel.App</StartupObject>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Autofac, Version=3.5.0.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
+      <HintPath>..\packages\Autofac.3.5.2\lib\net40\Autofac.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Esp.Net, Version=0.4.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\esp-net.0.4.3-alpha\lib\portable-net45+sl50+netcore45+wpa81+wp8\Esp.Net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="log4net, Version=1.2.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Reactive.Core, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Reactive.Interfaces, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Rx-Interfaces.2.2.5\lib\net45\System.Reactive.Interfaces.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Reactive.Linq, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Rx-Linq.2.2.5\lib\net45\System.Reactive.Linq.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Reactive.PlatformServices, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Rx-PlatformServices.2.2.5\lib\net45\System.Reactive.PlatformServices.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Reactive.Windows.Threading, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Rx-XAML.2.2.5\lib\net45\System.Reactive.Windows.Threading.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Windows.Controls.Input.Toolkit, Version=3.5.40128.1, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Infragistics.Themes.MetroDark.Wpf.1.0.0\lib\net40\System.Windows.Controls.Input.Toolkit.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Windows.Controls.Layout.Toolkit, Version=3.5.40128.1, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Infragistics.Themes.MetroDark.Wpf.1.0.0\lib\net40\System.Windows.Controls.Layout.Toolkit.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Xml" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xaml">
+      <RequiredTargetFramework>4.0</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="WindowsBase" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WPFToolkit, Version=3.5.40128.1, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Infragistics.Themes.MetroDark.Wpf.1.0.0\lib\net40\WPFToolkit.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+    <Compile Include="Bootstrapper.cs" />
+    <Compile Include="ClientApp\Model\Gateways\IReferenceDataGateway.cs" />
+    <Compile Include="ClientApp\Model\Gateways\IRequestForQuoteGateway.cs" />
+    <Compile Include="ClientApp\Services\Entities\QuoteStatusExt.cs" />
+    <Compile Include="Common\UI\InverseBooleanToVisibilityConverter .cs" />
+    <Compile Include="ClientApp\UI\Shell\ClientAppShellView.xaml.cs">
+      <DependentUpon>ClientAppShellView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ClientApp\UI\Shell\ClientAppShellViewModel.cs" />
+    <Compile Include="Common\FakeMiddleware.cs" />
+    <Compile Include="Common\UI\EntryMonitor.cs" />
+    <Compile Include="ClientApp\Services\Entities\QuoteStatus.cs" />
+    <Compile Include="ClientApp\ClientAppBootstrapper.cs" />
+    <Compile Include="ClientApp\Services\Entities\CurrencyPair.cs" />
+    <Compile Include="ClientApp\Services\Entities\RfqRequest.cs" />
+    <Compile Include="ClientApp\Services\Entities\RfqResponse.cs" />
+    <Compile Include="ClientApp\Services\IReferenceDataServiceClient.cs" />
+    <Compile Include="TraderApp\Model\Events\ClientClosedQuoteEvent.cs" />
+    <Compile Include="TraderApp\Model\Gateways\IRfqServiceGateway.cs" />
+    <Compile Include="TraderApp\Services\Entities\QuoteStatus.cs" />
+    <Compile Include="TraderApp\Model\Entities\RfqDetails.cs" />
+    <Compile Include="TraderApp\Model\Entities\RfqScreen.cs" />
+    <Compile Include="TraderApp\Model\Events\InitialiseEvent.cs" />
+    <Compile Include="TraderApp\Model\Events\TraderRejectQuoteEvent.cs" />
+    <Compile Include="TraderApp\Model\Events\RfqRateChangedEvent.cs" />
+    <Compile Include="TraderApp\Model\Events\ClientAcceptedQuoteEvent.cs" />
+    <Compile Include="TraderApp\Model\Events\ClientRejectQuoteEvent.cs" />
+    <Compile Include="TraderApp\Model\Events\RfqReceivedEvent.cs" />
+    <Compile Include="TraderApp\Model\Events\TraderSendQuoteEvent.cs" />
+    <Compile Include="TraderApp\Model\Gateways\RfqServiceGateway.cs" />
+    <Compile Include="TraderApp\Services\Entities\CurrencyPair.cs" />
+    <Compile Include="TraderApp\Services\Entities\RfqRequest.cs" />
+    <Compile Include="TraderApp\Services\Entities\RfqResponse.cs" />
+    <Compile Include="TraderApp\Services\IRfqService.cs" />
+    <Compile Include="TraderApp\TraderAppBootstrapper.cs" />
+    <Compile Include="TraderApp\UI\RfqScreen\RfqDetailsViewModel.cs" />
+    <Compile Include="TraderApp\UI\RfqScreen\TraderRfqScreenViewModel.cs" />
+    <Compile Include="ClientApp\Model\Entities\Rfq\Rfq.cs" />
+    <Compile Include="ClientApp\Model\Events\AcceptQuoteEvent.cs" />
+    <Compile Include="ClientApp\Model\Events\RejectQuoteEvent.cs" />
+    <Compile Include="ClientApp\Model\Events\OrderResponseReceivedEvent.cs" />
+    <Compile Include="ClientApp\Services\IRfqServiceClient.cs" />
+    <Compile Include="Common\Services\SchedulerService.cs" />
+    <Compile Include="Common\UI\DelegateCommand .cs" />
+    <Compile Include="Common\UI\Fields\FieldViewModel.cs" />
+    <Compile Include="Common\UI\Fields\SelectionFieldViewModel.cs" />
+    <Compile Include="Common\UI\NotifyingBase .cs" />
+    <Compile Include="Common\UI\ObservableExtensions.cs" />
+    <Compile Include="ClientApp\UI\RfqScreen\ClientRfqScreenView.xaml.cs">
+      <DependentUpon>ClientRfqScreenView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ClientApp\UI\RfqScreen\ClientRfqScreenViewModel.cs" />
+    <Compile Include="App.xaml.cs">
+      <DependentUpon>App.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TraderApp\UI\RfqScreen\RfqDetailsView.xaml.cs">
+      <DependentUpon>RfqDetailsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="TraderApp\UI\RfqScreen\TraderRfqScreenView.xaml.cs">
+      <DependentUpon>TraderRfqScreenView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="TraderApp\UI\Shell\TraderAppShellViewModel.cs" />
+    <Compile Include="TraderApp\UI\Shell\TraderAppShellView.xaml.cs">
+      <DependentUpon>TraderAppShellView.xaml</DependentUpon>
+    </Compile>
+    <Page Include="ClientApp\UI\Shell\ClientAppShellView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ClientApp\UI\RfqScreen\ClientRfqScreenView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\MetroDark\MetroDark.MSControls.Core.Implicit.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\MetroDark\MetroDark.MSControls.Toolkit.Implicit.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\MetroDark\Styles.Shared.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\MetroDark\Styles.WPF.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\MetroDark\Theme.Colors.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="TraderApp\UI\RfqScreen\RfqDetailsView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="TraderApp\UI\RfqScreen\TraderRfqScreenView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="TraderApp\UI\Shell\TraderAppShellView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Common\Model\Entities\Fields\Field.cs" />
+    <Compile Include="Common\Model\Entities\Fields\SelectionField.cs" />
+    <Compile Include="ClientApp\Model\Entities\OrderInputs\OrderInputs.cs" />
+    <Compile Include="ClientApp\Model\Entities\OrderScreen.cs" />
+    <Compile Include="ClientApp\Model\Events\InitialiseEvent.cs" />
+    <Compile Include="ClientApp\Model\Events\RequestQuoteEvent.cs" />
+    <Compile Include="ClientApp\Model\Events\NotionalChangedEvent.cs" />
+    <Compile Include="ClientApp\Model\Events\ReferenceDataReceivedEvent.cs" />
+    <Compile Include="ClientApp\Model\Events\CurrencyPairChangedEvent.cs" />
+    <Compile Include="ClientApp\Model\Gateways\ReferenceDataGateway.cs" />
+    <Compile Include="ClientApp\Model\Gateways\RequestForQuoteGateway.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <AppDesigner Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Themes\MetroDark\HowToApplyTheme.txt" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
