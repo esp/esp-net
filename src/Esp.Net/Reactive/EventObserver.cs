@@ -16,7 +16,8 @@
 
 using System;
 
-namespace Esp.Net.Reactive
+// ReSharper disable once CheckNamespace
+namespace Esp.Net
 {
     public interface IEventObserver<in TModel, in TEvent, in TContext>
     {

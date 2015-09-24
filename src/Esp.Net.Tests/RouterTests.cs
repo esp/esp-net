@@ -16,10 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using Esp.Net.Reactive;
 using NUnit.Framework;
-using Shouldly;
 
 namespace Esp.Net
 {
@@ -44,6 +41,7 @@ namespace Esp.Net
 
         private TestModel3 _model3;
         private TestModel4 _model4;
+        private TestModel5 _model5;
 
         private const int EventProcessor1Id = 1;
         private const int EventProcessor2Id = 2;
@@ -75,6 +73,9 @@ namespace Esp.Net
 
             _model4 = new TestModel4();
             _router.RegisterModel(_model4.Id, _model4);
+
+            _model5 = new TestModel5();
+            _router.RegisterModel(_model5.Id, _model5);
         }
 
         protected void PublishEventWithMultipeSubsequentEvents(int numberOfSubsequentEvents)
@@ -134,6 +135,30 @@ namespace Esp.Net
             public TestModel4 Clone()
             {
                 return new TestModel4() { Id = Id, IsClone = true };
+            }
+        }
+
+        public class TestModel5 : IPreEventProcessor, IPostEventProcessor
+        {
+            public TestModel5()
+            {
+                Id = Guid.NewGuid();
+            }
+
+            public Guid Id { get; private set; }
+
+            public int PreProcessorInvocationCount { get; private set; }
+
+            public int PostProcessorInvocationCount { get; private set; }
+
+            void IPreEventProcessor.Process()
+            {
+                PreProcessorInvocationCount++;
+            }
+
+            void IPostEventProcessor.Process()
+            {
+                PostProcessorInvocationCount++;
             }
         }
 

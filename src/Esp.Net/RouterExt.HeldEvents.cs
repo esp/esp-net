@@ -18,13 +18,11 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Esp.Net.Disposables;
-using Esp.Net.Reactive;
 using Esp.Net.Utils;
 
-namespace Esp.Net.HeldEvents
+namespace Esp.Net
 {
-    public static class RouterExt
+    public static partial class RouterExt
     {
         private static readonly MethodInfo GetEventObservableMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(RouterExt), "GetEventObservable", 2, 2);
 

@@ -16,9 +16,9 @@
 
 using System;
 using System.Collections.Generic;
-using Esp.Net.Disposables;
 
-namespace Esp.Net.Reactive
+// ReSharper disable once CheckNamespace
+namespace Esp.Net
 {
     public interface IEventObservable<out TModel, out TEvent, out TContext>
     {

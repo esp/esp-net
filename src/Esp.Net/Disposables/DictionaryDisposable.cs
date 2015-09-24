@@ -17,7 +17,8 @@
 using System;
 using System.Collections.Generic;
 
-namespace Esp.Net.Disposables
+// ReSharper disable once CheckNamespace
+namespace Esp.Net
 {
     public class DictionaryDisposable<TKey> : IDisposable
     {

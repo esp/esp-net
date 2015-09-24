@@ -19,7 +19,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Esp.Net.Meta;
-using Esp.Net.Reactive;
 using Esp.Net.Utils;
 
 namespace Esp.Net   
@@ -86,8 +85,7 @@ namespace Esp.Net
                 postEventProcessor,
                 _state,
                 _modelsEventsObservations.CreateForModel(modelId),
-                new ModelChangedEventPublisher(this),
-                _routerDispatcher
+                new ModelChangedEventPublisher(this)
             );
             lock (_gate)
             {

@@ -39,24 +39,59 @@ namespace Esp.Net
         }
 
         [Test]
-        public void ObserveAttributeObservesEventsWithModelAndEventAndEventContextSignature()
+        public void ObserveAttribute_ObservesEventsWithHandler_Model_Event_Context()
         {
-            _stubEventProcessor.ObserveEvents();
-            _router.PublishEvent(new FooEvent());
-            _stubEventProcessor.FooEvents.Count.ShouldBe(1);
-            _stubEventProcessor.BarEvents.Count.ShouldBe(0);
-
-            _router.PublishEvent(new BarEvent());
-            _stubEventProcessor.FooEvents.Count.ShouldBe(1);
-            _stubEventProcessor.BarEvents.Count.ShouldBe(1);
+            _router.PublishEvent(new EventsForHandlerWith_Model_Event_Context_Evt());
+            _stubEventProcessor.EventsWith_Model_Event_Context.ShouldBe(1);
         }
 
         [Test]
-        public void ObserveAttributeObservesEventsWithModelAndEventSignature()
+        public void ObserveAttribute_ObservesEventsWithHandler_Model_Event()
         {
-            _stubEventProcessor.ObserveEvents(); 
-            _router.PublishEvent(new EventForNoContext());
-            _stubEventProcessor.EventForNoContexts.Count.ShouldBe(1);
+            _router.PublishEvent(new EventsForHandlerWith_Model_Event_Evt());
+            _stubEventProcessor.EventsWith_Model_Event.ShouldBe(1);
+        }
+
+        [Test]
+        public void ObserveAttribute_ObservesEventsWithHandler_Model()
+        {
+            _router.PublishEvent(new EventsForHandlerWith_Model_Evt());
+            _stubEventProcessor.EventsWith_Model.ShouldBe(1);
+        }
+
+        [Test]
+        public void ObserveAttribute_ObservesEventsWithHandler_Event_Context()
+        {
+            _router.PublishEvent(new EventsWith_Event_Context_Evt());
+            _stubEventProcessor.EventsWith_Event_Context.ShouldBe(1);
+        }
+
+        [Test]
+        public void ObserveAttribute_ObservesEventsWithHandler_Event()
+        {
+            _router.PublishEvent(new EventsForHandlerWith_Event_Evt());
+            _stubEventProcessor.EventsWith_Event.ShouldBe(1);
+        }
+
+        [Test]
+        public void ObserveAttribute_ObservesEventsWithHandler_Context()
+        {
+            _router.PublishEvent(new EventsForHandlerWith_Context_Evt());
+            _stubEventProcessor.EventsWith_Context.ShouldBe(1);
+        }
+
+        [Test]
+        public void ObserveAttribute_ObservesEventsWithHandler_Model_Context()
+        {
+            _router.PublishEvent(new EventsWith_Model_Context_Evt());
+            _stubEventProcessor.EventsWith_Model_Context.ShouldBe(1);
+        }
+
+        [Test]
+        public void ObserveAttribute_ObservesEventsWithHandler_NoArgs()
+        {
+            _router.PublishEvent(new EventsForHandlerWith_NoArgs_Evt());
+            _stubEventProcessor.EventsWith_NoArgs.ShouldBe(1);
         }
 
         [Test]
@@ -82,7 +117,6 @@ namespace Esp.Net
         [Test]
         public void ObserveAttributeObservesEventsAtCorrectStage()
         {
-            _stubEventProcessor.ObserveEvents();
             _router.PublishEvent(new WorkflowTestEvent());
             _stubEventProcessor.WorkflowTestEvents.Count.ShouldBe(3);
             _stubEventProcessor.WorkflowTestEvents[0].Item3.ShouldBe(ObservationStage.Preview);
@@ -93,7 +127,6 @@ namespace Esp.Net
         [Test]
         public void ObserveBaseEventFoo()
         {
-            _stubEventProcessor.ObserveEvents();
             _router.PublishEvent(new FooEvent());
             _router.PublishEvent(new BarEvent());
             _router.PublishEvent(new BazEvent());
@@ -106,54 +139,56 @@ namespace Esp.Net
             _stubEventProcessor.BaseEvents[2].Item3.ShouldBe(ObservationStage.Committed);
         }
 
-        public class TestModel
-        {
-        }
+        public class TestModel { }
 
-        public class FooEvent : BaseEvent
-        {
-        }
+        public class FooEvent : BaseEvent { }
 
-        public class BarEvent : BaseEvent
-        {
-        }
+        public class BarEvent : BaseEvent { }
 
-        public class BazEvent : BaseEvent
-        {
-        }
+        public class BazEvent : BaseEvent { }
 
-        public class EventForNoContext
-        {
-        }
+        public class WorkflowTestEvent { }
 
-        public class WorkflowTestEvent
-        {
-        }
+        public class BaseEvent { }
 
-        public class BaseEvent
-        {
-        }
+        public class EventsForHandlerWith_Model_Event_Context_Evt { }
 
-        public class StubEventProcessor : BaseModelEventProcessor<TestModel>
+        public class EventsForHandlerWith_Model_Event_Evt { }
+
+        public class EventsForHandlerWith_Model_Evt { }
+
+        public class EventsForHandlerWith_Event_Evt { }
+
+        public class EventsForHandlerWith_Context_Evt { }
+
+        public class EventsForHandlerWith_NoArgs_Evt { }
+
+        public class EventsWith_Event_Context_Evt { }
+
+        public class EventsWith_Model_Context_Evt { }
+
+        public class StubEventProcessor 
         {
             public StubEventProcessor(IRouter<TestModel> router)
-                : base(router)
             {
                 FooEvents = new List<Tuple<TestModel, FooEvent, IEventContext>>();
                 BarEvents = new List<Tuple<TestModel, BarEvent, IEventContext>>();
-                EventForNoContexts = new List<Tuple<TestModel, EventForNoContext>>();
                 WorkflowTestEvents = new List<Tuple<TestModel, WorkflowTestEvent, ObservationStage>>();
                 BaseEvents = new List<Tuple<TestModel, BaseEvent, ObservationStage>>();
+                router.ObserveEventsOn(this);
             }
 
             public List<Tuple<TestModel, FooEvent, IEventContext>> FooEvents { get; private set; }
-
             public List<Tuple<TestModel, BarEvent, IEventContext>> BarEvents { get; private set; }
-
-            public List<Tuple<TestModel, EventForNoContext>> EventForNoContexts { get; private set; }
-
+            public int EventsWith_Model_Event_Context { get; private set; }
+            public int EventsWith_Model_Event { get; private set; }
+            public int EventsWith_Model { get; private set; }
+            public int EventsWith_Event { get; private set; }
+            public int EventsWith_Context { get; private set; }
+            public int EventsWith_NoArgs { get; private set; }
+            public int EventsWith_Event_Context { get; private set; }
+            public int EventsWith_Model_Context { get; private set; }
             public List<Tuple<TestModel, WorkflowTestEvent, ObservationStage>> WorkflowTestEvents { get; private set; }
-
             public List<Tuple<TestModel, BaseEvent, ObservationStage>> BaseEvents { get; private set; }
 
             [ObserveEvent(typeof(FooEvent))]
@@ -168,10 +203,52 @@ namespace Esp.Net
                 BarEvents.Add(Tuple.Create(model, e, context));
             }
 
-            [ObserveEvent(typeof(EventForNoContext))]
-            public void ObserveEventWithoutContext(TestModel model, EventForNoContext e)
+            [ObserveEvent(typeof(EventsForHandlerWith_Model_Event_Context_Evt))]
+            public void ObserveObservesEventsWith_Model_Event_Context_Evt(TestModel model, EventsForHandlerWith_Model_Event_Context_Evt e, IEventContext context)
             {
-                EventForNoContexts.Add(Tuple.Create(model, e));
+                EventsWith_Model_Event_Context++;
+            }
+
+            [ObserveEvent(typeof(EventsForHandlerWith_Model_Event_Evt))]
+            public void ObserveObservesEventsWith_Model_Event_Evt(TestModel model, EventsForHandlerWith_Model_Event_Evt e)
+            {
+                EventsWith_Model_Event++;
+            }
+
+            [ObserveEvent(typeof(EventsForHandlerWith_Model_Evt))]
+            public void ObserveObservesEventsWith_Model_Evt(TestModel model)
+            {
+                EventsWith_Model++;
+            }
+
+            [ObserveEvent(typeof(EventsWith_Event_Context_Evt))]
+            public void ObserveObservesEventsWith_Event__Context_Evt(EventsWith_Event_Context_Evt e, IEventContext context)
+            {
+                EventsWith_Event_Context++;
+            }
+
+            [ObserveEvent(typeof(EventsForHandlerWith_Event_Evt))]
+            public void ObserveObservesEventsWith_Event_Evt(EventsForHandlerWith_Event_Evt e)
+            {
+                EventsWith_Event++;
+            }
+
+            [ObserveEvent(typeof(EventsForHandlerWith_Context_Evt))]
+            public void ObserveObservesEventsWith_Event_Evt(IEventContext context)
+            {
+                EventsWith_Context++;
+            }
+
+            [ObserveEvent(typeof(EventsWith_Model_Context_Evt))]
+            public void ObserveObservesEventsWith_Event__Context_Evt(TestModel model, IEventContext context)
+            {
+                EventsWith_Model_Context++;
+            }
+
+            [ObserveEvent(typeof(EventsForHandlerWith_NoArgs_Evt))]
+            public void ObserveObservesEventsWith_NoArgs_Evt()
+            {
+                EventsWith_NoArgs++;
             }
 
             [ObserveEvent(typeof(WorkflowTestEvent), ObservationStage.Preview)]
@@ -207,51 +284,73 @@ namespace Esp.Net
                 context.Commit();
             }
 
+
+
             public void NothingOnThis()
             {
             }
         }
 
+
+
         // ReSharper disable InconsistentNaming
-        public class StubEventProcessorWithIncorrectSignatures_IncorrectParamaterCount : BaseModelEventProcessor<TestModel>
-        { 
+        public class StubEventProcessorWithIncorrectSignatures_IncorrectParamaterCount 
+        {
+            private readonly IRouter<TestModel> _router;
+
             public StubEventProcessorWithIncorrectSignatures_IncorrectParamaterCount(IRouter<TestModel> router)
-                : base(router)
             {
-                
+                _router = router;
             }
 
             [ObserveEvent(typeof(FooEvent))]
-            public void ObserveFooEvent()
+            public void ObserveFooEvent(TestModel m, FooEvent e, IEventContext c, int b)
             {
+            }
+
+            public void ObserveEvents()
+            {
+                _router.ObserveEventsOn(this);
             }
         }
 
-        public class StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes1 : BaseModelEventProcessor<TestModel>
+        public class StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes1 
         {
-            public StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes1(IRouter<TestModel> router)
-                : base(router)
-            {
+            private readonly IRouter<TestModel> _router;
 
+            public StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes1(IRouter<TestModel> router)
+            {
+                _router = router;
             }
 
             [ObserveEvent(typeof(FooEvent))]
             public void ObserveFooEvent(TestModel model, int somethingWrong)
             {
             }
+
+            public void ObserveEvents()
+            {
+                _router.ObserveEventsOn(this);
+            }
         }
 
-        public class StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes2 : BaseModelEventProcessor<TestModel>
+        public class StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes2
         {
-            public StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes2(IRouter<TestModel> router)
-                : base(router)
-            {
+            private readonly IRouter<TestModel> _router;
 
+            public StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes2(IRouter<TestModel> router)
+            {
+                _router = router;
             }
 
             [ObserveEvent(typeof(FooEvent))]
             public void ObserveFooEvent(TestModel model, FooEvent e, string somethinElse)
             {
+            }
+
+            public void ObserveEvents()
+            {
+                _router.ObserveEventsOn(this);
             }
         }
         // ReSharper restore InconsistentNaming
