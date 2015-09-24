@@ -200,11 +200,26 @@ namespace Esp.Net
 
         public void RunAction<TModel>(object modelId, Action<TModel> action)
         {
-            throw new NotImplementedException();
+            if (!_routerDispatcher.CheckAccess())
+            {
+                _state.ThrowIfHalted();
+                _routerDispatcher.Dispatch(() => RunAction(modelId, action));
+                return;
+            }
+            _state.ThrowIfHalted();
+            IModelEntry modelEntry = GetModelEntry(modelId);
+            modelEntry.RunAction(action);
+            PurgeEventQueues();
         }
 
-        public void RunAction<TModel>(object modelId, Action action)
+        public void RunAction(object modelId, Action action)
         {
+            if (!_routerDispatcher.CheckAccess())
+            {
+                _state.ThrowIfHalted();
+                _routerDispatcher.Dispatch(() => RunAction(modelId, action));
+                return;
+            }
             _state.ThrowIfHalted();
             IModelEntry modelEntry = GetModelEntry(modelId);
             modelEntry.RunAction(action);

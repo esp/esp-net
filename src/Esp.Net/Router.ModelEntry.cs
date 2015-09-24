@@ -33,7 +33,8 @@ namespace Esp.Net
             bool IsRemoved { get; }
             void TryEnqueue<TEvent>(TEvent @event);
             void ExecuteEvent<TEvent>(TEvent @event);
-            void RunAction(Action @event);
+            void RunAction(Action action);
+            void RunAction<TModel>(Action<TModel> action);
             void PurgeEventQueue();
             void RunPreProcessor();
             void RunPostProcessor();
@@ -64,7 +65,7 @@ namespace Esp.Net
             private readonly State _state;
             private readonly IEventObservationRegistrar _eventObservationRegistrar;
             private readonly IModelChangedEventPublisher _modelChangedEventPublisher;
-            private readonly Queue<dynamic> _eventDispatchQueue = new Queue<dynamic>();
+            private readonly Queue<Action> _eventDispatchQueue = new Queue<Action>();
             private readonly Dictionary<Type, dynamic> _eventSubjects = new Dictionary<Type, dynamic>();
             private readonly ModelSubject<TModel> _modelUpdateSubject = new ModelSubject<TModel>();
             private readonly object _gate = new object();
@@ -122,12 +123,18 @@ namespace Esp.Net
                 _eventDispatchQueue.Enqueue(action);
             }
 
+            public void RunAction<TModel1>(Action<TModel1> action)
+            {
+                dynamic dAction = action;
+                _eventDispatchQueue.Enqueue(() => dAction(_model));
+            }
+
             public void PurgeEventQueue()
             {
                 bool hasEvents = _eventDispatchQueue.Count > 0;
                 while (hasEvents)
                 {
-                    var dispatchAction = _eventDispatchQueue.Dequeue();
+                    dynamic dispatchAction = _eventDispatchQueue.Dequeue();
                     dispatchAction();
                     hasEvents = _eventDispatchQueue.Count > 0;
                 }

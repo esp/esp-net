@@ -83,7 +83,7 @@ namespace Esp.Net
 
         public void RunAction(Action action)
         {
-            _underlying.RunAction<TModel>(_modelIid, action);
+            _underlying.RunAction(_modelIid, action);
         }
     }
 }

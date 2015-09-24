@@ -45,7 +45,7 @@ namespace Esp.Net
         void BroadcastEvent(object @event);
 
         void RunAction<TModel>(object modelId, Action<TModel> action);
-        void RunAction<TModel>(object modelId, Action action);
+        void RunAction(object modelId, Action action);
 
         void RegisterTerminalErrorHandler(Action<Exception> onHaltingError);
     }
