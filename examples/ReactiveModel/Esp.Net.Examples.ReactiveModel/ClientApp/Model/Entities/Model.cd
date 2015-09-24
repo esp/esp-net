@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Esp.Net.Examples.ReactiveModel.ClientApp.Model.Entities.OrderScreen">
+    <Position X="0.5" Y="0.5" Width="2.5" />
+    <Members>
+      <Field Name="_currentyPairs" Hidden="true" />
+      <Field Name="_orderInputs" Hidden="true" />
+      <Field Name="_referenceDataDisposable" Hidden="true" />
+      <Field Name="_referenceDataGateway" Hidden="true" />
+      <Field Name="_rfq" Hidden="true" />
+      <Field Name="_router" Hidden="true" />
+      <Field Name="_version" Hidden="true" />
+      <Field Name="Log" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>JAgAVABAAAQAMAAAAAAAQAAAlAgAAAAAAAAgAAAgAAA=</HashCode>
+      <FileName>ClientApp\Model\Entities\OrderScreen.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="Inputs" />
+      <Property Name="Rfq" />
+    </ShowAsAssociation>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Esp.Net.Examples.ReactiveModel.ClientApp.Model.Entities.Rfq.Rfq">
+    <Position X="0.75" Y="3.75" Width="2.5" />
+    <Members>
+      <Field Name="_acceptQuoteDisposable" Hidden="true" />
+      <Field Name="_inFlightRfqQuoteDetails" Hidden="true" />
+      <Field Name="_orderDisposable" Hidden="true" />
+      <Field Name="_quoteId" Hidden="true" />
+      <Field Name="_rate" Hidden="true" />
+      <Field Name="_rejectQuoteDisposable" Hidden="true" />
+      <Field Name="_rfqGateway" Hidden="true" />
+      <Field Name="_rfqSummary" Hidden="true" />
+      <Field Name="_status" Hidden="true" />
+      <Field Name="Log" Hidden="true" />
+    </Members>
+    <NestedTypes>
+      <Class Name="Esp.Net.Examples.ReactiveModel.ClientApp.Model.Entities.Rfq.Rfq.InFlightRfqQuoteDetails" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>ClientApp\Model\Entities\Rfq\Rfq.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>QEAACEAECABAQAAAFABBABAAAAgAAAAAAAAAAQkAAAQ=</HashCode>
+      <FileName>ClientApp\Model\Entities\Rfq\Rfq.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Esp.Net.Examples.ReactiveModel.ClientApp.Model.Entities.OrderInputs.OrderInputs">
+    <Position X="4.75" Y="0.5" Width="2.5" />
+    <Members>
+      <Field Name="_currencyPair" Hidden="true" />
+      <Field Name="_notional" Hidden="true" />
+      <Field Name="_orderSummary" Hidden="true" />
+      <Field Name="Log" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAACIACABAAAAAAAAQABAAAAAAgAIACAAAAAAAEgAAA=</HashCode>
+      <FileName>ClientApp\Model\Entities\OrderInputs\OrderInputs.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

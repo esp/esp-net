@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Esp.Net.Examples.ReactiveModel.TraderApp.Model.Entities.RfqDetails">
+    <Position X="4" Y="0.5" Width="2.25" />
+    <Members>
+      <Field Name="_currencyPair" Hidden="true" />
+      <Field Name="_notional" Hidden="true" />
+      <Field Name="_quoteId" Hidden="true" />
+      <Field Name="_quoteStatus" Hidden="true" />
+      <Field Name="_rate" Hidden="true" />
+      <Field Name="_rfqServiceGateway" Hidden="true" />
+      <Field Name="_rfqSummary" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>UAECAACADAAAQEAAAAMDABAAAAAAQAAAAAAAAQkCAAA=</HashCode>
+      <FileName>TraderApp\Model\Entities\RfqDetails.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Esp.Net.Examples.ReactiveModel.TraderApp.Model.Entities.RfqScreen">
+    <Position X="0.5" Y="0.5" Width="2.25" />
+    <Members>
+      <Field Name="_readOnlyRfqs" Hidden="true" />
+      <Field Name="_rfqDetailsFactory" Hidden="true" />
+      <Field Name="_rfqEventsDisposable" Hidden="true" />
+      <Field Name="_rfqs" Hidden="true" />
+      <Field Name="_rfqsById" Hidden="true" />
+      <Field Name="_rfqServiceGateway" Hidden="true" />
+      <Field Name="_router" Hidden="true" />
+      <Field Name="_version" Hidden="true" />
+      <Field Name="Log" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>IAAAEABAAAAAMGgACiAIAAAAhggAAAAAAAAAAAAACAA=</HashCode>
+      <FileName>TraderApp\Model\Entities\RfqScreen.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Property Name="Rfqs" />
+    </ShowAsCollectionAssociation>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
