@@ -66,6 +66,7 @@
     <Compile Include="Meta\ModelsEventsObservations.cs" />
     <Compile Include="ModelChangedEvent.cs" />
     <Compile Include="ModelRouter.cs" />
+    <Compile Include="Router.ModelSpeific.cs" />
     <Compile Include="SubModelRouter.cs" />
     <Compile Include="ObservationStage.cs" />
     <Compile Include="ObserveBaseEventAttribute.cs" />
