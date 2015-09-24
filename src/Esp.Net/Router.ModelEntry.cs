@@ -33,6 +33,7 @@ namespace Esp.Net
             bool IsRemoved { get; }
             void TryEnqueue<TEvent>(TEvent @event);
             void ExecuteEvent<TEvent>(TEvent @event);
+            void RunAction(Action @event);
             void PurgeEventQueue();
             void RunPreProcessor();
             void RunPostProcessor();
@@ -114,6 +115,11 @@ namespace Esp.Net
             {
                 Action dispatchAction = CreateEventDispatchAction(@event);
                 dispatchAction();
+            }
+
+            public void RunAction(Action action)
+            {
+                _eventDispatchQueue.Enqueue(action);
             }
 
             public void PurgeEventQueue()

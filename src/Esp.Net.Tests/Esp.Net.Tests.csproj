@@ -66,6 +66,7 @@
     <Compile Include="BaseModelEventProcessorTests.cs" />
     <Compile Include="Dispatchers\NewThreadRouterDispatcherTests.cs" />
     <Compile Include="Disposables\EspDisposableTests.cs" />
+    <Compile Include="Foo.cs" />
     <Compile Include="Reactive\StubSubject.cs" />
     <Compile Include="RouterTests.RemoveModel.cs" />
     <Compile Include="RouterTests.EventWorkflow.cs" />

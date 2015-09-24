@@ -63,5 +63,15 @@ namespace Esp.Net
         {
             _modelRouter.BroadcastEvent(@event);
         }
+
+        public void RunAction(Action<TModel> action)
+        {
+            _modelRouter.RunAction(action);
+        }
+
+        public void RunAction(Action action)
+        {
+            _modelRouter.RunAction(action);
+        }
     }
 }

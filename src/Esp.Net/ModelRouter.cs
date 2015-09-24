@@ -73,5 +73,15 @@ namespace Esp.Net
         {
             _underlying.BroadcastEvent(@event);
         }
+
+        public void RunAction(Action<TModel> action)
+        {
+            _underlying.RunAction(_modelIid, action);
+        }
+
+        public void RunAction(Action action)
+        {
+            _underlying.RunAction<TModel>(_modelIid, action);
+        }
     }
 }

@@ -198,6 +198,19 @@ namespace Esp.Net
             }
         }
 
+        public void RunAction<TModel>(object modelId, Action<TModel> action)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RunAction<TModel>(object modelId, Action action)
+        {
+            _state.ThrowIfHalted();
+            IModelEntry modelEntry = GetModelEntry(modelId);
+            modelEntry.RunAction(action);
+            PurgeEventQueues();
+        }
+
         public void RegisterTerminalErrorHandler(Action<Exception> onHaltingError)
         {
             lock (_gate)
