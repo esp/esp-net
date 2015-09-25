@@ -135,7 +135,7 @@ namespace Esp.Net.HeldEvents
         {
             _model = new TestModel();
             _router = new Router(new StubRouterDispatcher());
-            _router.RegisterModel(_model.Id, _model);
+            _router.AddModel(_model.Id, _model);
             _model.HoldAllEvents = true;
         }
 
@@ -281,7 +281,7 @@ namespace Esp.Net.HeldEvents
         [Test]
         public void CanHoldUsingModelRouter()
         {
-            IRouter<TestModel> modelRouter = _router.CreateModelRouter<TestModel>(_model.Id);
+            IRouter<TestModel> modelRouter = new Router<TestModel>(_model.Id, _router);
             IEventObservable<TestModel, BaseEvent, IEventContext> baseEventStream = modelRouter.GetEventObservable(new HoldBaseEventsBasedOnModelStrategy<FooEvent, BaseEvent>());
             int receivedBaseEvents = 0, reveivedBarEvents = 0;
             baseEventStream.Observe((model, baseEvent, context) =>

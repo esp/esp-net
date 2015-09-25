@@ -18,16 +18,16 @@ using System;
 
 namespace Esp.Net
 {
-    internal class SubModelRouter<TModel, TSubModel> : IRouter<TSubModel>
+    internal class Router<TModel, TSubModel> : IRouter<TSubModel>
     {
         private readonly Func<TModel, TSubModel> _selector;
         private readonly object _modelIid;
         private readonly IRouter _underlying;
 
-        public SubModelRouter(object modelIid, IRouter underlying, Func<TModel, TSubModel> selector)
+        public Router(object modelIid, IRouter underlying, Func<TModel, TSubModel> selector)
         {
-            _modelIid = modelIid;
             _underlying = underlying;
+            _modelIid = modelIid;
             _selector = selector;
         }
 
@@ -64,16 +64,6 @@ namespace Esp.Net
         public void ExecuteEvent(object @event)
         {
             _underlying.ExecuteEvent(_modelIid, @event);
-        }
-
-        public void BroadcastEvent<TEvent>(TEvent @event)
-        {
-            _underlying.BroadcastEvent(@event);
-        }
-
-        public void BroadcastEvent(object @event)
-        {
-            _underlying.BroadcastEvent(@event);
         }
 
         public void RunAction(Action<TSubModel> action)

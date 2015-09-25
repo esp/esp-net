@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reactive.Linq;
 using System.Threading;
+using Microsoft.Reactive.Testing;
 using NUnit.Framework;
 using Shouldly;
 
@@ -15,11 +16,12 @@ namespace Esp.Net
             {
                 int action1RunCount = 0, action2RunCount = 0;
                 bool modelUpdated = false;
-                var gate = new ManualResetEvent(false);
-                var router = new Router<TestModel>(new TestModel(), new NewThreadRouterDispatcher());
+                var testScheduler = new  TestScheduler();
+                var router = new Router<TestModel>(new TestModel());
                 router.GetEventObservable<int>().Observe((m, e) =>
                 {
-                    Observable.Timer(TimeSpan.FromSeconds(1)).Subscribe(i =>
+                    var observable = Observable.Timer(TimeSpan.FromSeconds(1), testScheduler);
+                    observable.Subscribe(i =>
                     {
                         router.RunAction(() =>
                         {
@@ -36,10 +38,9 @@ namespace Esp.Net
                 {
                     Console.WriteLine(m.Count);
                     modelUpdated = m.Count == 1 && m.Version == 3;
-                    if(m.Count == 2) gate.Set();
                 });
                 router.PublishEvent(1);
-                gate.WaitOne(3000);
+                testScheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
                 action1RunCount.ShouldBe(1);
                 action2RunCount.ShouldBe(1);
                 modelUpdated.ShouldBe(true);

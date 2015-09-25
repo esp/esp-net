@@ -323,8 +323,10 @@ namespace Esp.Net
 
                 private void AssertEventPublishThrows()
                 {
-                    InvalidOperationException ex = Assert.Throws<InvalidOperationException>(() => _router.PublishEvent(_model1.Id, new Event1()));
-                    ex.Message.ShouldContain("Can't execute event.");
+                    _router.PublishEvent(_model1.Id, new Event1());
+                    _terminalErrorHandler.Errors.Count.ShouldBe(1);
+                    _terminalErrorHandler.Errors[0].ShouldBeOfType<InvalidOperationException>();
+                    _terminalErrorHandler.Errors[0].Message.ShouldContain("Can't execute event");
                 }
             }
 
@@ -385,7 +387,9 @@ namespace Esp.Net
                     _router.GetEventObservable<TestModel, ModelChangedEvent<TestModel>>(_model2.Id).Observe((m, e) =>
                     {
                     });
-                    Assert.Throws<NotSupportedException>(() => _router.PublishEvent(_model1.Id, new Event1()));
+                    _router.PublishEvent(_model1.Id, new Event1());
+                    _terminalErrorHandler.Errors.Count.ShouldBe(1);
+                    _terminalErrorHandler.Errors[0].ShouldBeOfType<NotSupportedException>();
                 }
             }
 

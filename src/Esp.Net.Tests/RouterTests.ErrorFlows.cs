@@ -11,50 +11,47 @@ namespace Esp.Net
             [Test]
             public void CancelingAtNormalObservationStageThrows()
             {
-                Assert.Throws<InvalidOperationException>(() =>
+                var event1 = new Event1
                 {
-                    var event1 = new Event1
-                    {
-                        ShouldCancel = true,
-                        CancelAtStage = ObservationStage.Normal,
-                        CancelAtEventProcesserId = EventProcessor1Id,
-                    };
-                    _router.PublishEvent(_model1.Id, event1);
-                });
+                    ShouldCancel = true,
+                    CancelAtStage = ObservationStage.Normal,
+                    CancelAtEventProcesserId = EventProcessor1Id,
+                };
+                _router.PublishEvent(_model1.Id, event1);
+                _terminalErrorHandler.Errors.Count.ShouldBe(1);
+                _terminalErrorHandler.Errors[0].ShouldBeOfType<InvalidOperationException>();
             }
 
             [Test]
             public void CancelingAtCommittedObservationStageThrows()
             {
-                Assert.Throws<InvalidOperationException>(() =>
+                var event1 = new Event1
                 {
-                    var event1 = new Event1
-                    {
-                        ShouldCommit = true,
-                        CommitAtStage = ObservationStage.Normal,
-                        CommitAtEventProcesserId = EventProcessor1Id,
+                    ShouldCommit = true,
+                    CommitAtStage = ObservationStage.Normal,
+                    CommitAtEventProcesserId = EventProcessor1Id,
 
-                        ShouldCancel = true,
-                        CancelAtStage = ObservationStage.Committed,
-                        CancelAtEventProcesserId = EventProcessor1Id,
-                    };
-                    _router.PublishEvent(_model1.Id, event1);
-                });
+                    ShouldCancel = true,
+                    CancelAtStage = ObservationStage.Committed,
+                    CancelAtEventProcesserId = EventProcessor1Id,
+                };
+                _router.PublishEvent(_model1.Id, event1);
+                _terminalErrorHandler.Errors.Count.ShouldBe(1);
+                _terminalErrorHandler.Errors[0].ShouldBeOfType<InvalidOperationException>();
             }
 
             [Test]
             public void CommittingAtPreviewObservationStageThrows()
             {
-                Assert.Throws<InvalidOperationException>(() =>
+                var event1 = new Event1
                 {
-                    var event1 = new Event1
-                    {
-                        ShouldCommit = true,
-                        CommitAtStage = ObservationStage.Preview,
-                        CommitAtEventProcesserId = EventProcessor1Id,
-                    };
-                    _router.PublishEvent(_model1.Id, event1);
-                });
+                    ShouldCommit = true,
+                    CommitAtStage = ObservationStage.Preview,
+                    CommitAtEventProcesserId = EventProcessor1Id,
+                };
+                _router.PublishEvent(_model1.Id, event1);
+                _terminalErrorHandler.Errors.Count.ShouldBe(1);
+                _terminalErrorHandler.Errors[0].ShouldBeOfType<InvalidOperationException>();
             }
 
             [Test]
@@ -71,8 +68,24 @@ namespace Esp.Net
             public void PublishingAPrivateEventThrowsAnInvalidOperationException()
             {
                 _router.GetEventObservable<TestModel, PrivateEvent>(_model1.Id).Observe((model, ev) => { });
-                var ex = Assert.Throws<Exception>(() => _router.PublishEvent(_model1.Id, new PrivateEvent()));
-                ex.Message.ShouldContain("Is this event scoped as private or internal");
+                _router.PublishEvent(_model1.Id, new PrivateEvent());
+                _terminalErrorHandler.Errors.Count.ShouldBe(1);
+                _terminalErrorHandler.Errors[0].ShouldBeOfType<Exception>();
+                _terminalErrorHandler.Errors[0].Message.ShouldContain("Is this event scoped as private or internal");
+            }
+
+            [Test]
+            public void RethrowsWhenNoTerminalErrorHandlerRegistered()
+            {
+                var router = new Router<TestModel>(new TestModel());
+                router.GetEventObservable<Event1>().Observe((m, e) =>
+                {
+                    throw new InvalidOperationException("Boom");
+                });
+                Assert.Throws<InvalidOperationException>(() =>
+                {
+                    router.PublishEvent(new Event1());
+                });
             }
 
             private class PrivateEvent : PrivateBaseEvent { }

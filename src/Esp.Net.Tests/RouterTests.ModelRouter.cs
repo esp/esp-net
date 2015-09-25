@@ -14,7 +14,7 @@ namespace Esp.Net
             public override void SetUp()
             {
                 base.SetUp();
-                _modelRouter = _router.CreateModelRouter<TestModel>(_model1.Id);
+                _modelRouter = new Router<TestModel>(_model1.Id, _router);
             }
 
             [Test]
@@ -33,14 +33,6 @@ namespace Esp.Net
                 _modelRouter.GetModelObservable().Observe(m => receivedModelCount++);
                 _modelRouter.PublishEvent(new Event1());
                 receivedModelCount.ShouldBe(1);
-            }
-
-            [Test]
-            public void CanBroadcastProxiedEvent()
-            {
-                _modelRouter.BroadcastEvent(new Event1());
-                _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(1);
-                _model2EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(1);
             }
         }
     }

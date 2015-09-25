@@ -38,6 +38,7 @@ namespace Esp.Net
         private StubModelProcessor _model2PostEventProcessor;
         private GenericModelEventProcessor<TestModel> _model2EventProcessor;
         private TestModelController _model2Controller;
+        private TerminalErrorHandler _terminalErrorHandler;
 
         private TestModel3 _model3;
         private TestModel4 _model4;
@@ -51,12 +52,13 @@ namespace Esp.Net
         public virtual void SetUp()
         {
             _routerDispatcher = new StubRouterDispatcher();
-            _router = new Router(_routerDispatcher);
+            _terminalErrorHandler = new TerminalErrorHandler();
+            _router = new Router(_routerDispatcher, _terminalErrorHandler);
 
             _model1 = new TestModel();
             _model1PreEventProcessor = new StubModelProcessor();
             _model1PostEventProcessor = new StubModelProcessor();
-            _router.RegisterModel(_model1.Id, _model1, _model1PreEventProcessor, _model1PostEventProcessor);
+            _router.AddModel(_model1.Id, _model1, _model1PreEventProcessor, _model1PostEventProcessor);
             _model1EventProcessor = new GenericModelEventProcessor<TestModel>(_router, _model1.Id, EventProcessor1Id);
             _model1EventProcessor2 = new GenericModelEventProcessor<TestModel>(_router, _model1.Id, EventProcessor2Id);
             _model1Controller = new TestModelController(_router, _model1.Id);
@@ -64,18 +66,18 @@ namespace Esp.Net
             _model2 = new TestModel();
             _model2PreEventProcessor = new StubModelProcessor();
             _model2PostEventProcessor = new StubModelProcessor();
-            _router.RegisterModel(_model2.Id, _model2, _model2PreEventProcessor, _model2PostEventProcessor);
+            _router.AddModel(_model2.Id, _model2, _model2PreEventProcessor, _model2PostEventProcessor);
             _model2EventProcessor = new GenericModelEventProcessor<TestModel>(_router, _model2.Id, EventProcessor3Id);
             _model2Controller = new TestModelController(_router, _model2.Id);
 
             _model3 = new TestModel3();
-            _router.RegisterModel(_model3.Id, _model3);
+            _router.AddModel(_model3.Id, _model3);
 
             _model4 = new TestModel4();
-            _router.RegisterModel(_model4.Id, _model4);
+            _router.AddModel(_model4.Id, _model4);
 
             _model5 = new TestModel5();
-            _router.RegisterModel(_model5.Id, _model5);
+            _router.AddModel(_model5.Id, _model5);
         }
 
         protected void PublishEventWithMultipeSubsequentEvents(int numberOfSubsequentEvents)
@@ -359,6 +361,21 @@ namespace Esp.Net
             public void RegisterAction(Action<TestModel> action)
             {
                 _actions.Add(action);
+            }
+        }
+
+        public class TerminalErrorHandler : ITerminalErrorHandler
+        {
+            public TerminalErrorHandler()
+            {
+                Errors = new List<Exception>();
+            }
+
+            public List<Exception> Errors { get; private set; }
+
+            public void OnError(Exception exception)
+            {
+                Errors.Add(exception);
             }
         }
     }

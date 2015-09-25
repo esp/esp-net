@@ -32,19 +32,30 @@ namespace Esp.Net
         private readonly object _gate = new object();
         private readonly State _state = new State();
         private readonly IRouterDispatcher _routerDispatcher;
+        private readonly ITerminalErrorHandler _errorHandler;
         private readonly ModelsEventsObservations _modelsEventsObservations;
-        private readonly Dictionary<object, IModelEntry> _modelsById = new Dictionary<object, IModelEntry>();
-        private readonly List<Action<Exception>> _terminalErrorHandlers = new List<Action<Exception>>();
+        private readonly Dictionary<object, IModelRouter> _modelsById = new Dictionary<object, IModelRouter>();
 
         public Router()
-            : this(new CurrentThreadDispatcher())
+            : this(new CurrentThreadDispatcher(), null)
         {
         }
 
         public Router(IRouterDispatcher routerDispatcher)
+            : this(routerDispatcher, null)
+        {
+        }
+
+        public Router(ITerminalErrorHandler errorHandler)
+            : this(new CurrentThreadDispatcher(), errorHandler)
+        {
+        }
+
+        public Router(IRouterDispatcher routerDispatcher, ITerminalErrorHandler errorHandler)
         {
             Guard.Requires<ArgumentNullException>(routerDispatcher != null, "routerDispatcher can not be null");
             _routerDispatcher = routerDispatcher;
+            _errorHandler = errorHandler;
             _modelsEventsObservations = new ModelsEventsObservations();
         }
 
@@ -56,29 +67,29 @@ namespace Esp.Net
             }
         }
 
-        public void RegisterModel<TModel>(object modelId, TModel model)
+        public void AddModel<TModel>(object modelId, TModel model)
         {
-            RegisterModel(modelId, model, null, null);
+            AddModel(modelId, model, null, null);
         }
 
-        public void RegisterModel<TModel>(object modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor)
+        public void AddModel<TModel>(object modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor)
         {
             Guard.Requires<ArgumentNullException>(preEventProcessor != null, "preEventProcessor can not be null");
-            RegisterModel(modelId, model, preEventProcessor, null);
+            AddModel(modelId, model, preEventProcessor, null);
         }
 
-        public void RegisterModel<TModel>(object modelId, TModel model, IPostEventProcessor<TModel> postEventProcessor)
+        public void AddModel<TModel>(object modelId, TModel model, IPostEventProcessor<TModel> postEventProcessor)
         {
             Guard.Requires<ArgumentNullException>(postEventProcessor != null, "postEventProcessor can not be null");
-            RegisterModel(modelId, model, null, postEventProcessor);
+            AddModel(modelId, model, null, postEventProcessor);
         }
 
-        public void RegisterModel<TModel>(object modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor, IPostEventProcessor<TModel> postEventProcessor)
+        public void AddModel<TModel>(object modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor, IPostEventProcessor<TModel> postEventProcessor)
         {
             Guard.Requires<ArgumentNullException>(modelId != null, "modelId can not be null");
             Guard.Requires<ArgumentNullException>(model != null, "model can not be null");
             _state.ThrowIfHalted();
-            var entry = new ModelEntry<TModel>(
+            var entry = new ModelRouter<TModel>(
                 modelId,
                 model,
                 preEventProcessor,
@@ -105,13 +116,13 @@ namespace Esp.Net
                 return;
             }
             _state.ThrowIfHalted();
-            IModelEntry modelEntry;
+            IModelRouter modelRouter;
             lock (_gate)
             {
-                if (!_modelsById.TryGetValue(modelId, out modelEntry)) throw new ArgumentException(string.Format("Model with id {0} not registered", modelId));
+                if (!_modelsById.TryGetValue(modelId, out modelRouter)) throw new ArgumentException(string.Format("Model with id {0} not registered", modelId));
                 _modelsById.Remove(modelId);
             }
-            modelEntry.OnRemoved();
+            modelRouter.OnRemoved();
         }
 
         public void PublishEvent<TEvent>(object modelId, TEvent @event)
@@ -123,8 +134,8 @@ namespace Esp.Net
                 return;
             }
             _state.ThrowIfHalted();
-            IModelEntry modelEntry = GetModelEntry(modelId);
-            modelEntry.TryEnqueue(@event);
+            IModelRouter modelRouter = GetModelRouter(modelId);
+            modelRouter.TryEnqueue(@event);
             PurgeEventQueues();
         }
 
@@ -146,8 +157,8 @@ namespace Esp.Net
             _state.ThrowIfHalted();
             _routerDispatcher.EnsureAccess();
             _state.MoveToExecuting(modelId);
-            IModelEntry modelEntry = GetModelEntry(modelId);
-            modelEntry.ExecuteEvent(@event);
+            IModelRouter modelRouter = GetModelRouter(modelId);
+            modelRouter.ExecuteEvent(@event);
             _state.EndExecuting();
         }
 
@@ -173,12 +184,12 @@ namespace Esp.Net
                 return;
             }
             _state.ThrowIfHalted();
-            IModelEntry[] modelEntries;
+            IModelRouter[] modelRouters;
             lock (_gate)
             {
-                modelEntries = _modelsById.Values.ToArray();
+                modelRouters = _modelsById.Values.ToArray();
             }
-            foreach (IModelEntry modelEntry in modelEntries)
+            foreach (IModelRouter modelEntry in modelRouters)
             {
                 modelEntry.TryEnqueue(@event);
             }
@@ -207,8 +218,8 @@ namespace Esp.Net
                 return;
             }
             _state.ThrowIfHalted();
-            IModelEntry modelEntry = GetModelEntry(modelId);
-            modelEntry.RunAction(action);
+            IModelRouter modelRouter = GetModelRouter(modelId);
+            modelRouter.RunAction(action);
             PurgeEventQueues();
         }
 
@@ -221,51 +232,31 @@ namespace Esp.Net
                 return;
             }
             _state.ThrowIfHalted();
-            IModelEntry modelEntry = GetModelEntry(modelId);
-            modelEntry.RunAction(action);
+            IModelRouter modelRouter = GetModelRouter(modelId);
+            modelRouter.RunAction(action);
             PurgeEventQueues();
-        }
-
-        public void RegisterTerminalErrorHandler(Action<Exception> onHaltingError)
-        {
-            lock (_gate)
-            {
-                _terminalErrorHandlers.Add(onHaltingError);
-            }
         }
 
         public IModelObservable<TModel> GetModelObservable<TModel>(object modelId)
         {
             Guard.Requires<ArgumentNullException>(modelId != null, "modelId can not be null");
             _state.ThrowIfHalted();
-            IModelEntry<TModel> entry = GetModelEntry<TModel>(modelId);
-            return entry.GetModelObservable();
+            IModelRouter<TModel> modelRouter = GetModelRouter<TModel>(modelId);
+            return modelRouter.GetModelObservable();
         }
 
         public IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TModel, TEvent>(object modelId, ObservationStage observationStage = ObservationStage.Normal)
         {
             _state.ThrowIfHalted();
-            IModelEntry<TModel> entry = GetModelEntry<TModel>(modelId);
-            return entry.GetEventObservable<TEvent>(observationStage);
+            IModelRouter<TModel> modelRouter = GetModelRouter<TModel>(modelId);
+            return modelRouter.GetEventObservable<TEvent>(observationStage);
         }
 
         public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TBaseEvent>(object modelId, Type subEventType, ObservationStage observationStage = ObservationStage.Normal)
         {
             _state.ThrowIfHalted();
-            IModelEntry<TModel> entry = GetModelEntry<TModel>(modelId);
-            return entry.GetEventObservable<TBaseEvent>(subEventType, observationStage);
-        }
-
-        public IRouter<TModel> CreateModelRouter<TModel>(object modelId)
-        {
-            _state.ThrowIfHalted();
-            return new ModelRouter<TModel>(modelId, this);
-        }
-
-        public IRouter<TSubModel> CreateModelRouter<TModel, TSubModel>(object modelId, Func<TModel, TSubModel> subModelSelector)
-        {
-            _state.ThrowIfHalted();
-            return new SubModelRouter<TModel, TSubModel>(modelId, this, subModelSelector);
+            IModelRouter<TModel> modelRouter = GetModelRouter<TModel>(modelId);
+            return modelRouter.GetEventObservable<TBaseEvent>(subEventType, observationStage);
         }
 
         private void PurgeEventQueues()
@@ -274,87 +265,81 @@ namespace Esp.Net
             {
                 try
                 {
-                    IModelEntry modelEntry = GetNextModelEntryWithEvents();
-                    while (modelEntry != null)
+                    IModelRouter modelRouter = GetNextModelEntryWithEvents();
+                    while (modelRouter != null)
                     {
-                        var changedModels = new Dictionary<object, IModelEntry>();
-                        while (modelEntry != null)
+                        var changedModels = new Dictionary<object, IModelRouter>();
+                        while (modelRouter != null)
                         {
-                            _state.MoveToPreProcessing(modelEntry.Id);
-                            modelEntry.RunPreProcessor();
-                            if (!modelEntry.IsRemoved)
+                            _state.MoveToPreProcessing(modelRouter.Id);
+                            modelRouter.RunPreProcessor();
+                            if (!modelRouter.IsRemoved)
                             {
                                 _state.MoveToEventDispatch();
-                                modelEntry.PurgeEventQueue();
-                                if (!modelEntry.IsRemoved)
+                                modelRouter.PurgeEventQueue();
+                                if (!modelRouter.IsRemoved)
                                 {
                                     _state.MoveToPostProcessing();
-                                    modelEntry.RunPostProcessor();
+                                    modelRouter.RunPostProcessor();
                                 }
                             }
-                            modelEntry.BroadcastModelChangedEvent();
-                            if (!changedModels.ContainsKey(modelEntry.Id))
-                                changedModels.Add(modelEntry.Id, modelEntry);
-                            modelEntry = GetNextModelEntryWithEvents();
+                            modelRouter.BroadcastModelChangedEvent();
+                            if (!changedModels.ContainsKey(modelRouter.Id))
+                                changedModels.Add(modelRouter.Id, modelRouter);
+                            modelRouter = GetNextModelEntryWithEvents();
                         }
                         _state.MoveToDispatchModelUpdates();
-                        foreach (IModelEntry changedModelEntry in changedModels.Values)
+                        foreach (IModelRouter changedModelEntry in changedModels.Values)
                         {
                             if (!changedModelEntry.IsRemoved)
                                 changedModelEntry.DispatchModel();
                         }
-                        modelEntry = GetNextModelEntryWithEvents();
+                        modelRouter = GetNextModelEntryWithEvents();
                     }
                     _state.MoveToIdle();
                 }
                 catch (Exception ex)
                 {
                     _state.MoveToHalted(ex);
-                    Action<Exception>[] terminalErrorHandlers;
-                    lock (_gate)
-                    {
-                        terminalErrorHandlers = _terminalErrorHandlers.ToArray();
-                    }
-                    foreach (Action<Exception> terminalErrorHandler in terminalErrorHandlers)
-                    {
-                        terminalErrorHandler(ex); 
-                    }
-                    throw;
+                    if (_errorHandler != null)
+                        _errorHandler.OnError(ex);
+                    else
+                        throw;
                 }
             }
         }
 
-        private IModelEntry GetNextModelEntryWithEvents()
+        private IModelRouter GetNextModelEntryWithEvents()
         {
-            IModelEntry modelEntry = null;
+            IModelRouter modelRouter = null;
             lock (_gate)
             {
-                foreach (IModelEntry entry in _modelsById.Values)
+                foreach (IModelRouter entry in _modelsById.Values)
                 {
                     if (entry.HadEvents)
                     {
-                        modelEntry = entry;
+                        modelRouter = entry;
                         break;
                     }
                 }
             }
-            return modelEntry;
+            return modelRouter;
         }
 
-        private IModelEntry<TModel> GetModelEntry<TModel>(object modelId)
+        private IModelRouter<TModel> GetModelRouter<TModel>(object modelId)
         {
-            IModelEntry entry;
+            IModelRouter router;
             lock (_gate)
             {
-                if (!_modelsById.TryGetValue(modelId, out entry))
+                if (!_modelsById.TryGetValue(modelId, out router))
                 {
                     throw new InvalidOperationException(string.Format("Model with id [{0}] isn't registered", modelId));
                 }
             }
-            IModelEntry<TModel> result;
+            IModelRouter<TModel> result;
             try
             {
-                result = (IModelEntry<TModel>) entry;
+                result = (IModelRouter<TModel>) router;
             }
             catch (InvalidCastException)
             {
@@ -366,14 +351,14 @@ namespace Esp.Net
             return result;
         }
 
-        private IModelEntry GetModelEntry(object modelId)
+        private IModelRouter GetModelRouter(object modelId)
         {
-            IModelEntry modelEntry;
+            IModelRouter modelRouter;
             lock (_gate)
             {
-                if (!_modelsById.TryGetValue(modelId, out modelEntry)) throw new ArgumentException(string.Format("Model with id {0} not registered", modelId));
+                if (!_modelsById.TryGetValue(modelId, out modelRouter)) throw new ArgumentException(string.Format("Model with id {0} not registered", modelId));
             }
-            return modelEntry;
+            return modelRouter;
         }
 
         // Having this type and IModelChangedEventPublisher is a bit of a 'roundabout' way of 
@@ -390,7 +375,7 @@ namespace Esp.Net
 
             public void BroadcastEvent<TModel>(ModelChangedEvent<TModel> @event)
             {
-                foreach (IModelEntry modelEntry in _parent._modelsById.Values)
+                foreach (IModelRouter modelEntry in _parent._modelsById.Values)
                 {
                     if (modelEntry.Id != @event.ModelId) modelEntry.TryEnqueue(@event);
                 }

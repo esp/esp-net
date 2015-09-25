@@ -57,7 +57,7 @@ namespace Esp.Net
                 _router = new Router(); // default ctor
 
                 _model1 = new TestModel();
-                _router.RegisterModel(_model1.Id, _model1);
+                _router.AddModel(_model1.Id, _model1);
                 _model1EventProcessor = new GenericModelEventProcessor<TestModel>(_router, _model1.Id, EventProcessor1Id);
                 _model1Controller = new TestModelController(_router, _model1.Id);
             }

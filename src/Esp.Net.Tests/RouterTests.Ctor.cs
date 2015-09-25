@@ -8,9 +8,9 @@ namespace Esp.Net
         public class Ctor
         {
             [Test]
-            public void ThrowsIfThreadGuardNull()
+            public void ThrowsIfIRouterDispatcherNull()
             {
-                Assert.Throws<ArgumentNullException>(() => new Router(null));
+                Assert.Throws<ArgumentNullException>(() => new Router((IRouterDispatcher)null));
             }
         }
     }

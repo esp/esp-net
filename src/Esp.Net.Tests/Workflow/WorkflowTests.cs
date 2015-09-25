@@ -58,7 +58,7 @@ namespace Esp.Net.Workflow
         {
             _model = new TestModel();
             _router = new Router(new StubRouterDispatcher());
-            _router.RegisterModel(_model.Id, _model);
+            _router.AddModel(_model.Id, _model);
             _stringSubject = new StubSubject<string>();
             _intSubject = new StubSubject<int>();
             _decimalSubject = new StubSubject<decimal>();

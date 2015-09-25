@@ -34,7 +34,7 @@ namespace Esp.Net
             where TEvent : TBaseEvent, IIdentifiableEvent
             where TModel : IHeldEventStore
         {
-            var modelRouter = router.CreateModelRouter<TModel>(modelId);
+            var modelRouter = new Router<TModel>(modelId, router);
             return modelRouter.GetEventObservable(strategy);
         }
 
@@ -64,7 +64,7 @@ namespace Esp.Net
             where TEvent : IIdentifiableEvent
             where TModel : IHeldEventStore
         {
-            var modelRouter = router.CreateModelRouter<TModel>(modelId);
+            var modelRouter = new Router<TModel>(modelId, router);
             return modelRouter.GetEventObservable(strategy);
         }
 

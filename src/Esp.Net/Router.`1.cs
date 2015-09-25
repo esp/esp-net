@@ -18,15 +18,44 @@ using System;
 
 namespace Esp.Net
 {
-    internal class ModelRouter<TModel> : IRouter<TModel>
+    public class Router<TModel> : IRouter<TModel>
     {
-        private readonly object _modelIid;
+        private object _modelIid;
         private readonly IRouter _underlying;
 
-        public ModelRouter(object modelIid, IRouter underlying)
+        public Router(TModel model)
+            : this(model, new CurrentThreadDispatcher(), null)
         {
-            _modelIid = modelIid;
+        }
+
+        public Router(TModel model, IRouterDispatcher routerDispatcher)
+            :this(model, routerDispatcher, null)
+        {
+
+        }
+
+        public Router(TModel model, ITerminalErrorHandler errorHandler)
+            : this(model, new CurrentThreadDispatcher(), errorHandler)
+        {
+
+        }
+
+        public Router(TModel model, IRouterDispatcher routerDispatcher, ITerminalErrorHandler errorHandler)
+        {
+            _underlying = new Router(routerDispatcher, errorHandler);
+            AddModelInternal(model);
+        }
+
+        public Router(TModel model, IRouter underlying)
+        {
             _underlying = underlying;
+            AddModelInternal(model);
+        }
+
+        public Router(object modelId, IRouter underlying)
+        {
+            _underlying = underlying;
+            _modelIid = modelId;
         }
 
         public IModelObservable<TModel> GetModelObservable()
@@ -64,16 +93,6 @@ namespace Esp.Net
             _underlying.ExecuteEvent(_modelIid, @event);
         }
 
-        public void BroadcastEvent<TEvent>(TEvent @event)
-        {
-            _underlying.BroadcastEvent(@event);
-        }
-
-        public void BroadcastEvent(object @event)
-        {
-            _underlying.BroadcastEvent(@event);
-        }
-
         public void RunAction(Action<TModel> action)
         {
             _underlying.RunAction(_modelIid, action);
@@ -82,6 +101,12 @@ namespace Esp.Net
         public void RunAction(Action action)
         {
             _underlying.RunAction(_modelIid, action);
+        }
+
+        private void AddModelInternal(TModel model)
+        {
+            _modelIid = Guid.NewGuid();
+            _underlying.AddModel(_modelIid, model);
         }
     }
 }

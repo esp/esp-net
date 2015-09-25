@@ -26,7 +26,7 @@ namespace Esp.Net
 {
     public partial class Router
     {
-        private interface IModelEntry
+        private interface IModelRouter
         {
             object Id { get; }
             bool HadEvents { get; }
@@ -43,7 +43,7 @@ namespace Esp.Net
             void BroadcastModelChangedEvent();
         }
 
-        private interface IModelEntry<out TModel> : IModelEntry
+        private interface IModelRouter<out TModel> : IModelRouter
         {
             IModelObservable<TModel> GetModelObservable();
             IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal);
@@ -55,7 +55,7 @@ namespace Esp.Net
             void BroadcastEvent<TModel>(ModelChangedEvent<TModel> @event);
         }
 
-        private class ModelEntry<TModel> : IModelEntry<TModel>
+        private class ModelRouter<TModel> : IModelRouter<TModel>
         {
             private readonly TModel _model;
             private readonly IPreEventProcessor<TModel> _preEventProcessor;
@@ -69,9 +69,9 @@ namespace Esp.Net
             private readonly Dictionary<Type, dynamic> _eventSubjects = new Dictionary<Type, dynamic>();
             private readonly ModelSubject<TModel> _modelUpdateSubject = new ModelSubject<TModel>();
             private readonly object _gate = new object();
-            private static readonly MethodInfo GetEventObservableMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(ModelEntry<TModel>), "GetEventObservable", 1, 1);
+            private static readonly MethodInfo GetEventObservableMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(ModelRouter<TModel>), "GetEventObservable", 1, 1);
 
-            public ModelEntry(
+            public ModelRouter(
                 object id, 
                 TModel model, 
                 IPreEventProcessor<TModel> preEventProcessor, 

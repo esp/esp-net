@@ -52,26 +52,23 @@ namespace Esp.Net
             [Test]
             public void TerminalErrorHandlerGetInvokedOnHaltingException()
             {
-                List<Tuple<int, Exception>> received = new List<Tuple<int, Exception>>();
-                _router.RegisterTerminalErrorHandler(ex => received.Add(Tuple.Create(1, ex)));
-                _router.RegisterTerminalErrorHandler(ex => received.Add(Tuple.Create(2, ex)));
                 var exception = new Exception("Boom");
                 _model1Controller.RegisterAction(m =>
                 {
                     throw exception;
                 });
                 AssertPublishEventThrows();
-                received.Count.ShouldBe(2);
-                received[0].Item1.ShouldBe(1);
-                received[0].Item2.ShouldBe(exception);
-                received[1].Item1.ShouldBe(2);
-                received[1].Item2.ShouldBe(exception);
+                _terminalErrorHandler.Errors.Count.ShouldBe(1);
+                _terminalErrorHandler.Errors[0].ShouldBe(exception);
             }
 
             private void AssertPublishEventThrows()
             {
-                Exception ex = Assert.Throws<Exception>(() => _router.PublishEvent(_model1.Id, new Event1()));
-                ex.Message.ShouldBe("Boom");
+                _router.PublishEvent(_model1.Id, new Event1());
+                _terminalErrorHandler.Errors.Count.ShouldBe(1);
+                _terminalErrorHandler.Errors[0].ShouldBeOfType<Exception>();
+                _terminalErrorHandler.Errors[0].Message.ShouldBe("Boom");
+
                 Exception ex2 = Assert.Throws<Exception>(() => _router.PublishEvent(_model1.Id, new Event2()));
                 ex2.Message.ShouldBe("Router halted due to previous error");
                 ex2.InnerException.Message.ShouldBe("Boom");
@@ -102,18 +99,12 @@ namespace Esp.Net
                 }
 
                 [Test]
-                public void ShouldThrowOnRegisterModel()
+                public void ShouldThrowOnAddModel()
                 {
-                    AssertRethrows(() => _router.RegisterModel(Guid.NewGuid(), _model1));
-                    AssertRethrows(() => _router.RegisterModel(Guid.NewGuid(), _model1, (IPreEventProcessor<TestModel>)new StubModelProcessor()));
-                    AssertRethrows(() => _router.RegisterModel(Guid.NewGuid(), _model1, (IPostEventProcessor<TestModel>)new StubModelProcessor()));
-                    AssertRethrows(() => _router.RegisterModel(Guid.NewGuid(), _model1, new StubModelProcessor(), new StubModelProcessor()));
-                }
-
-                [Test]
-                public void ShouldThrowOnCreateModelRouter()
-                {
-                    AssertRethrows(() => _router.CreateModelRouter<TestModel>(_model1.Id));
+                    AssertRethrows(() => _router.AddModel(Guid.NewGuid(), _model1));
+                    AssertRethrows(() => _router.AddModel(Guid.NewGuid(), _model1, (IPreEventProcessor<TestModel>)new StubModelProcessor()));
+                    AssertRethrows(() => _router.AddModel(Guid.NewGuid(), _model1, (IPostEventProcessor<TestModel>)new StubModelProcessor()));
+                    AssertRethrows(() => _router.AddModel(Guid.NewGuid(), _model1, new StubModelProcessor(), new StubModelProcessor()));
                 }
 
                 [Test]
