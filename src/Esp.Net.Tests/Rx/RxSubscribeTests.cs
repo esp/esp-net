@@ -9,7 +9,7 @@ using Shouldly;
 namespace Esp.Net.Rx
 {
     [TestFixture]
-    public class RxSchedulerTests
+    public class RxSubscribeTests
     {
         private Router<TestModel> _router;
         private TestModel _model;
@@ -78,7 +78,7 @@ namespace Esp.Net.Rx
                         {
                             int i = 0;
                         })
-                        .SubscribeOnRouter(
+                        .Subscribe(
                             _rouer, 
                             i =>
                             {

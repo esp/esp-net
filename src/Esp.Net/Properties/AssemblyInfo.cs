@@ -25,3 +25,4 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyConfiguration("")]
 
 [assembly: InternalsVisibleTo("Esp.Net.Tests")]
+[assembly: InternalsVisibleTo("Esp.Net.Rx")]

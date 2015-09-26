@@ -86,7 +86,7 @@
     <Compile Include="RouterTests.RouterDispatcher.cs" />
     <Compile Include="RouterTests.ErrorFlow.Halting.cs" />
     <Compile Include="RouterTests.Ctor.cs" />
-    <Compile Include="Rx\RxSchedulerTests.cs" />
+    <Compile Include="Rx\RxSubscribeTests.cs" />
     <Compile Include="StubRouterDispatcher.cs" />
     <Compile Include="HeldEvents\HeldEventTests.cs" />
     <Compile Include="Reactive\ReactiveTests.cs" />
