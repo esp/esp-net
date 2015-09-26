@@ -11,7 +11,6 @@ namespace Esp.Net.Rx
     [TestFixture]
     public class RxSchedulerTests
     {
-
         private Router<TestModel> _router;
         private TestModel _model;
         private TestScheduler _testScheduler;
@@ -45,11 +44,10 @@ namespace Esp.Net.Rx
             modelUpdated.ShouldBe(true);
         }
 
-        public class TestModel : Esp.Net.DisposableBase, IPreEventProcessor
+        public class TestModel : DisposableBase, IPreEventProcessor
         {
             private readonly IRouter<TestModel> _rouer;
             private readonly IScheduler _rxScheduler;
-            private readonly RouterScheduler<TestModel> _routerScheduler;
 
             public TestModel(IRouter<TestModel> rouer, IScheduler rxScheduler)
             {
@@ -57,7 +55,6 @@ namespace Esp.Net.Rx
                 _rxScheduler = rxScheduler;
                 ReceivedInts = new List<long>();
                 Id = Guid.NewGuid();
-                _routerScheduler = new RouterScheduler<TestModel>(rouer);
             }
 
             public void ObserveEvents()
@@ -77,13 +74,18 @@ namespace Esp.Net.Rx
                 AddDisposable(
                     Observable
                         .Timer(TimeSpan.FromTicks(1), _rxScheduler)
-                        .ObserveOn(_routerScheduler)
-                        .Subscribe(i =>
+                        .Do(_ =>
                         {
-                            ReceivedInts.Add(i);
-                            // on the dispatch loop, updating private state is ok 
-                        }
-                    )
+                            int i = 0;
+                        })
+                        .SubscribeOnRouter(
+                            _rouer, 
+                            i =>
+                            {
+                                // on the dispatch loop, updating private state is ok 
+                                ReceivedInts.Add(i);
+                            }
+                        )
                 );
             }
 

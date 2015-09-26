@@ -103,9 +103,9 @@
       <Project>{769ECEB6-57D8-47B9-8E5F-651F003F609A}</Project>
       <Name>Esp.Net.Dispatchers</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Esp.Net.Workflow\Esp.Net.Workflow.csproj">
+    <ProjectReference Include="..\Esp.Net.Rx\Esp.Net.Rx.csproj">
       <Project>{e9844144-0f47-40d3-bc35-6135af535732}</Project>
-      <Name>Esp.Net.Workflow</Name>
+      <Name>Esp.Net.Rx</Name>
     </ProjectReference>
     <ProjectReference Include="..\Esp.Net\Esp.Net.csproj">
       <Project>{2c08eebf-99f4-43ad-b87f-2b90deb6f8de}</Project>

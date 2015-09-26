@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>esp-net-workflow-source</id>
+    <id>esp-net-rx-source</id>
     <version>$version$</version>
-    <title>esp-net-workflow-source</title>
+    <title>esp-net-rx-source</title>
     <authors>Keith Woods</authors>
     <owners>Keith Woods</owners>
     <licenseUrl>https://github.com/esp/esp-net/LICENSE.txt</licenseUrl>
@@ -15,6 +15,6 @@
     <tags>evented state processor reactive router event loop rx</tags>
   </metadata>
   <files>
-    <file src="**\*.cs" exclude="Properties\AssemblyInfo.cs" target="content\App_Packages\Esp.Net.Workflow.$version$" />
+    <file src="**\*.cs" exclude="Properties\AssemblyInfo.cs" target="content\App_Packages\Esp.Net.Rx.$version$" />
   </files>
 </package>
