@@ -42,7 +42,9 @@
       <Link>Properties\AssemblyInfo.Common.cs</Link>
     </Compile>
     <Compile Include="AyncResultsEvent.cs" />
+    <Compile Include="ObservableExt.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RouterScheduler.cs" />
     <Compile Include="Workflow.cs" />
     <Compile Include="Workflow.Steps.cs" />
   </ItemGroup>

@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Linq;
 using Esp.Net.Reactive;
 using NUnit.Framework;
 using Shouldly;
@@ -106,6 +107,10 @@ namespace Esp.Net.Workflow
 //            var stringEventObservable = _router.GetEventSubject<AyncResultsEvent<string>>();
 //            var decimalEventObservable = _router.GetEventSubject<AyncResultsEvent<decimal>>(); 
 //            
+
+            _stringSubject
+                .ObserveOn(_router.)
+                .Subscribe(s => { });
             _router
                 .ConfigureWorkflow<TestModel, InitialEvent>()
                 .SelectMany(GetStringObservble, OnStringResultsReceived)
