@@ -75,7 +75,6 @@
     <Compile Include="RouterTests.ObserveEventsOn.cs" />
     <Compile Include="Dispatchers\NewThreadRouterDispatcherTests.cs" />
     <Compile Include="Disposables\EspDisposableTests.cs" />
-    <Compile Include="Reactive\StubSubject.cs" />
     <Compile Include="RouterTests.RunAction.cs" />
     <Compile Include="RouterTests.RemoveModel.cs" />
     <Compile Include="RouterTests.EventWorkflow.cs" />
@@ -89,7 +88,6 @@
     <Compile Include="RouterTests.Ctor.cs" />
     <Compile Include="Rx\RxSchedulerTests.cs" />
     <Compile Include="StubRouterDispatcher.cs" />
-    <Compile Include="Workflow\WorkflowTests.cs" />
     <Compile Include="HeldEvents\HeldEventTests.cs" />
     <Compile Include="Reactive\ReactiveTests.cs" />
     <Compile Include="Reactive\StubEventObservable.cs" />

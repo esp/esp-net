@@ -1,47 +1,99 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reactive.Concurrency;
+using System.Reactive.Linq;
+using Microsoft.Reactive.Testing;
+using NUnit.Framework;
+using Shouldly;
 
 namespace Esp.Net.Rx
 {
+    [TestFixture]
     public class RxSchedulerTests
     {
-        public class TestModel
-        {
-            public TestModel()
-            {
-                ReceivedInts = new List<int>();
-                ReceivedStrings = new List<string>();
-                ReceivedDecimals = new List<decimal>();
-                Id = Guid.NewGuid();
-            }
-            public Guid Id { get; private set; }
-            public List<int> ReceivedInts { get; set; }
-            public List<string> ReceivedStrings { get; set; }
-            public List<decimal> ReceivedDecimals { get; set; }
-        }
 
-        public class InitialEvent { }
-        public class AnAsyncEvent { }
-
-        private Router _router;
+        private Router<TestModel> _router;
         private TestModel _model;
-        private StubSubject<string> _stringSubject;
-        private StubSubject<int> _intSubject;
-        private StubSubject<decimal> _decimalSubject;
-        private Exception _exception;
+        private TestScheduler _testScheduler;
 
         [SetUp]
         public void SetUp()
         {
-            _model = new TestModel();
-            _router = new Router(new StubRouterDispatcher());
-            _router.AddModel(_model.Id, _model);
-            _stringSubject = new StubSubject<string>();
-            _intSubject = new StubSubject<int>();
-            _decimalSubject = new StubSubject<decimal>();
+            // need to solve this chicken and egg problem : creating the router with a model which takes a router
+            // might have to make the router take a factory
+
+            _testScheduler = new TestScheduler();
+            var router = new Router();
+            _router = new Router<TestModel>("modelId", router);
+            _model = new TestModel(_router, _testScheduler);
+            router.AddModel("modelId", _model);
         }
+
+        [Test]
+        public void ObserverInvokedOnRouterDispatchLoop()
+        {
+            _model.ObserveEvents();
+            bool modelUpdated = false;
+            _router.GetModelObservable().Observe(m =>
+            {
+                modelUpdated = m.ReceivedInts.Count == 1 && m.Version == 2;
+            });
+            _router.PublishEvent(new InitialEvent());
+            _testScheduler.AdvanceBy(1);
+            _model.ReceivedInts.Count.ShouldBe(1);
+            _model.ReceivedInts[0].ShouldBe(0);
+            modelUpdated.ShouldBe(true);
+        }
+
+        public class TestModel : Esp.Net.DisposableBase, IPreEventProcessor
+        {
+            private readonly IRouter<TestModel> _rouer;
+            private readonly IScheduler _rxScheduler;
+            private readonly RouterScheduler<TestModel> _routerScheduler;
+
+            public TestModel(IRouter<TestModel> rouer, IScheduler rxScheduler)
+            {
+                _rouer = rouer;
+                _rxScheduler = rxScheduler;
+                ReceivedInts = new List<long>();
+                Id = Guid.NewGuid();
+                _routerScheduler = new RouterScheduler<TestModel>(rouer);
+            }
+
+            public void ObserveEvents()
+            {
+                _rouer.ObserveEventsOn(this);
+            }
+
+            public Guid Id { get; private set; }
+
+            public int Version { get; private set; }
+
+            public List<long> ReceivedInts { get; set; }
+
+            [ObserveEvent(typeof(InitialEvent))]
+            private void ObserveIntEvent()
+            {
+                AddDisposable(
+                    Observable
+                        .Timer(TimeSpan.FromTicks(1), _rxScheduler)
+                        .ObserveOn(_routerScheduler)
+                        .Subscribe(i =>
+                        {
+                            ReceivedInts.Add(i);
+                            // on the dispatch loop, updating private state is ok 
+                        }
+                    )
+                );
+            }
+
+            void IPreEventProcessor.Process()
+            {
+                Version++;
+            }
+        }
+
+        public class InitialEvent { }
+
     }
 }

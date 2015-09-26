@@ -5,13 +5,6 @@ using System.Threading;
 
 namespace Esp.Net
 {
-    public class RouterScheduler
-    {
-        public RouterScheduler<TModel> Create<TModel>(IRouter router, object modelId)
-        {
-            
-        }
-    }
     public class RouterScheduler<TModel> : IScheduler
     {
         private readonly IRouter<TModel> _router;
@@ -22,6 +15,7 @@ namespace Esp.Net
             _router = router;
         }
 
+        // TODO this isn't working correctly
         public IDisposable Schedule<TState>(TState state, Func<IScheduler, TState, IDisposable> action)
         {
             int shouldRun = 1;
