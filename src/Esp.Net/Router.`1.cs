@@ -15,6 +15,7 @@
 #endregion
 
 using System;
+using Esp.Net.Utils;
 
 namespace Esp.Net
 {
@@ -23,90 +24,118 @@ namespace Esp.Net
         private object _modelIid;
         private readonly IRouter _underlying;
 
-        public Router(TModel model)
-            : this(model, new CurrentThreadDispatcher(), null)
+        public Router()
+            : this(new CurrentThreadDispatcher(), null)
         {
+            
         }
 
-        public Router(TModel model, IRouterDispatcher routerDispatcher)
-            :this(model, routerDispatcher, null)
-        {
-
-        }
-
-        public Router(TModel model, ITerminalErrorHandler errorHandler)
-            : this(model, new CurrentThreadDispatcher(), errorHandler)
+        public Router(IRouterDispatcher routerDispatcher)
+            : this(routerDispatcher, null)
         {
 
         }
 
-        public Router(TModel model, IRouterDispatcher routerDispatcher, ITerminalErrorHandler errorHandler)
+        public Router(ITerminalErrorHandler errorHandler)
+            : this(new CurrentThreadDispatcher(), errorHandler)
+        {
+
+        }
+
+        public Router(IRouterDispatcher routerDispatcher, ITerminalErrorHandler errorHandler)
         {
             _underlying = new Router(routerDispatcher, errorHandler);
-            AddModelInternal(model);
-        }
-
-        public Router(TModel model, IRouter underlying)
-        {
-            _underlying = underlying;
-            AddModelInternal(model);
         }
 
         public Router(object modelId, IRouter underlying)
         {
-            _underlying = underlying;
             _modelIid = modelId;
+            _underlying = underlying;
+        }
+
+        // exists to avoid the chicken and egg problem whereby the Router needs the model and the model needs the router
+        public void SetModel(object modelId, TModel model)
+        {
+            if (_modelIid == null)
+            {
+                _modelIid = modelId;
+                AddModelInternal(model);
+            }
+        }
+
+        // exists to avoid the chicken and egg problem whereby the Router needs the model and the model needs the router
+        public void SetModel(TModel model)
+        {
+            if (_modelIid == null)
+            {
+                _modelIid = Guid.NewGuid();
+                AddModelInternal(model);
+            }
         }
 
         public IModelObservable<TModel> GetModelObservable()
         {
+            EnsureModel();
             return _underlying.GetModelObservable<TModel>(_modelIid);
         }
 
         public IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal)
         {
+            EnsureModel();
             return _underlying.GetEventObservable<TModel, TEvent>(_modelIid, observationStage);
         }
 
         public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal)
         {
+            EnsureModel();
             return _underlying.GetEventObservable<TModel, TBaseEvent>(_modelIid, eventType, observationStage);
         }
 
         public void PublishEvent<TEvent>(TEvent @event)
         {
+            EnsureModel();
             _underlying.PublishEvent(_modelIid, @event);
         }
 
         public void PublishEvent(object @event)
         {
+            EnsureModel();
             _underlying.PublishEvent(_modelIid, @event);
         }
 
         public void ExecuteEvent<TEvent>(TEvent @event)
         {
+            EnsureModel();
             _underlying.ExecuteEvent(_modelIid, @event);
         }
 
         public void ExecuteEvent(object @event)
         {
+            EnsureModel();
             _underlying.ExecuteEvent(_modelIid, @event);
         }
 
         public void RunAction(Action<TModel> action)
         {
+            EnsureModel();
             _underlying.RunAction(_modelIid, action);
         }
 
         public void RunAction(Action action)
         {
+            EnsureModel();
             _underlying.RunAction(_modelIid, action);
         }
 
         private void AddModelInternal(TModel model)
         {
-            _modelIid = Guid.NewGuid();
+            EnsureModel();
             _underlying.AddModel(_modelIid, model);
+        }
+
+        private void EnsureModel()
+        {
+            Guard.Requires<InvalidOperationException>(_modelIid != null, "Model not set");
         }
     }
 }

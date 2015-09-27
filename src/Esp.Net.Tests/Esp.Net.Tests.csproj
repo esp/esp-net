@@ -86,7 +86,6 @@
     <Compile Include="RouterTests.RouterDispatcher.cs" />
     <Compile Include="RouterTests.ErrorFlow.Halting.cs" />
     <Compile Include="RouterTests.Ctor.cs" />
-    <Compile Include="Rx\RxSubscribeTests.cs" />
     <Compile Include="StubRouterDispatcher.cs" />
     <Compile Include="HeldEvents\HeldEventTests.cs" />
     <Compile Include="Reactive\ReactiveTests.cs" />
@@ -102,10 +101,6 @@
     <ProjectReference Include="..\Esp.Net.Dispatchers\Esp.Net.Dispatchers.csproj">
       <Project>{769ECEB6-57D8-47B9-8E5F-651F003F609A}</Project>
       <Name>Esp.Net.Dispatchers</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Esp.Net.Rx\Esp.Net.Rx.csproj">
-      <Project>{e9844144-0f47-40d3-bc35-6135af535732}</Project>
-      <Name>Esp.Net.Rx</Name>
     </ProjectReference>
     <ProjectReference Include="..\Esp.Net\Esp.Net.csproj">
       <Project>{2c08eebf-99f4-43ad-b87f-2b90deb6f8de}</Project>

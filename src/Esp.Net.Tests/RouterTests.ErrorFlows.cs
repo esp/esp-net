@@ -77,7 +77,9 @@ namespace Esp.Net
             [Test]
             public void RethrowsWhenNoTerminalErrorHandlerRegistered()
             {
-                var router = new Router<TestModel>(new TestModel());
+                var router = new Router<TestModel>();
+                var model = new TestModel();
+                router.SetModel(model.Id, model);
                 router.GetEventObservable<Event1>().Observe((m, e) =>
                 {
                     throw new InvalidOperationException("Boom");
