@@ -78,7 +78,7 @@ namespace Esp.Net.Rx
                         {
                             int i = 0;
                         })
-                        .Subscribe(
+                        .SubscribeWithRouter(
                             _rouer, 
                             i =>
                             {
