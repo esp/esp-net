@@ -6,12 +6,4 @@ namespace Esp.Net
     {
         void OnError(Exception exception); 
     }
-
-    public class BubblingTerminalErrorHandler : ITerminalErrorHandler
-    {
-        public void OnError(Exception exception)
-        {
-            throw new NotImplementedException();
-        }
-    }
 }

@@ -59,10 +59,7 @@ namespace Esp.Net
                 int action1RunCount = 0, action2RunCount = 0;
                 bool modelUpdated = false;
                 var testScheduler = new  TestScheduler();
-
-                var router = new Router<TestModel>();
-                router.SetModel(new TestModel());
-
+                var router = new Router<TestModel>(new TestModel());
                 router.GetEventObservable<int>().Observe((m, e) =>
                 {
                     var observable = Observable.Timer(TimeSpan.FromSeconds(1), testScheduler);
