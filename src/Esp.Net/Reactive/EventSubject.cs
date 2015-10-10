@@ -21,10 +21,10 @@ using Esp.Net.Meta;
 // ReSharper disable once CheckNamespace
 namespace Esp.Net
 {
-    internal class EventSubject<TModel, TEvent, TContext> : IEventObservable<TModel, TEvent, TContext>, IEventObserver<TModel, TEvent, TContext>
+    internal class EventSubject<TEvent, TContext, TModel> : IEventObservable<TEvent, TContext, TModel>, IEventObserver<TEvent, TContext, TModel>
     {
         private readonly IEventObservationRegistrar _observationRegistrar;
-        private readonly List<IEventObserver<TModel, TEvent, TContext>> _observers = new List<IEventObserver<TModel, TEvent, TContext>>();
+        private readonly List<IEventObserver<TEvent, TContext, TModel>> _observers = new List<IEventObserver<TEvent, TContext, TModel>>();
         private readonly object _gate = new object();
         private bool _hasCompleted = false;
 
@@ -33,13 +33,13 @@ namespace Esp.Net
             _observationRegistrar = observationRegistrar;
         }
 
-        public void OnNext(TModel model, TEvent @event, TContext context)
+        public void OnNext(TEvent @event, TContext context, TModel model)
         {
             var observers = _observers.ToArray();
             foreach(var observer in observers) 
 			{
                 if (_hasCompleted) break;
-                observer.OnNext(model, @event, context);
+                observer.OnNext(@event, context, model);
 			}
         }
 
@@ -56,31 +56,55 @@ namespace Esp.Net
             }
         }
 
-        public IDisposable Observe(Action<TModel, TEvent> onNext)
+        public IDisposable Observe(Action<TEvent> onNext)
         {
-            var observer = new EventObserver<TModel, TEvent, TContext>(onNext);
+            var observer = new EventObserver<TEvent, TContext, TModel>(onNext);
             return Observe(observer);
         }
 
-        public IDisposable Observe(Action<TModel, TEvent> onNext, Action onCompleted)
+        public IDisposable Observe(Action<TEvent> onNext, Action onCompleted)
         {
-            var observer = new EventObserver<TModel, TEvent, TContext>(onNext, onCompleted);
+            var observer = new EventObserver<TEvent, TContext, TModel>(onNext, onCompleted);
             return Observe(observer);
         }
 
-        public IDisposable Observe(Action<TModel, TEvent, TContext> onNext)
+        public IDisposable Observe(Action<TEvent, TContext> onNext)
         {
-            var observer = new EventObserver<TModel, TEvent, TContext>(onNext);
+            var observer = new EventObserver<TEvent, TContext, TModel>(onNext);
             return Observe(observer);
         }
 
-        public IDisposable Observe(Action<TModel, TEvent, TContext> onNext, Action onCompleted)
+        public IDisposable Observe(Action<TEvent, TContext> onNext, Action onCompleted)
         {
-            var observer = new EventObserver<TModel, TEvent, TContext>(onNext, onCompleted);
+            var observer = new EventObserver<TEvent, TContext, TModel>(onNext, onCompleted);
             return Observe(observer);
         }
 
-        public IDisposable Observe(IEventObserver<TModel, TEvent, TContext> observer)
+        public IDisposable Observe(Action<TEvent, TModel> onNext)
+        {
+            var observer = new EventObserver<TEvent, TContext, TModel>(onNext);
+            return Observe(observer);
+        }
+
+        public IDisposable Observe(Action<TEvent, TModel> onNext, Action onCompleted)
+        {
+            var observer = new EventObserver<TEvent, TContext, TModel>(onNext, onCompleted);
+            return Observe(observer);
+        }
+
+        public IDisposable Observe(Action<TEvent, TContext, TModel> onNext)
+        {
+            var observer = new EventObserver<TEvent, TContext, TModel>(onNext);
+            return Observe(observer);
+        }
+
+        public IDisposable Observe(Action<TEvent, TContext, TModel> onNext, Action onCompleted)
+        {
+            var observer = new EventObserver<TEvent, TContext, TModel>(onNext, onCompleted);
+            return Observe(observer);
+        }
+
+        public IDisposable Observe(IEventObserver<TEvent, TContext, TModel> observer)
         {
             lock (_gate)
             {

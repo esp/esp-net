@@ -245,14 +245,14 @@ namespace Esp.Net
             return modelRouter.GetModelObservable();
         }
 
-        public IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TModel, TEvent>(object modelId, ObservationStage observationStage = ObservationStage.Normal)
+        public IEventObservable<TEvent, IEventContext, TModel> GetEventObservable<TEvent, TModel>(object modelId, ObservationStage observationStage = ObservationStage.Normal)
         {
             _state.ThrowIfHalted();
             IModelRouter<TModel> modelRouter = GetModelRouter<TModel>(modelId);
             return modelRouter.GetEventObservable<TEvent>(observationStage);
         }
 
-        public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TBaseEvent>(object modelId, Type subEventType, ObservationStage observationStage = ObservationStage.Normal)
+        public IEventObservable<TBaseEvent, IEventContext, TModel> GetEventObservable<TBaseEvent, TModel>(object modelId, Type subEventType, ObservationStage observationStage = ObservationStage.Normal)
         {
             _state.ThrowIfHalted();
             IModelRouter<TModel> modelRouter = GetModelRouter<TModel>(modelId);

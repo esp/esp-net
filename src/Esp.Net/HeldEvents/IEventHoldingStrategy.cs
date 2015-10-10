@@ -18,13 +18,13 @@
 // ReSharper disable once CheckNamespace
 namespace Esp.Net
 {
-    public interface IEventHoldingStrategy<in TModel, in TEvent> where TEvent : IIdentifiableEvent
+    public interface IEventHoldingStrategy<in TEvent, in TModel> where TEvent : IIdentifiableEvent
     {
-        bool ShouldHold(TModel model, TEvent @event, IEventContext context);
-        IEventDescription GetEventDescription(TModel model, TEvent @event);
+        bool ShouldHold(TEvent @event, IEventContext context, TModel model);
+        IEventDescription GetEventDescription(TEvent @event, TModel model);
     }
 
-    public interface IEventHoldingStrategy<in TModel, in TEvent, in TBaseEvent> : IEventHoldingStrategy<TModel, TEvent>
+    public interface IEventHoldingStrategy<in TEvent, in TBaseEvent, in TModel> : IEventHoldingStrategy<TEvent, TModel>
         where TEvent : IIdentifiableEvent, TBaseEvent
     {
     }

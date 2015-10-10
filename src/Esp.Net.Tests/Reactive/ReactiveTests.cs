@@ -57,7 +57,7 @@ namespace Esp.Net.Reactive
                 receivedEvent = e;
                 receivedContext = c;
             });
-            subject.OnNext(_model, 1, _eventContext);
+            subject.OnNext(1, _eventContext, _model);
             receivedModel.ShouldBeSameAs(_model);
             receivedEvent.ShouldBe(1);
             receivedContext.ShouldBeSameAs(_eventContext);
@@ -69,10 +69,10 @@ namespace Esp.Net.Reactive
             var subject = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
             int received = 0;
             var disposable = subject.Observe((m, e, c) => received = e);
-            subject.OnNext(_model, 1, _eventContext);
+            subject.OnNext(1, _eventContext, _model);
             Assert.AreEqual(1, received);
             disposable.Dispose();
-            subject.OnNext(_model, 2, _eventContext);
+            subject.OnNext(2, _eventContext, _model);
             Assert.AreEqual(1, received);
         }
 
@@ -84,7 +84,7 @@ namespace Esp.Net.Reactive
             subject
                 .Where((m, e, c) => e%2 == 0)
                 .Observe((m, e, c) => received.Add(e));
-            for (int i = 0; i < 10; i++) subject.OnNext(_model, i, _eventContext);
+            for (int i = 0; i < 10; i++) subject.OnNext(i, _eventContext, _model);
             Assert.IsTrue(received.SequenceEqual(new[] {0, 2, 4, 6, 8}));
         }
 
@@ -113,10 +113,10 @@ namespace Esp.Net.Reactive
             var stream = EventObservable.Merge(subject1, subject2);
             List<int> received = new List<int>();
             stream.Observe((m, e, c) => received.Add(e));
-            subject1.OnNext(_model, 1, _eventContext);
-            subject2.OnNext(_model, 2, _eventContext);
-            subject1.OnNext(_model, 3, _eventContext);
-            subject2.OnNext(_model, 4, _eventContext);
+            subject1.OnNext(1, _eventContext, _model);
+            subject2.OnNext(2, _eventContext, _model);
+            subject1.OnNext(3, _eventContext, _model);
+            subject2.OnNext(4, _eventContext, _model);
             Assert.IsTrue(received.SequenceEqual(new[] {1, 2, 3, 4}));
         }
 
@@ -126,10 +126,10 @@ namespace Esp.Net.Reactive
             List<int> received = new List<int>();
             var subject1 = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
             subject1.Take(3).Observe((m, e, c) => received.Add(e));
-            subject1.OnNext(_model, 1, _eventContext);
-            subject1.OnNext(_model, 2, _eventContext);
-            subject1.OnNext(_model, 3, _eventContext);
-            subject1.OnNext(_model, 4, _eventContext);
+            subject1.OnNext(1, _eventContext, _model);
+            subject1.OnNext(2, _eventContext, _model);
+            subject1.OnNext(3, _eventContext, _model);
+            subject1.OnNext(4, _eventContext, _model);
             Assert.IsTrue(received.SequenceEqual(new[] {1, 2, 3}));
         }
 

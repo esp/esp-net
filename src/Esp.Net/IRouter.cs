@@ -28,8 +28,8 @@ namespace Esp.Net
 
         IModelObservable<TModel> GetModelObservable<TModel>(object modelId);
   
-        IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TModel, TEvent>(object modelId, ObservationStage observationStage = ObservationStage.Normal);
-        IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TBaseEvent>(object modelId, Type subEventType, ObservationStage observationStage = ObservationStage.Normal);
+        IEventObservable<TEvent, IEventContext, TModel> GetEventObservable<TEvent, TModel>(object modelId, ObservationStage observationStage = ObservationStage.Normal);
+        IEventObservable<TBaseEvent, IEventContext, TModel> GetEventObservable<TBaseEvent, TModel>(object modelId, Type subEventType, ObservationStage observationStage = ObservationStage.Normal);
   
         void PublishEvent<TEvent>(object modelId, TEvent @event);
         void PublishEvent(object modelId, object @event);

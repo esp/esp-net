@@ -46,8 +46,8 @@ namespace Esp.Net
         private interface IModelRouter<out TModel> : IModelRouter
         {
             IModelObservable<TModel> GetModelObservable();
-            IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal);
-            IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type subEventType, ObservationStage observationStage = ObservationStage.Normal);
+            IEventObservable<TEvent, IEventContext, TModel> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal);
+            IEventObservable<TBaseEvent, IEventContext, TModel> GetEventObservable<TBaseEvent>(Type subEventType, ObservationStage observationStage = ObservationStage.Normal);
         }
 
         private interface IModelChangedEventPublisher
@@ -201,10 +201,10 @@ namespace Esp.Net
             /// <param name="subEventType"></param>
             /// <param name="observationStage"></param>
             /// <returns></returns>
-            public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type subEventType, ObservationStage observationStage = ObservationStage.Normal)
+            public IEventObservable<TBaseEvent, IEventContext, TModel> GetEventObservable<TBaseEvent>(Type subEventType, ObservationStage observationStage = ObservationStage.Normal)
             {
                 Guard.Requires<ArgumentException>(typeof(TBaseEvent).IsAssignableFrom(subEventType), "Event type {0} must derive from {1}", subEventType, typeof(TBaseEvent));
-                return EventObservable.Create<TModel, TBaseEvent, IEventContext>(o =>
+                return EventObservable.Create<TBaseEvent, IEventContext, TModel>(o =>
                 {
                     var getEventStreamMethod = GetEventObservableMethodInfo.MakeGenericMethod(subEventType);
                     try
@@ -225,9 +225,9 @@ namespace Esp.Net
             /// <typeparam name="TEvent">Type type of event to observe</typeparam>
             /// <param name="observationStage">The stage in the event processing workflow you wish to observe at</param>
             /// <returns></returns>
-            public IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal)
+            public IEventObservable<TEvent, IEventContext, TModel> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal)
             {
-                return EventObservable.Create<TModel, TEvent, IEventContext>(o =>
+                return EventObservable.Create<TEvent, IEventContext, TModel>(o =>
                 {
                     _state.ThrowIfHalted();
                     EventSubjects<TEvent> eventSubjects;
@@ -243,7 +243,7 @@ namespace Esp.Net
                             eventSubjects = (EventSubjects<TEvent>) _eventSubjects[typeof (TEvent)];
                         }
                     }
-                    EventSubject<TModel, TEvent, IEventContext> subject;
+                    EventSubject<TEvent, IEventContext, TModel> subject;
                     switch (observationStage)
                     {
                         case ObservationStage.Preview:
@@ -277,17 +277,17 @@ namespace Esp.Net
                         {
                             var eventContext = new EventContext();
                             eventContext.CurrentStage = ObservationStage.Preview;
-                            eventSubjects.PreviewSubject.OnNext(_model, @event, eventContext);
+                            eventSubjects.PreviewSubject.OnNext(@event, eventContext, _model);
                             if (eventContext.IsCommitted) throw new InvalidOperationException(string.Format("Committing event [{0}] at the ObservationStage.Preview is invalid", @event.GetType().Name));
                             if (!eventContext.IsCanceled && !IsRemoved)
                             {
                                 eventContext.CurrentStage = ObservationStage.Normal;
-                                eventSubjects.NormalSubject.OnNext(_model, @event, eventContext);
+                                eventSubjects.NormalSubject.OnNext(@event, eventContext, _model);
                                 if (eventContext.IsCanceled) throw new InvalidOperationException(string.Format("Cancelling event [{0}] at the ObservationStage.Normal is invalid", @event.GetType().Name));
                                 if (eventContext.IsCommitted && !IsRemoved)
                                 {
                                     eventContext.CurrentStage = ObservationStage.Committed;
-                                    eventSubjects.CommittedSubject.OnNext(_model, @event, eventContext);
+                                    eventSubjects.CommittedSubject.OnNext(@event, eventContext, _model);
                                     if (eventContext.IsCanceled) throw new InvalidOperationException(string.Format("Cancelling event [{0}] at the ObservationStage.Committed is invalid", @event.GetType().Name));
                                 }
                             }
@@ -304,14 +304,14 @@ namespace Esp.Net
             {
                 public EventSubjects(IEventObservationRegistrar observationRegistrar)
                 {
-                    PreviewSubject = new EventSubject<TModel, TEvent, IEventContext>(observationRegistrar);
-                    NormalSubject = new EventSubject<TModel, TEvent, IEventContext>(observationRegistrar);
-                    CommittedSubject = new EventSubject<TModel, TEvent, IEventContext>(observationRegistrar);
+                    PreviewSubject = new EventSubject<TEvent, IEventContext, TModel>(observationRegistrar);
+                    NormalSubject = new EventSubject<TEvent, IEventContext, TModel>(observationRegistrar);
+                    CommittedSubject = new EventSubject<TEvent, IEventContext, TModel>(observationRegistrar);
                 }
 
-                public EventSubject<TModel, TEvent, IEventContext> PreviewSubject { get; private set; }
-                public EventSubject<TModel, TEvent, IEventContext> NormalSubject { get; private set; }
-                public EventSubject<TModel, TEvent, IEventContext> CommittedSubject { get; private set; }
+                public EventSubject<TEvent, IEventContext, TModel> PreviewSubject { get; private set; }
+                public EventSubject<TEvent, IEventContext, TModel> NormalSubject { get; private set; }
+                public EventSubject<TEvent, IEventContext, TModel> CommittedSubject { get; private set; }
             }
         }
     }

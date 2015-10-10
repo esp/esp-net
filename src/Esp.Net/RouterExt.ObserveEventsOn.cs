@@ -127,7 +127,7 @@ namespace Esp.Net
 
             private void ObserveBaseEvents<TBaseEvent>(MethodInfo method, ObserveBaseEventAttribute[] observeEventAttributes)
             {
-                var eventObservables = new IEventObservable<TModel, TBaseEvent, IEventContext>[observeEventAttributes.Length];
+                var eventObservables = new IEventObservable<TBaseEvent, IEventContext, TModel>[observeEventAttributes.Length];
                 Type baseEventType = typeof(TBaseEvent);
                 EnsureObserveEventSignatureCorrect(method, baseEventType);
                 for (int i = 0; i < observeEventAttributes.Length; i++)
