@@ -28,9 +28,6 @@ namespace Esp.Net
         IDisposable Observe(Action<TEvent, TContext> onNext);
         IDisposable Observe(Action<TEvent, TContext> onNext, Action onCompleted);
 
-        IDisposable Observe(Action<TEvent, TModel> onNext);
-        IDisposable Observe(Action<TEvent, TModel> onNext, Action onCompleted);
-
         IDisposable Observe(Action<TEvent, TContext, TModel> onNext);
         IDisposable Observe(Action<TEvent, TContext, TModel> onNext, Action onCompleted);
         
@@ -185,18 +182,6 @@ namespace Esp.Net
         }
 
         public IDisposable Observe(Action<TEvent, TContext> onNext, Action onCompleted)
-        {
-            var streamObserver = new EventObserver<TEvent, TContext, TModel>(onNext, onCompleted);
-            return Observe(streamObserver);
-        }
-
-        public IDisposable Observe(Action<TEvent, TModel> onNext)
-        {
-            var streamObserver = new EventObserver<TEvent, TContext, TModel>(onNext);
-            return Observe(streamObserver);
-        }
-
-        public IDisposable Observe(Action<TEvent, TModel> onNext, Action onCompleted)
         {
             var streamObserver = new EventObserver<TEvent, TContext, TModel>(onNext, onCompleted);
             return Observe(streamObserver);

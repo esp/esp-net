@@ -260,7 +260,7 @@ namespace Esp.Net.HeldEvents
         public void CanHoldByBaseEvent()
         {
             List<BaseEvent> receivedBarEvents = new List<BaseEvent>();
-            IEventObservable<BaseEvent, IEventContext, TestModel> fooEventStream = _router.GetEventObservable<FooEvent, BaseEvent, TestModel>(_model.Id, new HoldBaseEventsBasedOnModelStrategy<FooEvent, BaseEvent>());
+            IEventObservable<BaseEvent, IEventContext, TestModel> fooEventStream = _router.GetEventObservable(_model.Id, new HoldBaseEventsBasedOnModelStrategy<FooEvent, BaseEvent>());
             IEventObservable<BaseEvent, IEventContext, TestModel> barEventStream = _router.GetEventObservable(_model.Id, new HoldBaseEventsBasedOnModelStrategy<BarEvent, BaseEvent>());
             var stream = EventObservable.Merge(fooEventStream, barEventStream);
             stream.Observe((baseEvent, context, model) =>

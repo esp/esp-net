@@ -18,32 +18,42 @@ using System;
 
 namespace Esp.Net.Reactive
 {
-    public class StubEventObservable<T> : IEventObservable<T, int, IEventContext>
+    public class StubEventObservable<TModel> : IEventObservable<int, IEventContext, TModel>
     {
         public bool IsDisposed { get; private set; }
         public bool IsObserved { get; set; }
 
-        public IDisposable Observe(Action<T, int> onNext)
+        public IDisposable Observe(Action<int> onNext)
         {
             return EspDisposable.Create(() => IsDisposed = true);
         }
 
-        public IDisposable Observe(Action<T, int> onNext, Action onCompleted)
+        public IDisposable Observe(Action<int> onNext, Action onCompleted)
         {
             return EspDisposable.Create(() => IsDisposed = true);
         }
 
-        public IDisposable Observe(Action<T, int, IEventContext> onNext)
+        public IDisposable Observe(Action<int, IEventContext> onNext)
         {
             return EspDisposable.Create(() => IsDisposed = true);
         }
 
-        public IDisposable Observe(Action<T, int, IEventContext> onNext, Action onCompleted)
+        public IDisposable Observe(Action<int, IEventContext> onNext, Action onCompleted)
         {
             return EspDisposable.Create(() => IsDisposed = true);
         }
 
-        public IDisposable Observe(IEventObserver<T, int, IEventContext> observer)
+        public IDisposable Observe(Action<int, IEventContext, TModel> onNext)
+        {
+            return EspDisposable.Create(() => IsDisposed = true);
+        }
+
+        public IDisposable Observe(Action<int, IEventContext, TModel> onNext, Action onCompleted)
+        {
+            return EspDisposable.Create(() => IsDisposed = true);
+        }
+
+        public IDisposable Observe(IEventObserver<int, IEventContext, TModel> observer)
         {
             return EspDisposable.Create(() => IsDisposed = true);
         }

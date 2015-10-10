@@ -83,8 +83,8 @@ namespace Esp.Net
         protected void PublishEventWithMultipeSubsequentEvents(int numberOfSubsequentEvents)
         {
             _router
-                .GetEventObservable<TestModel, Event1>(_model1.Id)
-                .Where((m, e) => e.Payload != "subsequent")
+                .GetEventObservable<Event1, TestModel>(_model1.Id)
+                .Where((e, c, m) => e.Payload != "subsequent")
                 .Observe(
                     (model, @event) =>
                     {
@@ -263,9 +263,9 @@ namespace Esp.Net
             private EventObservationStageDetails<TEvent> WireUpObservationStage<TEvent>(ObservationStage stage) where TEvent : BaseEvent
             {
                 var details = new EventObservationStageDetails<TEvent>(stage);
-                details.ObservationDisposable = _router.GetEventObservable<TModel, TEvent>(_modelId, details.Stage)
+                details.ObservationDisposable = _router.GetEventObservable<TEvent, TModel>(_modelId, details.Stage)
                     .Observe(
-                        (model, @event, context) =>
+                        (@event, context, model) =>
                         {
                             details.ReceivedEvents.Add(@event);
                             var shouldCancel = @event.ShouldCancel && stage == @event.CancelAtStage && @event.CancelAtEventProcesserId == _id;

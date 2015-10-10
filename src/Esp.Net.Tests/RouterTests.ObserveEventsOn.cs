@@ -41,16 +41,16 @@ namespace Esp.Net
             }
 
             [Test]
-            public void ObserveAttribute_ObservesEventsWithHandler_Model_Event_Context()
+            public void ObserveAttribute_ObservesEventsWithHandler_Event_Context_Model()
             {
-                _router.PublishEvent(new EventsForHandlerWith_Model_Event_Context_Evt());
+                _router.PublishEvent(new EventsForHandlerWith_Event_Context_Model_Evt());
                 _stubEventProcessor.EventsWith_Model_Event_Context.ShouldBe(1);
             }
 
             [Test]
-            public void ObserveAttribute_ObservesEventsWithHandler_Model_Event()
+            public void ObserveAttribute_ObservesEventsWithHandler_Event_Model()
             {
-                _router.PublishEvent(new EventsForHandlerWith_Model_Event_Evt());
+                _router.PublishEvent(new EventsForHandlerWith_Event_Model_Evt());
                 _stubEventProcessor.EventsWith_Model_Event.ShouldBe(1);
             }
 
@@ -80,13 +80,6 @@ namespace Esp.Net
             {
                 _router.PublishEvent(new EventsForHandlerWith_Context_Evt());
                 _stubEventProcessor.EventsWith_Context.ShouldBe(1);
-            }
-
-            [Test]
-            public void ObserveAttribute_ObservesEventsWithHandler_Model_Context()
-            {
-                _router.PublishEvent(new EventsWith_Model_Context_Evt());
-                _stubEventProcessor.EventsWith_Model_Context.ShouldBe(1);
             }
 
             [Test]
@@ -121,9 +114,9 @@ namespace Esp.Net
             {
                 _router.PublishEvent(new WorkflowTestEvent());
                 _stubEventProcessor.WorkflowTestEvents.Count.ShouldBe(3);
-                _stubEventProcessor.WorkflowTestEvents[0].Item3.ShouldBe(ObservationStage.Preview);
-                _stubEventProcessor.WorkflowTestEvents[1].Item3.ShouldBe(ObservationStage.Normal);
-                _stubEventProcessor.WorkflowTestEvents[2].Item3.ShouldBe(ObservationStage.Committed);
+                _stubEventProcessor.WorkflowTestEvents[0].Item2.ShouldBe(ObservationStage.Preview);
+                _stubEventProcessor.WorkflowTestEvents[1].Item2.ShouldBe(ObservationStage.Normal);
+                _stubEventProcessor.WorkflowTestEvents[2].Item2.ShouldBe(ObservationStage.Committed);
             }
 
             [Test]
@@ -133,12 +126,12 @@ namespace Esp.Net
                 _router.PublishEvent(new BarEvent());
                 _router.PublishEvent(new BazEvent());
                 _stubEventProcessor.BaseEvents.Count.ShouldBe(3);
-                _stubEventProcessor.BaseEvents[0].Item2.GetType().ShouldBe(typeof(FooEvent));
-                _stubEventProcessor.BaseEvents[0].Item3.ShouldBe(ObservationStage.Preview);
-                _stubEventProcessor.BaseEvents[1].Item2.GetType().ShouldBe(typeof(BarEvent));
-                _stubEventProcessor.BaseEvents[1].Item3.ShouldBe(ObservationStage.Normal);
-                _stubEventProcessor.BaseEvents[2].Item2.GetType().ShouldBe(typeof(BazEvent));
-                _stubEventProcessor.BaseEvents[2].Item3.ShouldBe(ObservationStage.Committed);
+                _stubEventProcessor.BaseEvents[0].Item1.GetType().ShouldBe(typeof(FooEvent));
+                _stubEventProcessor.BaseEvents[0].Item2.ShouldBe(ObservationStage.Preview);
+                _stubEventProcessor.BaseEvents[1].Item1.GetType().ShouldBe(typeof(BarEvent));
+                _stubEventProcessor.BaseEvents[1].Item2.ShouldBe(ObservationStage.Normal);
+                _stubEventProcessor.BaseEvents[2].Item1.GetType().ShouldBe(typeof(BazEvent));
+                _stubEventProcessor.BaseEvents[2].Item2.ShouldBe(ObservationStage.Committed);
             }
 
             public class TestModel { }
@@ -153,9 +146,9 @@ namespace Esp.Net
 
             public class BaseEvent { }
 
-            public class EventsForHandlerWith_Model_Event_Context_Evt { }
+            public class EventsForHandlerWith_Event_Context_Model_Evt { }
 
-            public class EventsForHandlerWith_Model_Event_Evt { }
+            public class EventsForHandlerWith_Event_Model_Evt { }
 
             public class EventsForHandlerWith_Model_Evt { }
 
@@ -167,21 +160,19 @@ namespace Esp.Net
 
             public class EventsWith_Event_Context_Evt { }
 
-            public class EventsWith_Model_Context_Evt { }
-
             public class StubEventProcessor
             {
                 public StubEventProcessor(IRouter<TestModel> router)
                 {
-                    FooEvents = new List<Tuple<TestModel, FooEvent, IEventContext>>();
-                    BarEvents = new List<Tuple<TestModel, BarEvent, IEventContext>>();
-                    WorkflowTestEvents = new List<Tuple<TestModel, WorkflowTestEvent, ObservationStage>>();
-                    BaseEvents = new List<Tuple<TestModel, BaseEvent, ObservationStage>>();
+                    FooEvents = new List<Tuple<FooEvent, IEventContext, TestModel>>();
+                    BarEvents = new List<Tuple<BarEvent, IEventContext, TestModel>>();
+                    WorkflowTestEvents = new List<Tuple<WorkflowTestEvent, ObservationStage, TestModel>>();
+                    BaseEvents = new List<Tuple<BaseEvent, ObservationStage, TestModel>>();
                     router.ObserveEventsOn(this);
                 }
 
-                public List<Tuple<TestModel, FooEvent, IEventContext>> FooEvents { get; private set; }
-                public List<Tuple<TestModel, BarEvent, IEventContext>> BarEvents { get; private set; }
+                public List<Tuple<FooEvent, IEventContext, TestModel>> FooEvents { get; private set; }
+                public List<Tuple<BarEvent, IEventContext, TestModel>> BarEvents { get; private set; }
                 public int EventsWith_Model_Event_Context { get; private set; }
                 public int EventsWith_Model_Event { get; private set; }
                 public int EventsWith_Model { get; private set; }
@@ -189,30 +180,29 @@ namespace Esp.Net
                 public int EventsWith_Context { get; private set; }
                 public int EventsWith_NoArgs { get; private set; }
                 public int EventsWith_Event_Context { get; private set; }
-                public int EventsWith_Model_Context { get; private set; }
-                public List<Tuple<TestModel, WorkflowTestEvent, ObservationStage>> WorkflowTestEvents { get; private set; }
-                public List<Tuple<TestModel, BaseEvent, ObservationStage>> BaseEvents { get; private set; }
+                public List<Tuple<WorkflowTestEvent, ObservationStage, TestModel>> WorkflowTestEvents { get; private set; }
+                public List<Tuple<BaseEvent, ObservationStage, TestModel>> BaseEvents { get; private set; }
 
                 [ObserveEvent(typeof(FooEvent))]
-                public void ObserveFooEvent(TestModel model, FooEvent e, IEventContext context)
+                public void ObserveFooEvent(FooEvent e, IEventContext context, TestModel model)
                 {
-                    FooEvents.Add(Tuple.Create(model, e, context));
+                    FooEvents.Add(Tuple.Create(e, context, model));
                 }
 
                 [ObserveEvent(typeof(BarEvent), ObservationStage.Preview)]
-                public void ObserveBarEvent(TestModel model, BarEvent e, IEventContext context)
+                public void ObserveBarEvent(BarEvent e, IEventContext context, TestModel model)
                 {
-                    BarEvents.Add(Tuple.Create(model, e, context));
+                    BarEvents.Add(Tuple.Create(e, context, model));
                 }
 
-                [ObserveEvent(typeof(EventsForHandlerWith_Model_Event_Context_Evt))]
-                public void ObserveObservesEventsWith_Model_Event_Context_Evt(TestModel model, EventsForHandlerWith_Model_Event_Context_Evt e, IEventContext context)
+                [ObserveEvent(typeof(EventsForHandlerWith_Event_Context_Model_Evt))]
+                public void ObserveObservesEventsWith_Model_Event_Context_Evt(EventsForHandlerWith_Event_Context_Model_Evt e, IEventContext context, TestModel model)
                 {
                     EventsWith_Model_Event_Context++;
                 }
 
-                [ObserveEvent(typeof(EventsForHandlerWith_Model_Event_Evt))]
-                public void ObserveObservesEventsWith_Model_Event_Evt(TestModel model, EventsForHandlerWith_Model_Event_Evt e)
+                [ObserveEvent(typeof(EventsForHandlerWith_Event_Model_Evt))]
+                public void ObserveObservesEventsWith_Model_Event_Evt(EventsForHandlerWith_Event_Model_Evt e, TestModel model)
                 {
                     EventsWith_Model_Event++;
                 }
@@ -241,12 +231,6 @@ namespace Esp.Net
                     EventsWith_Context++;
                 }
 
-                [ObserveEvent(typeof(EventsWith_Model_Context_Evt))]
-                public void ObserveObservesEventsWith_Event__Context_Evt(TestModel model, IEventContext context)
-                {
-                    EventsWith_Model_Context++;
-                }
-
                 [ObserveEvent(typeof(EventsForHandlerWith_NoArgs_Evt))]
                 public void ObserveObservesEventsWith_NoArgs_Evt()
                 {
@@ -254,34 +238,34 @@ namespace Esp.Net
                 }
 
                 [ObserveEvent(typeof(WorkflowTestEvent), ObservationStage.Preview)]
-                private void ObservePreviewTestEventAtPreview(TestModel model, WorkflowTestEvent e, IEventContext context)
+                private void ObservePreviewTestEventAtPreview(WorkflowTestEvent e, IEventContext context, TestModel model)
                 {
-                    WorkflowTestEvents.Add(Tuple.Create(model, e, ObservationStage.Preview));
+                    WorkflowTestEvents.Add(Tuple.Create(e, ObservationStage.Preview, model));
                 }
 
                 [ObserveEvent(typeof(WorkflowTestEvent))]
-                public void ObservePreviewTestEventAtNormal(TestModel model, WorkflowTestEvent e, IEventContext context)
+                public void ObservePreviewTestEventAtNormal(WorkflowTestEvent e, IEventContext context, TestModel model)
                 {
-                    WorkflowTestEvents.Add(Tuple.Create(model, e, ObservationStage.Normal));
+                    WorkflowTestEvents.Add(Tuple.Create(e, ObservationStage.Normal, model));
                     context.Commit();
                 }
 
                 [ObserveEvent(typeof(WorkflowTestEvent), ObservationStage.Committed)]
-                public void ObservePreviewTestEventAtCommitted(TestModel model, WorkflowTestEvent e)
+                public void ObservePreviewTestEventAtCommitted(WorkflowTestEvent e, TestModel model)
                 {
-                    WorkflowTestEvents.Add(Tuple.Create(model, e, ObservationStage.Committed));
+                    WorkflowTestEvents.Add(Tuple.Create(e, ObservationStage.Committed, model));
                 }
 
                 [ObserveBaseEvent(typeof(FooEvent), typeof(BaseEvent), ObservationStage.Preview)]
                 [ObserveBaseEvent(typeof(BarEvent), typeof(BaseEvent))]
                 [ObserveBaseEvent(typeof(BazEvent), typeof(BaseEvent), ObservationStage.Committed)]
-                private void ObserveBaseEvent(TestModel model, BaseEvent e, IEventContext context)
+                private void ObserveBaseEvent(BaseEvent e, IEventContext context, TestModel model)
                 {
-                    BaseEvents.Add(Tuple.Create(model, e, context.CurrentStage));
+                    BaseEvents.Add(Tuple.Create(e, context.CurrentStage, model));
                 }
 
                 [ObserveEvent(typeof(BazEvent))]
-                public void ObserveBaseEventHelper(TestModel model, BazEvent e, IEventContext context)
+                public void ObserveBaseEventHelper(BazEvent e, IEventContext context, TestModel model)
                 {
                     context.Commit();
                 }

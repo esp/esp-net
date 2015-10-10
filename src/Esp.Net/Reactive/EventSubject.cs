@@ -80,18 +80,6 @@ namespace Esp.Net
             return Observe(observer);
         }
 
-        public IDisposable Observe(Action<TEvent, TModel> onNext)
-        {
-            var observer = new EventObserver<TEvent, TContext, TModel>(onNext);
-            return Observe(observer);
-        }
-
-        public IDisposable Observe(Action<TEvent, TModel> onNext, Action onCompleted)
-        {
-            var observer = new EventObserver<TEvent, TContext, TModel>(onNext, onCompleted);
-            return Observe(observer);
-        }
-
         public IDisposable Observe(Action<TEvent, TContext, TModel> onNext)
         {
             var observer = new EventObserver<TEvent, TContext, TModel>(onNext);

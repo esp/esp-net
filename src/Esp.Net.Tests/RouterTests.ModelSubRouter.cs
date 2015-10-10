@@ -21,11 +21,11 @@ namespace Esp.Net
             [Test]
             public void CanPublishAndObserveProxiedEvent()
             {
-                List<Tuple<SubTestModel, Event1>> receivedSubModels = new List<Tuple<SubTestModel, Event1>>();
-                _modelRouter.GetEventObservable<Event1>().Observe((m, e, c) => receivedSubModels.Add(Tuple.Create(m, e)));
+                List<Tuple<Event1, IEventContext, SubTestModel>> receivedSubModels = new List<Tuple<Event1, IEventContext, SubTestModel>>();
+                _modelRouter.GetEventObservable<Event1>().Observe((e, c, m) => receivedSubModels.Add(Tuple.Create(e, c, m)));
                 _modelRouter.PublishEvent(new Event1());
                 receivedSubModels.Count.ShouldBe(1);
-                receivedSubModels[0].Item1.ShouldBe(_model1.SubTestModel);
+                receivedSubModels[0].Item3.ShouldBe(_model1.SubTestModel);
             }
 
             [Test]

@@ -42,7 +42,7 @@ namespace Esp.Net
             return EventObservable.Create<TBaseEvent, IEventContext, TModel>(
                 o =>
                 {
-                    var getEventStreamMethod = GetEventObservableMethodInfo.MakeGenericMethod(typeof(TModel), typeof(TEvent));
+                    var getEventStreamMethod = GetEventObservableMethodInfo.MakeGenericMethod(typeof(TEvent), typeof(TModel));
                     dynamic observable = getEventStreamMethod.Invoke(null, parameters);
                     return (IDisposable)observable.Observe(o);                    
                 }

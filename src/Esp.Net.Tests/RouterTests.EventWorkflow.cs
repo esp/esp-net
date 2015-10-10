@@ -96,7 +96,7 @@ namespace Esp.Net
             [Test]
             public void PreAndPostProcessorOnModelInvokedDuringEventWorkflow()
             {
-                _router.GetEventObservable<TestModel5, Event1>(_model5.Id).Observe((m, e) => { /* noop */});
+                _router.GetEventObservable<Event1, TestModel5>(_model5.Id).Observe((e, c) => { /* noop */});
                 _router.PublishEvent(_model5.Id, new Event1());
                 _model5.PreProcessorInvocationCount.ShouldBe(1);
                 _model5.PostProcessorInvocationCount.ShouldBe(1);
@@ -204,8 +204,8 @@ namespace Esp.Net
                 {
                     var receivedEventCount = 0;
                     _router
-                        .GetEventObservable<TestModel, BaseEvent>(_model1.Id, typeof(Event1))
-                        .Observe((m, e) => receivedEventCount++);
+                        .GetEventObservable<BaseEvent, TestModel>(_model1.Id, typeof(Event1))
+                        .Observe((e, c, m) => receivedEventCount++);
                     _router.PublishEvent(_model1.Id, new Event1());
                     receivedEventCount.ShouldBe(1);
                 }
@@ -213,7 +213,7 @@ namespace Esp.Net
                 [Test]
                 public void ThrowsIfSubTypeDoesntDeriveFromBase()
                 {
-                    Assert.Throws<ArgumentException>(() => _router.GetEventObservable<TestModel, BaseEvent>(_model1.Id, typeof(string)));
+                    Assert.Throws<ArgumentException>(() => _router.GetEventObservable<BaseEvent, TestModel>(_model1.Id, typeof(string)));
                 }
 
                 [Test]
@@ -221,11 +221,11 @@ namespace Esp.Net
                 {
                     var receivedEvents = new List<BaseEvent>();
                     var stream = EventObservable.Merge(
-                        _router.GetEventObservable<TestModel, BaseEvent>(_model1.Id, typeof(Event1)),
-                        _router.GetEventObservable<TestModel, BaseEvent>(_model1.Id, typeof(Event2)),
-                        _router.GetEventObservable<TestModel, BaseEvent>(_model1.Id, typeof(Event3))
+                        _router.GetEventObservable<BaseEvent, TestModel>(_model1.Id, typeof(Event1)),
+                        _router.GetEventObservable<BaseEvent, TestModel>(_model1.Id, typeof(Event2)),
+                        _router.GetEventObservable<BaseEvent, TestModel>(_model1.Id, typeof(Event3))
                     );
-                    stream.Observe((model, baseEvent, context) =>
+                    stream.Observe((baseEvent, context, model) =>
                     {
                         receivedEvents.Add(baseEvent);
                     });
@@ -371,7 +371,7 @@ namespace Esp.Net
                 public void WhenEventProcessingWorkflowFinishedModelChangedEventIsRaised()
                 {
                     var receivedEvents = new List<ModelChangedEvent<TestModel>>();
-                    _router.GetEventObservable<TestModel3, ModelChangedEvent<TestModel>>(_model3.Id).Observe((m, e) =>
+                    _router.GetEventObservable<ModelChangedEvent<TestModel>, TestModel3>(_model3.Id).Observe((e, c, m) =>
                     {
                         receivedEvents.Add(e);
                     });
@@ -384,7 +384,7 @@ namespace Esp.Net
                 [Test]
                 public void ObservingTheSameModelTypesChangedEventThrows()
                 {
-                    _router.GetEventObservable<TestModel, ModelChangedEvent<TestModel>>(_model2.Id).Observe((m, e) =>
+                    _router.GetEventObservable<ModelChangedEvent<TestModel>, TestModel>(_model2.Id).Observe((e, c, m) =>
                     {
                     });
                     _router.PublishEvent(_model1.Id, new Event1());
