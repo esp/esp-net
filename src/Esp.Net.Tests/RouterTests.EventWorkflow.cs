@@ -241,6 +241,22 @@ namespace Esp.Net
                     router.PublishEvent(new Event1());
                     Assert.Fail();
                 }
+
+                public class Foo<T> : BaseEvent
+                { }
+
+                [Test]
+                public void Issue45TestCase_OpenGenerics()
+                {
+                    var router = new Router<TestModel>(new TestModel());
+                    var stream = EventObservable.Merge<BaseEvent, IEventContext, TestModel>(
+                        router.GetEventObservable<Foo<string>>(),
+                        router.GetEventObservable<Foo<int>>()
+                    );
+                    stream.Observe((ev, model) => Assert.Pass());
+                    router.PublishEvent(new Foo<string>());
+                    Assert.Fail();
+                }
             }
 
             public class ExecuteEvent : RouterTests
