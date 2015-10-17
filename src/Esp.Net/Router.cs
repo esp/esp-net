@@ -259,6 +259,11 @@ namespace Esp.Net
             return modelRouter.GetEventObservable<TBaseEvent>(subEventType, observationStage);
         }
 
+        public IRouter<TModel> CreateModelRouter<TModel>(object modelId)
+        {
+            return new Router<TModel>(modelId, this);
+        } 
+
         private void PurgeEventQueues()
         {
             if (_state.CurrentStatus == Status.Idle)

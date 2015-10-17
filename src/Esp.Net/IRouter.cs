@@ -25,6 +25,7 @@ namespace Esp.Net
         void AddModel<TModel>(object modelId, TModel model, IPostEventProcessor<TModel> postEventProcessor);
         void AddModel<TModel>(object modelId, TModel model, IPreEventProcessor<TModel> preEventProcessor, IPostEventProcessor<TModel> postEventProcessor);
         void RemoveModel(object modelId);
+        IRouter<TModel> CreateModelRouter<TModel>(object modelId);
 
         IModelObservable<TModel> GetModelObservable<TModel>(object modelId);
   

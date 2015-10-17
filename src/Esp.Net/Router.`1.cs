@@ -15,6 +15,7 @@
 #endregion
 
 using System;
+using Esp.Net.Utils;
 
 namespace Esp.Net
 {
@@ -22,91 +23,110 @@ namespace Esp.Net
     {
         private object _modelIid;
         private readonly IRouter _underlying;
+        
+        public Router()
+        {
+            _underlying = new Router(new CurrentThreadDispatcher());
+        }
+
+        public Router(IRouterDispatcher routerDispatcher)
+        {
+            Guard.Requires<ArgumentNullException>(routerDispatcher != null, "routerDispatcher can not be null");
+            _underlying = new Router(routerDispatcher);
+        }
 
         public Router(TModel model)
-            : this(model, new CurrentThreadDispatcher(), null)
         {
-        }
-
-        public Router(TModel model, IRouterDispatcher routerDispatcher)
-            :this(model, routerDispatcher, null)
-        {
-
-        }
-
-        public Router(TModel model, ITerminalErrorHandler errorHandler)
-            : this(model, new CurrentThreadDispatcher(), errorHandler)
-        {
-
-        }
-
-        public Router(TModel model, IRouterDispatcher routerDispatcher, ITerminalErrorHandler errorHandler)
-        {
-            _underlying = new Router(routerDispatcher, errorHandler);
+            Guard.Requires<ArgumentNullException>(model != null, "model can not be null");
+            _underlying = new Router(new CurrentThreadDispatcher());
             AddModelInternal(model);
         }
 
-        public Router(TModel model, IRouter underlying)
+        public Router(TModel model, IRouterDispatcher routerDispatcher)
         {
-            _underlying = underlying;
+            Guard.Requires<ArgumentNullException>(model != null, "model can not be null");
+            Guard.Requires<ArgumentNullException>(routerDispatcher != null, "routerDispatcher can not be null");
+            _underlying = new Router(routerDispatcher);
             AddModelInternal(model);
         }
 
         public Router(object modelId, IRouter underlying)
         {
+            Guard.Requires<ArgumentNullException>(modelId != null, "modelId can not be null");
+            Guard.Requires<ArgumentNullException>(underlying != null, "underlying IRouter can not be null");
             _underlying = underlying;
             _modelIid = modelId;
         }
 
+        public void SetModel(TModel model)
+        {
+            AddModelInternal(model);
+        }
+
         public IModelObservable<TModel> GetModelObservable()
         {
+            if (_modelIid == null) ThrowAsModelNotSet();
             return _underlying.GetModelObservable<TModel>(_modelIid);
         }
 
         public IEventObservable<TEvent, IEventContext, TModel> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal)
         {
+            if (_modelIid == null) ThrowAsModelNotSet();
             return _underlying.GetEventObservable<TEvent, TModel>(_modelIid, observationStage);
         }
 
         public IEventObservable<TBaseEvent, IEventContext, TModel> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal)
         {
+            if (_modelIid == null) ThrowAsModelNotSet();
             return _underlying.GetEventObservable<TBaseEvent, TModel>(_modelIid, eventType, observationStage);
         }
 
         public void PublishEvent<TEvent>(TEvent @event)
         {
+            if (_modelIid == null) ThrowAsModelNotSet();
             _underlying.PublishEvent(_modelIid, @event);
         }
 
         public void PublishEvent(object @event)
         {
+            if (_modelIid == null) ThrowAsModelNotSet();
             _underlying.PublishEvent(_modelIid, @event);
         }
 
         public void ExecuteEvent<TEvent>(TEvent @event)
         {
+            if (_modelIid == null) ThrowAsModelNotSet();
             _underlying.ExecuteEvent(_modelIid, @event);
         }
 
         public void ExecuteEvent(object @event)
         {
+            if (_modelIid == null) ThrowAsModelNotSet();
             _underlying.ExecuteEvent(_modelIid, @event);
         }
 
         public void RunAction(Action<TModel> action)
         {
+            if (_modelIid == null) ThrowAsModelNotSet();
             _underlying.RunAction(_modelIid, action);
         }
 
         public void RunAction(Action action)
         {
+            if (_modelIid == null) ThrowAsModelNotSet();
             _underlying.RunAction(_modelIid, action);
         }
 
         private void AddModelInternal(TModel model)
         {
+            Guard.Requires<InvalidOperationException>(_modelIid == null, "Model already set");
             _modelIid = Guid.NewGuid();
             _underlying.AddModel(_modelIid, model);
+        }
+
+        private void ThrowAsModelNotSet()
+        {
+            throw new InvalidOperationException("Model not set. You must call ruter.SetModel(model) passing the model.");
         }
     }
 }
