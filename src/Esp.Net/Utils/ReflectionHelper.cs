@@ -15,6 +15,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -22,22 +23,22 @@ namespace Esp.Net.Utils
 {
     internal class ReflectionHelper
     {
-        public static MethodInfo GetGenericMethodByArgumentCount(Type declaringType, string methodName, int numberOfTypeArguments, int numberOfArguments)
+        internal static MethodInfo GetGenericMethodByArgumentCount(Type declaringType, string methodName, int numberOfTypeArguments, int numberOfArguments)
         {
             return GetGenericMethodByArgumentCountInternal(declaringType, methodName, numberOfTypeArguments, numberOfArguments, null, null);
         }
 
-        public static MethodInfo GetGenericMethodByArgumentCount(Type declaringType, string methodName, int numberOfTypeArguments, int numberOfArguments, BindingFlags bindingFlags)
+        internal static MethodInfo GetGenericMethodByArgumentCount(Type declaringType, string methodName, int numberOfTypeArguments, int numberOfArguments, BindingFlags bindingFlags)
         {
             return GetGenericMethodByArgumentCountInternal(declaringType, methodName, numberOfTypeArguments, numberOfArguments, null, bindingFlags);
         }
 
-        public static MethodInfo GetGenericMethodByArgumentCount(Type declaringType, string methodName, int numberOfTypeArguments, int numberOfArguments, BindingFlags bindingFlags, Func<ParameterInfo[], bool> paramPredicate)
+        internal static MethodInfo GetGenericMethodByArgumentCount(Type declaringType, string methodName, int numberOfTypeArguments, int numberOfArguments, BindingFlags bindingFlags, Func<ParameterInfo[], bool> paramPredicate)
         {
             return GetGenericMethodByArgumentCountInternal(declaringType, methodName, numberOfTypeArguments, numberOfArguments, paramPredicate, bindingFlags);
         }
 
-        public static MethodInfo GetGenericMethodByArgumentCountInternal(
+        internal static MethodInfo GetGenericMethodByArgumentCountInternal(
             Type declaringType, 
             string methodName,
             int numberOfTypeArguments, 
@@ -51,13 +52,88 @@ namespace Esp.Net.Utils
                 : declaringType.GetMethods();
             var query =
                 from m in methodInfos
-                where
+                let match = 
                     m.Name == methodName &&
                     m.GetGenericArguments().Length == numberOfTypeArguments &&
                     m.GetParameters().Length == numberOfArguments
                     && predicate(m.GetParameters())
+                where match
                 select m;
             return query.Single();
+        }
+
+        internal static bool SharesBaseType(Type commonBaseType, params Type[] types)
+        {
+            return SharesBaseType(commonBaseType, types.ToList());
+        }
+
+        internal static bool SharesBaseType(Type commonBaseType, IEnumerable<Type> types)
+        {
+            Guard.Requires<ArgumentNullException>(commonBaseType != null, "commonBaseType can not be null");
+            bool? allTypesShareCommonBase = null;
+            foreach (Type t in types)
+            {
+                if (!allTypesShareCommonBase.HasValue) allTypesShareCommonBase = true; // default to true if we have any types
+                bool shares = false;
+                var type = t;
+                while (type != null)
+                {
+                    if (type == typeof(object)) break;
+                    if (commonBaseType == type)
+                    {
+                        shares = true;
+                        break;
+                    }
+                    type = type.BaseType;
+                }
+                if (!shares)
+                {
+                    allTypesShareCommonBase = false;
+                    break;
+                }
+            }
+            return allTypesShareCommonBase ?? false;
+        }
+
+        internal static bool TryGetCommonBaseType(out Type baseType, params Type[] types)
+        {
+            return TryGetCommonBaseType(out baseType, types.ToList());
+        }
+
+        internal static bool TryGetCommonBaseType(out Type baseType, IEnumerable<Type> types)
+        {
+            var inheritanceChains = new List<List<Type>>();
+            foreach (Type t in types)
+            {
+                List<Type> chain = new List<Type>();
+                var type = t;
+                while (type != null)
+                {
+                    if(type == typeof(object)) break;
+                    chain.Add(type);
+                    type = type.BaseType;
+                }
+                chain.Reverse();
+                inheritanceChains.Add(chain);
+            }
+            var j = 0;
+            baseType = null;
+            while (true)
+            {
+                Type commonBaseType = baseType ?? inheritanceChains[0][0];
+                bool shareSameBaseType = inheritanceChains.All(chain =>
+                {
+                    return chain.Count >= j -1
+                        ? chain[j] == commonBaseType
+                        : false;
+                });
+                if (shareSameBaseType)
+                    baseType = inheritanceChains[0][j];
+                else
+                    break;
+                j++;
+            }
+            return baseType != null;
         }
     }
 }

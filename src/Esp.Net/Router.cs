@@ -252,13 +252,6 @@ namespace Esp.Net
             return modelRouter.GetEventObservable<TEvent>(observationStage);
         }
 
-//        public IEventObservable<TBaseEvent, IEventContext, TModel> GetEventObservable<TBaseEvent, TModel>(object modelId, Type subEventType, ObservationStage observationStage = ObservationStage.Normal)
-//        {
-//            _state.ThrowIfHalted();
-//            IModelRouter<TModel> modelRouter = GetModelRouter<TModel>(modelId);
-//            return modelRouter.GetEventObservable<TBaseEvent>(subEventType, observationStage);
-//        }
-
         public IRouter<TModel> CreateModelRouter<TModel>(object modelId)
         {
             return new Router<TModel>(modelId, this);

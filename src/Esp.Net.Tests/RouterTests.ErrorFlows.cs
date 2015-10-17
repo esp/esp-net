@@ -57,11 +57,10 @@ namespace Esp.Net
             [Test]
             public void ObservingAPrivateEventThrowsAnInvalidOperationException()
             {
-                var ex = Assert.Throws<Exception>(() =>
-                {
-                    _router.GetEventObservable<PrivateBaseEvent, TestModel>(_model1.Id).Observe((model, ev) => { });
-                });
-                ex.Message.ShouldContain("Is this event scoped as private or internal");
+                _router.GetEventObservable<PrivateEvent, TestModel>(_model1.Id).Observe((model, ev) => { });
+                _router.PublishEvent(_model1.Id, new PrivateEvent());
+                _terminalErrorHandler.Errors.Count.ShouldBe(1);
+                _terminalErrorHandler.Errors[0].Message.ShouldContain("Is this event scoped as private or internal");
             }
 
             [Test]

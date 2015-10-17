@@ -94,6 +94,7 @@
     <Compile Include="Reactive\StubEventObservable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RouterTests.cs" />
+    <Compile Include="Utils\ReflectionHelperTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -38,6 +38,96 @@ namespace Esp.Net
             {
                 new CanObserveUsingWithNoParams().Run();
             }
+
+            [Test]
+            public void CanObserveUsingWithModel()
+            {
+                new CanObserveUsingWithModel().Run();
+            }
+
+            [Test]
+            public void CanObserveUsingWithEvent()
+            {
+                new CanObserveUsingWithEvent().Run();
+            }
+
+            [Test]
+            public void CanObserveUsingWithContext()
+            {
+                new CanObserveUsingWithContext().Run();
+            }
+
+            [Test]
+            public void CanObserveUsingWithModelAndEvent()
+            {
+                new CanObserveUsingWithModelAndEvent().Run();
+            }
+
+            [Test]
+            public void CanObserveUsingWithEventAndContext()
+            {
+                new CanObserveUsingWithEventAndContext().Run();
+            }
+
+            [Test]
+            public void CanObserveUsingWithModelAndEventAndContext()
+            {
+                new CanObserveUsingWithModelAndEventAndContext().Run();
+            }
+
+            [Test]
+            public void CanObserveUsingWithModelAndEventAndContextOrderUnimportant()
+            {
+                new CanObserveUsingWithModelAndEventAndContextOrderUnimportant().Run();
+            }
+
+            [Test]
+            public void CanObserveWithLessSpeificEventtype()
+            {
+                new CanObserveWithLessSpeificEventtype().Run();
+            }
+
+            [Test]
+            public void ObserveThrowsWhenThereAreAdditionalMethodParams()
+            {
+                new ObserveThrowsWhenThereAreAdditionalMethodParams().Run();
+            }
+
+            [Test]
+            public void ObserveThrowsWhenModelOfIncorrectType()
+            {
+                new ObserveThrowsWhenModelOfIncorrectType().Run();
+            }
+
+            [Test]
+            public void ObserveThrowsWhenThereAreDuplicateEvents()
+            {
+                new ObserveThrowsWhenThereAreDuplicateEvents().Run();
+            }
+
+            [Test]
+            public void ObserveThrowsWhenMultipleEventsDontShareSameBaseEvent_1()
+            {
+                new ObserveThrowsWhenMultipleEventsDontShareSameBaseEvent_1().Run();
+            }
+
+            [Test]
+            public void ObserveThrowsWhenMultipleEventsDontShareSameBaseEvent_2()
+            {
+                new ObserveThrowsWhenMultipleEventsDontShareSameBaseEvent_2().Run();
+            }
+
+            [Test]
+            public void CanObserveMultipleEventsByBaseEventType()
+            {
+                new CanObserveMultipleEventsByBaseEventType().Run();
+            }
+
+            [Test]
+            public void CanObserveMultipleEventsByBaseEventTypeAtCorrectStaage()
+            {
+                new CanObserveMultipleEventsByBaseEventTypeAtCorrectStaage().Run();
+            }
         }
 
         public class CanObserveUsingObserveAttribute : ObserveEventsOnBase
@@ -46,6 +136,7 @@ namespace Esp.Net
 
             protected override void RunTest()
             {
+                ObserveEventsOnThis();
                 Router.PublishEvent(new FooEvent());
                 _received.ShouldBe(true);
             }
@@ -63,6 +154,7 @@ namespace Esp.Net
 
             protected override void RunTest()
             {
+                ObserveEventsOnThis();
                 Router.PublishEvent(new FooEvent());
                 _received.ShouldBe(true);
             }
@@ -74,18 +166,335 @@ namespace Esp.Net
             }
         }
 
+
+        public class CanObserveUsingWithModel : ObserveEventsOnBase
+        {
+            public TestModel ReceivedModel;
+
+            protected override void RunTest()
+            {
+                ObserveEventsOnThis();
+                Router.PublishEvent(new FooEvent());
+                ReceivedModel.ShouldBe(Model);
+            }
+
+            [ObserveEvent(typeof(FooEvent))]
+            public void ObserveFooEvent(TestModel model)
+            {
+                ReceivedModel = model;
+            }
+        }
+
+        public class CanObserveUsingWithEvent : ObserveEventsOnBase
+        {
+            public FooEvent ReceivedEvent;
+
+            protected override void RunTest()
+            {
+                ObserveEventsOnThis();
+                var fooEvent = new FooEvent();
+                Router.PublishEvent(fooEvent);
+                ReceivedEvent.ShouldBe(fooEvent);
+            }
+
+            [ObserveEvent(typeof(FooEvent))]
+            public void ObserveFooEvent(FooEvent @event)
+            {
+                ReceivedEvent = @event;
+            }
+        }
+
+        public class CanObserveUsingWithContext : ObserveEventsOnBase
+        {
+            public bool ContextWasReceived;
+
+            protected override void RunTest()
+            {
+                ObserveEventsOnThis();
+                var fooEvent = new FooEvent();
+                Router.PublishEvent(fooEvent);
+                ContextWasReceived.ShouldBe(true);
+            }
+
+            [ObserveEvent(typeof(FooEvent))]
+            public void ObserveFooEvent(IEventContext context)
+            {
+                ContextWasReceived = context != null;
+            }
+        }
+
+        public class CanObserveUsingWithModelAndEvent : ObserveEventsOnBase
+        {
+            public FooEvent ReceivedEvent;
+            public TestModel ReceivedModel;
+
+            protected override void RunTest()
+            {
+                ObserveEventsOnThis();
+                var fooEvent = new FooEvent();
+                Router.PublishEvent(fooEvent);
+                ReceivedEvent.ShouldBe(fooEvent);
+                ReceivedModel.ShouldBe(Model);
+            }
+
+            [ObserveEvent(typeof(FooEvent))]
+            public void ObserveFooEvent(TestModel model, FooEvent e)
+            {
+                ReceivedModel = model;
+                ReceivedEvent = e;
+            }
+        }
+
+        public class CanObserveUsingWithEventAndContext : ObserveEventsOnBase
+        {
+            public FooEvent ReceivedEvent;
+            public bool ContextWasReceived;
+
+            protected override void RunTest()
+            {
+                ObserveEventsOnThis();
+                var fooEvent = new FooEvent();
+                Router.PublishEvent(fooEvent);
+                ReceivedEvent.ShouldBe(fooEvent);
+                ContextWasReceived.ShouldBe(true);
+            }
+
+            [ObserveEvent(typeof(FooEvent))]
+            public void ObserveFooEvent(FooEvent e, IEventContext context)
+            {
+                ReceivedEvent = e;
+                ContextWasReceived = context != null;
+            }
+        }
+
+        public class CanObserveUsingWithModelAndEventAndContext : ObserveEventsOnBase
+        {
+            public TestModel ReceivedModel;
+            public FooEvent ReceivedEvent;
+            public bool ContextWasReceived;
+
+            protected override void RunTest()
+            {
+                ObserveEventsOnThis();
+                var fooEvent = new FooEvent();
+                Router.PublishEvent(fooEvent);
+                ReceivedEvent.ShouldBe(fooEvent);
+                ContextWasReceived.ShouldBe(true);
+                ReceivedModel.ShouldBe(Model);
+            }
+
+            [ObserveEvent(typeof(FooEvent))]
+            public void ObserveFooEvent(TestModel model, FooEvent e, IEventContext context)
+            {
+                ReceivedModel = model;
+                ReceivedEvent = e;
+                ContextWasReceived = context != null;
+            }
+        }
+
+        public class CanObserveUsingWithModelAndEventAndContextOrderUnimportant : ObserveEventsOnBase
+        {
+            public TestModel ReceivedModel;
+            public FooEvent ReceivedEvent;
+            public bool ContextWasReceived;
+
+            protected override void RunTest()
+            {
+                ObserveEventsOnThis();
+                var fooEvent = new FooEvent();
+                Router.PublishEvent(fooEvent);
+                ReceivedEvent.ShouldBe(fooEvent);
+                ContextWasReceived.ShouldBe(true);
+                ReceivedModel.ShouldBe(Model);
+            }
+
+            [ObserveEvent(typeof(FooEvent))]
+            public void ObserveFooEvent(IEventContext context, FooEvent e, TestModel model)
+            {
+                ReceivedModel = model;
+                ReceivedEvent = e;
+                ContextWasReceived = context != null;
+            }
+        }
+
+        public class CanObserveWithLessSpeificEventtype : ObserveEventsOnBase
+        {
+            public BaseEvent ReceivedEvent;
+
+            protected override void RunTest()
+            {
+                ObserveEventsOnThis();
+                var fooEvent = new FooEvent();
+                Router.PublishEvent(fooEvent);
+                ReceivedEvent.ShouldBe(fooEvent);
+            }
+
+            [ObserveEvent(typeof(FooEvent))]
+            public void CommitBuzz(/* note we use the base event type here */ BaseEvent e, IEventContext context, TestModel model)
+            {
+                ReceivedEvent = e;
+            }
+        }
+
+        public class ObserveThrowsWhenThereAreAdditionalMethodParams : ObserveEventsOnBase
+        { 
+            protected override void RunTest()
+            {
+                InvalidOperationException ex = Assert.Throws<InvalidOperationException>(ObserveEventsOnThis);
+                ex.Message.ShouldContain("Incorrect ObserveEventAttribute usage on method");
+            }
+
+            [ObserveEvent(typeof(FooEvent))]
+            public void ObserveFooEvent(TestModel model, FooEvent e, IEventContext context, string foo)
+            {
+            }
+        }
+
+        public class ObserveThrowsWhenModelOfIncorrectType : ObserveEventsOnBase
+        {
+            protected override void RunTest()
+            {
+                InvalidOperationException ex = Assert.Throws<InvalidOperationException>(ObserveEventsOnThis);
+                ex.Message.ShouldContain("Incorrect ObserveEventAttribute usage on method");
+            }
+
+            [ObserveEvent(typeof(FooEvent))]
+            public void ObserveFooEvent(object model, FooEvent e, IEventContext context)
+            {
+            }
+        }
+
+        public class ObserveThrowsWhenThereAreDuplicateEvents : ObserveEventsOnBase
+        {
+            protected override void RunTest()
+            {
+                InvalidOperationException ex = Assert.Throws<InvalidOperationException>(ObserveEventsOnThis);
+                ex.Message.ShouldContain("Incorrect ObserveEventAttribute usage on method");
+            }
+
+            [ObserveEvent(typeof(FooEvent))]
+            public void ObserveFooEvent(FooEvent e1, FooEvent e)
+            {
+            }
+        }
+
+        public class ObserveThrowsWhenMultipleEventsDontShareSameBaseEvent_1 : ObserveEventsOnBase
+        {
+            protected override void RunTest()
+            {
+                InvalidOperationException ex = Assert.Throws<InvalidOperationException>(ObserveEventsOnThis);
+                ex.Message.ShouldContain("Events don't share common base type");
+            }
+
+            // here the code has to infer the events from the attributes AND ensure the BaseEvent in the method is correct
+            [ObserveEvent(typeof(FooEvent))]
+            [ObserveEvent(typeof(StandaloneEvent))] // not a BaseEvent
+            public void ObserveFooEvent(BaseEvent e1, IEventContext context, TestModel model)
+            {
+            }
+        }
+
+        public class ObserveThrowsWhenMultipleEventsDontShareSameBaseEvent_2 : ObserveEventsOnBase
+        {
+            protected override void RunTest()
+            {
+                InvalidOperationException ex = Assert.Throws<InvalidOperationException>(ObserveEventsOnThis);
+                ex.Message.ShouldContain("Events don't share common base type");
+            }
+
+            // here the code has to infer the events from the attributes alone
+            [ObserveEvent(typeof(FooEvent))]
+            [ObserveEvent(typeof(StandaloneEvent))] 
+            public void ObserveFooEvent() 
+            {
+            }
+        }
+
+        public class CanObserveMultipleEventsByBaseEventType : ObserveEventsOnBase
+        {
+            private List<BaseEvent> _receivedEvents = new List<BaseEvent>();
+
+            protected override void RunTest()
+            {
+                ObserveEventsOnThis();
+                var fooEvent = new FooEvent();
+                var barEvent = new BarEvent();
+                Router.PublishEvent(fooEvent);
+                Router.PublishEvent(barEvent);
+                _receivedEvents.Count.ShouldBe(2);
+                _receivedEvents[0].ShouldBe(fooEvent);
+                _receivedEvents[1].ShouldBe(barEvent);
+            }
+
+            [ObserveEvent(typeof(FooEvent))]
+            [ObserveEvent(typeof(BarEvent))]
+            public void ObserveByBaseEvent(BaseEvent e, IEventContext context, TestModel model)
+            {
+                _receivedEvents.Add(e);
+            }
+        }
+
+        public class CanObserveMultipleEventsByBaseEventTypeAtCorrectStaage : ObserveEventsOnBase
+        {
+            private List<Tuple<BaseEvent, ObservationStage>> _receivedEvents = new List<Tuple<BaseEvent, ObservationStage>>();
+
+            protected override void RunTest()
+            {
+                ObserveEventsOnThis();
+                var fooEvent = new FooEvent();
+                var barEvent = new BarEvent();
+                var bazEvent = new BazEvent();
+                var buzzEvent = new BuzzEvent();
+
+                Router.PublishEvent(fooEvent);
+                AssertLastReceivedEvent(1, ObservationStage.Preview, fooEvent);
+
+                Router.PublishEvent(barEvent);
+                AssertLastReceivedEvent(2, ObservationStage.Normal, barEvent);
+
+                Router.PublishEvent(bazEvent);
+                AssertLastReceivedEvent(3, ObservationStage.Normal, bazEvent);
+
+                Router.PublishEvent(buzzEvent);
+                AssertLastReceivedEvent(4, ObservationStage.Committed, buzzEvent);
+            }
+
+            [ObserveEvent(typeof(BuzzEvent))]
+            public void CommitBuzz(BuzzEvent e, IEventContext context, TestModel model)
+            {
+                context.Commit();
+            }
+
+            [ObserveEvent(typeof(FooEvent), ObservationStage.Preview)]
+            [ObserveEvent(typeof(BarEvent))]
+            [ObserveEvent(typeof(BazEvent), ObservationStage.Normal)]
+            [ObserveEvent(typeof(BuzzEvent), ObservationStage.Committed)]
+            public void ObserveByBaseEvent(BaseEvent e, IEventContext context, TestModel model)
+            {
+                _receivedEvents.Add(Tuple.Create(e, context.CurrentStage));
+            }
+
+            private void AssertLastReceivedEvent(int expectedEventReceivedCount, ObservationStage expectedObservationStage, BaseEvent sent)
+            {
+                _receivedEvents.Count.ShouldBe(expectedEventReceivedCount);
+                _receivedEvents[expectedEventReceivedCount -1].Item2.ShouldBe(expectedObservationStage);
+                _receivedEvents[expectedEventReceivedCount - 1].Item1.ShouldBe(sent);
+            }
+        }
+
         // Because the event wire up is done for all method in one shot (when you call ObserveEventsOn(obj)) it makes sense to have each test in it's own class. 
         // This helps find issues as each test only deals with attributed method at a time. 
         // Without this setup, with all the attributed methods in one class, you have a lot of event wire-up logic running  for every tests, makes it hard to see where it issues are.
         public abstract class ObserveEventsOnBase
         {
             protected Router<TestModel> Router;
+            protected TestModel Model;
 
             public void SetUp()
             {
                 Router = new Router<TestModel>(new StubRouterDispatcher());
-                Router.SetModel(new TestModel());
-                Router.ObserveEventsOn(this);
+                Model = new TestModel();
+                Router.SetModel(Model);
             }
 
             public void Run()
@@ -96,331 +505,18 @@ namespace Esp.Net
 
             protected abstract void RunTest();
 
+            protected void ObserveEventsOnThis()
+            {
+                Router.ObserveEventsOn(this);
+            }
+
             public class TestModel { }
-
             public class FooEvent : BaseEvent { }
-
             public class BarEvent : BaseEvent { }
+            public class BazEvent : BaseEvent { }
+            public class BuzzEvent : BaseEvent { }
+            public class StandaloneEvent { }
         }
     }
-//
-//        [TestFixture]
-//        public class ObserveEventsOnTests
-//        {
-//            private IRouter<TestModel> _router;
-//            private StubEventProcessor _stubEventProcessor;
-//
-//            [SetUp]
-//            public void SetUp()
-//            {
-//                var router = new Router(new StubRouterDispatcher());
-//                var modelId = Guid.NewGuid();
-//                router.AddModel(modelId, new TestModel());
-//                _router = new Router<TestModel>(modelId, router);
-//                _stubEventProcessor = new StubEventProcessor(_router);
-//            }
-//
-//            [Test]
-//            public void ObserveAttribute_ObservesEventsWithHandler_Event_Context_Model()
-//            {
-//                _router.PublishEvent(new EventsForHandlerWith_Event_Context_Model_Evt());
-//                _stubEventProcessor.EventsWith_Model_Event_Context.ShouldBe(1);
-//            }
-//
-//            [Test]
-//            public void ObserveAttribute_ObservesEventsWithHandler_Event_Model()
-//            {
-//                _router.PublishEvent(new EventsForHandlerWith_Event_Model_Evt());
-//                _stubEventProcessor.EventsWith_Model_Event.ShouldBe(1);
-//            }
-//
-//            [Test]
-//            public void ObserveAttribute_ObservesEventsWithHandler_Model()
-//            {
-//                _router.PublishEvent(new EventsForHandlerWith_Model_Evt());
-//                _stubEventProcessor.EventsWith_Model.ShouldBe(1);
-//            }
-//
-//            [Test]
-//            public void ObserveAttribute_ObservesEventsWithHandler_Event_Context()
-//            {
-//                _router.PublishEvent(new EventsWith_Event_Context_Evt());
-//                _stubEventProcessor.EventsWith_Event_Context.ShouldBe(1);
-//            }
-//
-//            [Test]
-//            public void ObserveAttribute_ObservesEventsWithHandler_Event()
-//            {
-//                _router.PublishEvent(new EventsForHandlerWith_Event_Evt());
-//                _stubEventProcessor.EventsWith_Event.ShouldBe(1);
-//            }
-//
-//            [Test]
-//            public void ObserveAttribute_ObservesEventsWithHandler_Context()
-//            {
-//                _router.PublishEvent(new EventsForHandlerWith_Context_Evt());
-//                _stubEventProcessor.EventsWith_Context.ShouldBe(1);
-//            }
-//
-//            [Test]
-//            public void ObserveAttribute_ObservesEventsWithHandler_NoArgs()
-//            {
-//                _router.PublishEvent(new EventsForHandlerWith_NoArgs_Evt());
-//                _stubEventProcessor.EventsWith_NoArgs.ShouldBe(1);
-//            }
-//
-//            [Test]
-//            public void ObserveAttributeThrowsWhenMethodSignatureHasIncorrectParamaterCount()
-//            {
-//                var processor = new StubEventProcessorWithIncorrectSignatures_IncorrectParamaterCount(_router);
-//                InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => { processor.ObserveEvents(); });
-//                exception.Message.ShouldContain("Incorrect ObserveEventAttribute usage");
-//            }
-//
-//            [Test]
-//            public void ObserveAttributeThrowsWhenMethodSignatureHasIncorrectParamaterTypes()
-//            {
-//                var processor1 = new StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes1(_router);
-//                InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => { processor1.ObserveEvents(); });
-//                exception.Message.ShouldContain("Incorrect ObserveEventAttribute usage");
-//
-//                var processor2 = new StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes2(_router);
-//                exception = Assert.Throws<InvalidOperationException>(() => { processor2.ObserveEvents(); });
-//                exception.Message.ShouldContain("Incorrect ObserveEventAttribute usage");
-//            }
-//
-//            [Test]
-//            public void ObserveAttributeObservesEventsAtCorrectStage()
-//            {
-//                _router.PublishEvent(new WorkflowTestEvent());
-//                _stubEventProcessor.WorkflowTestEvents.Count.ShouldBe(3);
-//                _stubEventProcessor.WorkflowTestEvents[0].Item2.ShouldBe(ObservationStage.Preview);
-//                _stubEventProcessor.WorkflowTestEvents[1].Item2.ShouldBe(ObservationStage.Normal);
-//                _stubEventProcessor.WorkflowTestEvents[2].Item2.ShouldBe(ObservationStage.Committed);
-//            }
-//
-//            [Test]
-//            public void ObserveBaseEventFoo()
-//            {
-//                _router.PublishEvent(new FooEvent());
-//                _router.PublishEvent(new BarEvent());
-//                _router.PublishEvent(new BazEvent());
-//                _stubEventProcessor.BaseEvents.Count.ShouldBe(3);
-////                _stubEventProcessor.BaseEvents[0].Item1.GetType().ShouldBe(typeof(FooEvent));
-////                _stubEventProcessor.BaseEvents[0].Item2.ShouldBe(ObservationStage.Preview);
-////                _stubEventProcessor.BaseEvents[1].Item1.GetType().ShouldBe(typeof(BarEvent));
-////                _stubEventProcessor.BaseEvents[1].Item2.ShouldBe(ObservationStage.Normal);
-////                _stubEventProcessor.BaseEvents[2].Item1.GetType().ShouldBe(typeof(BazEvent));
-////                _stubEventProcessor.BaseEvents[2].Item2.ShouldBe(ObservationStage.Committed);
-//            }
-//
-//            public class TestModel { }
-//
-//            public class FooEvent : BaseEvent { }
-//
-//            public class BarEvent : BaseEvent { }
-//
-//            public class BazEvent : BaseEvent { }
-//
-//            public class WorkflowTestEvent { }
-//
-//            public class BaseEvent { }
-//
-//            public class EventsForHandlerWith_Event_Context_Model_Evt { }
-//
-//            public class EventsForHandlerWith_Event_Model_Evt { }
-//
-//            public class EventsForHandlerWith_Model_Evt { }
-//
-//            public class EventsForHandlerWith_Event_Evt { }
-//
-//            public class EventsForHandlerWith_Context_Evt { }
-//
-//            public class EventsForHandlerWith_NoArgs_Evt { }
-//
-//            public class EventsWith_Event_Context_Evt { }
-//
-//            public class StubEventProcessor
-//            {
-//                public StubEventProcessor(IRouter<TestModel> router)
-//                {
-//                    FooEvents = new List<Tuple<FooEvent, IEventContext, TestModel>>();
-//                    BarEvents = new List<Tuple<BarEvent, IEventContext, TestModel>>();
-//                    WorkflowTestEvents = new List<Tuple<WorkflowTestEvent, ObservationStage, TestModel>>();
-//                    BaseEvents = new List<Tuple<BaseEvent, ObservationStage, TestModel>>();
-//                    router.ObserveEventsOn(this);
-//                }
-//
-//                public List<Tuple<FooEvent, IEventContext, TestModel>> FooEvents { get; private set; }
-//                public List<Tuple<BarEvent, IEventContext, TestModel>> BarEvents { get; private set; }
-//                public int EventsWith_Model_Event_Context { get; private set; }
-//                public int EventsWith_Model_Event { get; private set; }
-//                public int EventsWith_Model { get; private set; }
-//                public int EventsWith_Event { get; private set; }
-//                public int EventsWith_Context { get; private set; }
-//                public int EventsWith_NoArgs { get; private set; }
-//                public int EventsWith_Event_Context { get; private set; }
-//                public List<Tuple<WorkflowTestEvent, ObservationStage, TestModel>> WorkflowTestEvents { get; private set; }
-//                public List<Tuple<BaseEvent, ObservationStage, TestModel>> BaseEvents { get; private set; }
-//
-//                [ObserveEvent(typeof(FooEvent))]
-//                public void ObserveFooEvent(FooEvent e, IEventContext context, TestModel model)
-//                {
-//                    FooEvents.Add(Tuple.Create(e, context, model));
-//                }
-//
-//                [ObserveEvent(typeof(BarEvent), ObservationStage.Preview)]
-//                public void ObserveBarEvent(BarEvent e, IEventContext context, TestModel model)
-//                {
-//                    BarEvents.Add(Tuple.Create(e, context, model));
-//                }
-//
-//                [ObserveEvent(typeof(EventsForHandlerWith_Event_Context_Model_Evt))]
-//                public void ObserveObservesEventsWith_Model_Event_Context_Evt(EventsForHandlerWith_Event_Context_Model_Evt e, IEventContext context, TestModel model)
-//                {
-//                    EventsWith_Model_Event_Context++;
-//                }
-//
-//                [ObserveEvent(typeof(EventsForHandlerWith_Event_Model_Evt))]
-//                public void ObserveObservesEventsWith_Model_Event_Evt(EventsForHandlerWith_Event_Model_Evt e, TestModel model)
-//                {
-//                    EventsWith_Model_Event++;
-//                }
-//
-//                [ObserveEvent(typeof(EventsForHandlerWith_Model_Evt))]
-//                public void ObserveObservesEventsWith_Model_Evt(TestModel model)
-//                {
-//                    EventsWith_Model++;
-//                }
-//
-//                [ObserveEvent(typeof(EventsWith_Event_Context_Evt))]
-//                public void ObserveObservesEventsWith_Event__Context_Evt(EventsWith_Event_Context_Evt e, IEventContext context)
-//                {
-//                    EventsWith_Event_Context++;
-//                }
-//
-//                [ObserveEvent(typeof(EventsForHandlerWith_Event_Evt))]
-//                public void ObserveObservesEventsWith_Event_Evt(EventsForHandlerWith_Event_Evt e)
-//                {
-//                    EventsWith_Event++;
-//                }
-//
-//                [ObserveEvent(typeof(EventsForHandlerWith_Context_Evt))]
-//                public void ObserveObservesEventsWith_Event_Evt(IEventContext context)
-//                {
-//                    EventsWith_Context++;
-//                }
-//
-//                [ObserveEvent(typeof(EventsForHandlerWith_NoArgs_Evt))]
-//                public void ObserveObservesEventsWith_NoArgs_Evt()
-//                {
-//                    EventsWith_NoArgs++;
-//                }
-//
-//                [ObserveEvent(typeof(WorkflowTestEvent), ObservationStage.Preview)]
-//                private void ObservePreviewTestEventAtPreview(WorkflowTestEvent e, IEventContext context, TestModel model)
-//                {
-//                    WorkflowTestEvents.Add(Tuple.Create(e, ObservationStage.Preview, model));
-//                }
-//
-//                [ObserveEvent(typeof(WorkflowTestEvent))]
-//                public void ObservePreviewTestEventAtNormal(WorkflowTestEvent e, IEventContext context, TestModel model)
-//                {
-//                    WorkflowTestEvents.Add(Tuple.Create(e, ObservationStage.Normal, model));
-//                    context.Commit();
-//                }
-//
-//                [ObserveEvent(typeof(WorkflowTestEvent), ObservationStage.Committed)]
-//                public void ObservePreviewTestEventAtCommitted(WorkflowTestEvent e, TestModel model)
-//                {
-//                    WorkflowTestEvents.Add(Tuple.Create(e, ObservationStage.Committed, model));
-//                }
-//
-////                [ObserveBaseEvent(typeof(FooEvent), typeof(BaseEvent), ObservationStage.Preview)]
-////                [ObserveBaseEvent(typeof(BarEvent), typeof(BaseEvent))]
-////                [ObserveBaseEvent(typeof(BazEvent), typeof(BaseEvent), ObservationStage.Committed)]
-//
-//                [ObserveEvent(typeof(FooEvent), ObservationStage.Preview)]
-//                [ObserveEvent(typeof(BarEvent))]
-//                [ObserveEvent(typeof(BazEvent), ObservationStage.Committed)]
-//                private void ObserveBaseEvent(BaseEvent e, IEventContext context, TestModel model)
-//                {
-//                    BaseEvents.Add(Tuple.Create(e, context.CurrentStage, model));
-//                }
-//
-//                [ObserveEvent(typeof(BazEvent))]
-//                public void ObserveBaseEventHelper(BazEvent e, IEventContext context, TestModel model)
-//                {
-//                    context.Commit();
-//                }
-//
-//                public void NothingOnThis()
-//                {
-//                }
-//            }
-//
-//            // ReSharper disable InconsistentNaming
-//            public class StubEventProcessorWithIncorrectSignatures_IncorrectParamaterCount
-//            {
-//                private readonly IRouter<TestModel> _router;
-//
-//                public StubEventProcessorWithIncorrectSignatures_IncorrectParamaterCount(IRouter<TestModel> router)
-//                {
-//                    _router = router;
-//                }
-//
-//                [ObserveEvent(typeof(FooEvent))]
-//                public void ObserveFooEvent(TestModel m, FooEvent e, IEventContext c, int b)
-//                {
-//                }
-//
-//                public void ObserveEvents()
-//                {
-//                    _router.ObserveEventsOn(this);
-//                }
-//            }
-//
-//            public class StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes1
-//            {
-//                private readonly IRouter<TestModel> _router;
-//
-//                public StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes1(IRouter<TestModel> router)
-//                {
-//                    _router = router;
-//                }
-//
-//                [ObserveEvent(typeof(FooEvent))]
-//                public void ObserveFooEvent(TestModel model, int somethingWrong)
-//                {
-//                }
-//
-//                public void ObserveEvents()
-//                {
-//                    _router.ObserveEventsOn(this);
-//                }
-//            }
-//
-//            public class StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes2
-//            {
-//                private readonly IRouter<TestModel> _router;
-//
-//                public StubEventProcessorWithIncorrectSignatures_IncorrectParamaterTypes2(IRouter<TestModel> router)
-//                {
-//                    _router = router;
-//                }
-//
-//                [ObserveEvent(typeof(FooEvent))]
-//                public void ObserveFooEvent(TestModel model, FooEvent e, string somethinElse)
-//                {
-//                }
-//
-//                public void ObserveEvents()
-//                {
-//                    _router.ObserveEventsOn(this);
-//                }
-//            }
-//            // ReSharper restore InconsistentNaming
-//        }
-//    }
 }
 #endif
