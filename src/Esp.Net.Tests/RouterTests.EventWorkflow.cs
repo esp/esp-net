@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Esp.Net.Meta;
 using Esp.Net.Reactive;
 using NUnit.Framework;
 using Shouldly;
@@ -96,7 +97,7 @@ namespace Esp.Net
             [Test]
             public void PreAndPostProcessorOnModelInvokedDuringEventWorkflow()
             {
-                _router.GetEventObservable<TestModel5, Event1>(_model5.Id).Observe((m, e) => { /* noop */});
+                _router.GetEventObservable<Event1, TestModel5>(_model5.Id).Observe((e, c) => { /* noop */});
                 _router.PublishEvent(_model5.Id, new Event1());
                 _model5.PreProcessorInvocationCount.ShouldBe(1);
                 _model5.PostProcessorInvocationCount.ShouldBe(1);
@@ -204,16 +205,11 @@ namespace Esp.Net
                 {
                     var receivedEventCount = 0;
                     _router
-                        .GetEventObservable<TestModel, BaseEvent>(_model1.Id, typeof(Event1))
-                        .Observe((m, e) => receivedEventCount++);
+                        .GetEventObservable<BaseEvent, TestModel>(_model1.Id)
+                        .Observe((e, c, m) => receivedEventCount++);
                     _router.PublishEvent(_model1.Id, new Event1());
-                    receivedEventCount.ShouldBe(1);
-                }
-
-                [Test]
-                public void ThrowsIfSubTypeDoesntDeriveFromBase()
-                {
-                    Assert.Throws<ArgumentException>(() => _router.GetEventObservable<TestModel, BaseEvent>(_model1.Id, typeof(string)));
+                    _router.PublishEvent(_model1.Id, new Event2());
+                    receivedEventCount.ShouldBe(2);
                 }
 
                 [Test]
@@ -221,18 +217,45 @@ namespace Esp.Net
                 {
                     var receivedEvents = new List<BaseEvent>();
                     var stream = EventObservable.Merge(
-                        _router.GetEventObservable<TestModel, BaseEvent>(_model1.Id, typeof(Event1)),
-                        _router.GetEventObservable<TestModel, BaseEvent>(_model1.Id, typeof(Event2)),
-                        _router.GetEventObservable<TestModel, BaseEvent>(_model1.Id, typeof(Event3))
+                        _router.GetEventObservable<BaseEvent, TestModel>(_model1.Id), // stream 1
+                        _router.GetEventObservable<Event2, TestModel>(_model1.Id, ObservationStage.Preview), // stream 2
+                        _router.GetEventObservable<Event3, TestModel>(_model1.Id) // stream 3
                     );
-                    stream.Observe((model, baseEvent, context) =>
+                    stream.Observe((baseEvent, context, model) =>
                     {
                         receivedEvents.Add(baseEvent);
                     });
                     _router.PublishEvent(_model1.Id, new Event1());
+                    receivedEvents.Count.ShouldBe(1); // stream 1 should procure 
                     _router.PublishEvent(_model1.Id, new Event2());
+                    receivedEvents.Count.ShouldBe(3); // stream 1 and 2 should procure 
                     _router.PublishEvent(_model1.Id, new Event3());
-                    receivedEvents.Count.ShouldBe(3);
+                    receivedEvents.Count.ShouldBe(5); // stream 1 and 3 should procure 
+                }
+
+                [Test]
+                public void Issue45TestCase()
+                {
+                    var router = new Router<TestModel>(new TestModel());
+                    router.GetEventObservable<BaseEvent>().Observe((ev, model) => Assert.Pass());
+                    router.PublishEvent(new Event1());
+                    Assert.Fail();
+                }
+
+                public class Foo<T> : BaseEvent
+                { }
+
+                [Test]
+                public void Issue45TestCase_OpenGenerics()
+                {
+                    var router = new Router<TestModel>(new TestModel());
+                    var stream = EventObservable.Merge<BaseEvent, IEventContext, TestModel>(
+                        router.GetEventObservable<Foo<string>>(),
+                        router.GetEventObservable<Foo<int>>()
+                    );
+                    stream.Observe((ev, model) => Assert.Pass());
+                    router.PublishEvent(new Foo<string>());
+                    Assert.Fail();
                 }
             }
 
@@ -323,8 +346,10 @@ namespace Esp.Net
 
                 private void AssertEventPublishThrows()
                 {
-                    InvalidOperationException ex = Assert.Throws<InvalidOperationException>(() => _router.PublishEvent(_model1.Id, new Event1()));
-                    ex.Message.ShouldContain("Can't execute event.");
+                    _router.PublishEvent(_model1.Id, new Event1());
+                    _terminalErrorHandler.Errors.Count.ShouldBe(1);
+                    _terminalErrorHandler.Errors[0].ShouldBeOfType<InvalidOperationException>();
+                    _terminalErrorHandler.Errors[0].Message.ShouldContain("Can't execute event");
                 }
             }
 
@@ -369,7 +394,7 @@ namespace Esp.Net
                 public void WhenEventProcessingWorkflowFinishedModelChangedEventIsRaised()
                 {
                     var receivedEvents = new List<ModelChangedEvent<TestModel>>();
-                    _router.GetEventObservable<TestModel3, ModelChangedEvent<TestModel>>(_model3.Id).Observe((m, e) =>
+                    _router.GetEventObservable<ModelChangedEvent<TestModel>, TestModel3>(_model3.Id).Observe((e, c, m) =>
                     {
                         receivedEvents.Add(e);
                     });
@@ -382,10 +407,12 @@ namespace Esp.Net
                 [Test]
                 public void ObservingTheSameModelTypesChangedEventThrows()
                 {
-                    _router.GetEventObservable<TestModel, ModelChangedEvent<TestModel>>(_model2.Id).Observe((m, e) =>
+                    _router.GetEventObservable<ModelChangedEvent<TestModel>, TestModel>(_model2.Id).Observe((e, c, m) =>
                     {
                     });
-                    Assert.Throws<NotSupportedException>(() => _router.PublishEvent(_model1.Id, new Event1()));
+                    _router.PublishEvent(_model1.Id, new Event1());
+                    _terminalErrorHandler.Errors.Count.ShouldBe(1);
+                    _terminalErrorHandler.Errors[0].ShouldBeOfType<NotSupportedException>();
                 }
             }
 

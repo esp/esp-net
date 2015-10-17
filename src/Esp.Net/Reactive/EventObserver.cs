@@ -19,41 +19,61 @@ using System;
 // ReSharper disable once CheckNamespace
 namespace Esp.Net
 {
-    public interface IEventObserver<in TModel, in TEvent, in TContext>
+    public interface IEventObserver<in TEvent, in TContext, in TModel>
     {
-        void OnNext(TModel model, TEvent @event, TContext context);
+        void OnNext(TEvent @event, TContext context, TModel model);
         void OnCompleted();
     }
 
-    internal class EventObserver<TModel, TEvent, TContext> : IEventObserver<TModel, TEvent, TContext>
+    internal class EventObserver<TEvent, TContext, TModel> : IEventObserver<TEvent, TContext, TModel>
     {
         private readonly Action _onCompleted;
-        private readonly Action<TModel, TEvent, TContext> _onNext;
+        private readonly Action<TEvent, TContext, TModel> _onNext;
 
-        public EventObserver(Action<TModel, TEvent> onNext)
+        public EventObserver(Action<TEvent> onNext)
             : this(onNext, null)
         {
         }
 
-        public EventObserver(Action<TModel, TEvent> onNext, Action onCompleted)
-            : this((m, e, c) => onNext(m, e), onCompleted)
+        public EventObserver(Action<TEvent> onNext, Action onCompleted)
+            : this((e, c, m) => onNext(e), onCompleted)
         {
         }
 
-        public EventObserver(Action<TModel, TEvent, TContext> onNext)
+        public EventObserver(Action<TEvent, TContext> onNext)
             : this(onNext, null)
         {
         }
 
-        public EventObserver(Action<TModel, TEvent, TContext> onNext, Action onCompleted)
+        public EventObserver(Action<TEvent, TContext> onNext, Action onCompleted)
+            : this((e, c, m) => onNext(e, c), onCompleted)
+        {
+        }
+
+        public EventObserver(Action<TEvent, TModel> onNext)
+            : this(onNext, null)
+        {
+        }
+
+        public EventObserver(Action<TEvent, TModel> onNext, Action onCompleted)
+            : this((e, c, m) => onNext(e, m), onCompleted)
+        {
+        }
+
+        public EventObserver(Action<TEvent, TContext, TModel> onNext)
+            : this(onNext, null)
+        {
+        }
+
+        public EventObserver(Action<TEvent, TContext, TModel> onNext, Action onCompleted)
         {
             _onNext = onNext;
             _onCompleted = onCompleted;
         }
 
-        public void OnNext(TModel model, TEvent @event, TContext context)
+        public void OnNext(TEvent @event, TContext context, TModel model)
         {
-            _onNext(model, @event, context);
+            _onNext(@event, context, model);
         }
 
         public void OnCompleted()

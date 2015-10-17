@@ -8,8 +8,8 @@
     <ProjectGuid>{E9844144-0F47-40D3-BC35-6135AF535732}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Esp.Net.Workflow</RootNamespace>
-    <AssemblyName>Esp.Net.Workflow</AssemblyName>
+    <RootNamespace>Esp.Net</RootNamespace>
+    <AssemblyName>Esp.Net.Rx</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{786C830F-07A1-408B-BD7F-6EE04809D6DB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -26,7 +26,7 @@
     <DefineConstants>TRACE;DEBUG;ESP_EXPERIMENTAL</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Debug\Esp.Net.Workflow.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\Esp.Net.Rx.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -35,16 +35,14 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Release\Esp.Net.Workflow.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\Esp.Net.Rx.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\AssemblyInfo.Common.cs">
       <Link>Properties\AssemblyInfo.Common.cs</Link>
     </Compile>
-    <Compile Include="AyncResultsEvent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Workflow.cs" />
-    <Compile Include="Workflow.Steps.cs" />
+    <Compile Include="RouterScheduler.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Esp.Net\Esp.Net.csproj">
@@ -67,10 +65,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Esp.Net.Workflow.nuspec">
+    <None Include="Esp.Net.Rx.nuspec">
       <SubType>Designer</SubType>
     </None>
-    <None Include="Esp.Net.Workflow.SourcePackage.nuspec" />
+    <None Include="Esp.Net.Rx.SourcePackage.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />

@@ -88,27 +88,27 @@ namespace Esp.Net.HeldEvents
             public string Payload { get; private set; }
         }
 
-        public class HoldEventsBasedOnModelStrategy<TEvent> : IEventHoldingStrategy<TestModel, TEvent> where TEvent : IIdentifiableEvent
+        public class HoldEventsBasedOnModelStrategy<TEvent> : IEventHoldingStrategy<TEvent, TestModel> where TEvent : IIdentifiableEvent
         {
-            public bool ShouldHold(TestModel model, TEvent @event, IEventContext context)
+            public bool ShouldHold(TEvent @event, IEventContext context, TestModel model)
             {
                 return model.HoldAllEvents;
             }
 
-            public IEventDescription GetEventDescription(TestModel model, TEvent @event)
+            public IEventDescription GetEventDescription(TEvent @event, TestModel model)
             {
                 return new HeldEventDescription("Test Category", "Event being held", @event.Id);
             }
         }
 
-        public class HoldBaseEventsBasedOnModelStrategy<TEvent, TBaseEvent> : IEventHoldingStrategy<TestModel, TEvent, TBaseEvent> where TEvent : TBaseEvent, IIdentifiableEvent
+        public class HoldBaseEventsBasedOnModelStrategy<TEvent, TBaseEvent> : IEventHoldingStrategy<TEvent, TBaseEvent, TestModel> where TEvent : TBaseEvent, IIdentifiableEvent
         {
-            public bool ShouldHold(TestModel model, TEvent @event, IEventContext context)
+            public bool ShouldHold(TEvent @event, IEventContext context, TestModel model)
             {
                 return model.HoldAllEvents;
             }
 
-            public IEventDescription GetEventDescription(TestModel model, TEvent @event)
+            public IEventDescription GetEventDescription(TEvent @event, TestModel model)
             {
                 return new HeldEventDescription("Test Category", "Event being held", @event.Id);
             }
@@ -135,7 +135,7 @@ namespace Esp.Net.HeldEvents
         {
             _model = new TestModel();
             _router = new Router(new StubRouterDispatcher());
-            _router.RegisterModel(_model.Id, _model);
+            _router.AddModel(_model.Id, _model);
             _model.HoldAllEvents = true;
         }
 
@@ -260,10 +260,10 @@ namespace Esp.Net.HeldEvents
         public void CanHoldByBaseEvent()
         {
             List<BaseEvent> receivedBarEvents = new List<BaseEvent>();
-            IEventObservable<TestModel, BaseEvent, IEventContext> fooEventStream = _router.GetEventObservable(_model.Id, new HoldBaseEventsBasedOnModelStrategy<FooEvent, BaseEvent>());
-            IEventObservable<TestModel, BaseEvent, IEventContext> barEventStream = _router.GetEventObservable(_model.Id, new HoldBaseEventsBasedOnModelStrategy<BarEvent, BaseEvent>());
+            IEventObservable<BaseEvent, IEventContext, TestModel> fooEventStream = _router.GetEventObservable(_model.Id, new HoldBaseEventsBasedOnModelStrategy<FooEvent, BaseEvent>());
+            IEventObservable<BaseEvent, IEventContext, TestModel> barEventStream = _router.GetEventObservable(_model.Id, new HoldBaseEventsBasedOnModelStrategy<BarEvent, BaseEvent>());
             var stream = EventObservable.Merge(fooEventStream, barEventStream);
-            stream.Observe((model, baseEvent, context) =>
+            stream.Observe((baseEvent, context, model) =>
             {
                 receivedBarEvents.Add(baseEvent);
             });
@@ -281,14 +281,14 @@ namespace Esp.Net.HeldEvents
         [Test]
         public void CanHoldUsingModelRouter()
         {
-            IRouter<TestModel> modelRouter = _router.CreateModelRouter<TestModel>(_model.Id);
-            IEventObservable<TestModel, BaseEvent, IEventContext> baseEventStream = modelRouter.GetEventObservable(new HoldBaseEventsBasedOnModelStrategy<FooEvent, BaseEvent>());
+            IRouter<TestModel> modelRouter = new Router<TestModel>(_model.Id, _router);
+            IEventObservable<BaseEvent, IEventContext, TestModel> baseEventStream = modelRouter.GetEventObservable(new HoldBaseEventsBasedOnModelStrategy<FooEvent, BaseEvent>());
             int receivedBaseEvents = 0, reveivedBarEvents = 0;
             baseEventStream.Observe((model, baseEvent, context) =>
             {
                 receivedBaseEvents++;
             });
-            IEventObservable<TestModel, BarEvent, IEventContext> fooEventStream = modelRouter.GetEventObservable(new HoldEventsBasedOnModelStrategy<BarEvent>());
+            IEventObservable<BarEvent, IEventContext, TestModel> fooEventStream = modelRouter.GetEventObservable(new HoldEventsBasedOnModelStrategy<BarEvent>());
             fooEventStream.Observe((model, barEvent, context) =>
             {
                 reveivedBarEvents++;
@@ -308,7 +308,7 @@ namespace Esp.Net.HeldEvents
         public void SetUpFooEventHoldingStrategy()
         {
             _receivedFooEvents = new List<FooEvent>();
-            _fooEventStreamDisposable = _router.GetEventObservable(_model.Id, new HoldEventsBasedOnModelStrategy<FooEvent>()).Observe((m, e, c) =>
+            _fooEventStreamDisposable = _router.GetEventObservable(_model.Id, new HoldEventsBasedOnModelStrategy<FooEvent>()).Observe((e, c, m) =>
             {
                 _receivedFooEvents.Add(e);
             });
@@ -317,7 +317,7 @@ namespace Esp.Net.HeldEvents
         public void SetUpBarEventHoldingStrategy()
         {
             _receivedBarEvents = new List<BarEvent>();
-            _barEventStreamDisposable = _router.GetEventObservable(_model.Id, new HoldEventsBasedOnModelStrategy<BarEvent>()).Observe((m, e, c) =>
+            _barEventStreamDisposable = _router.GetEventObservable(_model.Id, new HoldEventsBasedOnModelStrategy<BarEvent>()).Observe((e, c, m) =>
             {
                 _receivedBarEvents.Add(e);
             });

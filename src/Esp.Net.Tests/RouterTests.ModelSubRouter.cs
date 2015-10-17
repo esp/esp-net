@@ -15,17 +15,17 @@ namespace Esp.Net
             public override void SetUp()
             {
                 base.SetUp();
-                _modelRouter = _router.CreateModelRouter<TestModel, SubTestModel>(_model1.Id, m => m.SubTestModel);
+                _modelRouter = new Router<TestModel, SubTestModel>(_model1.Id, _router, m => m.SubTestModel);
             }
 
             [Test]
             public void CanPublishAndObserveProxiedEvent()
             {
-                List<Tuple<SubTestModel, Event1>> receivedSubModels = new List<Tuple<SubTestModel, Event1>>();
-                _modelRouter.GetEventObservable<Event1>().Observe((m, e, c) => receivedSubModels.Add(Tuple.Create(m, e)));
+                List<Tuple<Event1, IEventContext, SubTestModel>> receivedSubModels = new List<Tuple<Event1, IEventContext, SubTestModel>>();
+                _modelRouter.GetEventObservable<Event1>().Observe((e, c, m) => receivedSubModels.Add(Tuple.Create(e, c, m)));
                 _modelRouter.PublishEvent(new Event1());
                 receivedSubModels.Count.ShouldBe(1);
-                receivedSubModels[0].Item1.ShouldBe(_model1.SubTestModel);
+                receivedSubModels[0].Item3.ShouldBe(_model1.SubTestModel);
             }
 
             [Test]
@@ -35,14 +35,6 @@ namespace Esp.Net
                 _modelRouter.GetModelObservable().Observe(m => receivedModelCount++);
                 _modelRouter.PublishEvent(new Event1());
                 receivedModelCount.ShouldBe(1);
-            }
-
-            [Test]
-            public void CanBroadcastProxiedEvent()
-            {
-                _modelRouter.BroadcastEvent(new Event1());
-                _model1EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(1);
-                _model2EventProcessor.Event1Details.NormalStage.ReceivedEvents.Count.ShouldBe(1);
             }
         }
     }

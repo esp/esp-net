@@ -17,7 +17,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Esp.Net.Meta;
 using NUnit.Framework;
 using Shouldly;
 
@@ -35,7 +34,7 @@ namespace Esp.Net.Reactive
         private IEventContext _eventContext;
 
         private StubEventObservationRegistrar _eventObservationRegistrar;
-        
+
         [SetUp]
         public void SetUp()
         {
@@ -47,17 +46,17 @@ namespace Esp.Net.Reactive
         [Test]
         public void SubjectOnNextsItems()
         {
-            var subject = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
+            var subject = new EventSubject<int, IEventContext, TestModel>(_eventObservationRegistrar);
             TestModel receivedModel = null;
             int receivedEvent = 0;
             IEventContext receivedContext = null;
-            subject.Observe((m, e, c) =>
+            subject.Observe((e, c, m) =>
             {
                 receivedModel = m;
                 receivedEvent = e;
                 receivedContext = c;
             });
-            subject.OnNext(_model, 1, _eventContext);
+            subject.OnNext(1, _eventContext, _model);
             receivedModel.ShouldBeSameAs(_model);
             receivedEvent.ShouldBe(1);
             receivedContext.ShouldBeSameAs(_eventContext);
@@ -66,25 +65,25 @@ namespace Esp.Net.Reactive
         [Test]
         public void SubjectRemovesSubscriptionOnDispose()
         {
-            var subject = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
+            var subject = new EventSubject<int, IEventContext, TestModel>(_eventObservationRegistrar);
             int received = 0;
-            var disposable = subject.Observe((m, e, c) => received = e);
-            subject.OnNext(_model, 1, _eventContext);
+            var disposable = subject.Observe((e, c, m) => received = e);
+            subject.OnNext(1, _eventContext, _model);
             Assert.AreEqual(1, received);
             disposable.Dispose();
-            subject.OnNext(_model, 2, _eventContext);
+            subject.OnNext(2, _eventContext, _model);
             Assert.AreEqual(1, received);
         }
 
         [Test]
         public void WhereFiltersWithProvidedPredicate()
         {
-            var subject = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
+            var subject = new EventSubject<int, IEventContext, TestModel>(_eventObservationRegistrar);
             List<int> received = new List<int>();
             subject
-                .Where((m, e, c) => e%2 == 0)
-                .Observe((m, e, c) => received.Add(e));
-            for (int i = 0; i < 10; i++) subject.OnNext(_model, i, _eventContext);
+                .Where((e, c, m) => e%2 == 0)
+                .Observe((e, c, m) => received.Add(e));
+            for (int i = 0; i < 10; i++) subject.OnNext(i, _eventContext, _model);
             Assert.IsTrue(received.SequenceEqual(new[] {0, 2, 4, 6, 8}));
         }
 
@@ -93,8 +92,8 @@ namespace Esp.Net.Reactive
         {
             var mockIEventObservable = new StubEventObservable<TestModel>();
             var disposable = mockIEventObservable
-                .Where((m, e, c) => true)
-                .Observe((m, e, c) => { });
+                .Where((e, c, m) => true)
+                .Observe((e, c, m) => { });
             disposable.Dispose();
             Assert.IsTrue(mockIEventObservable.IsDisposed);
         }
@@ -108,15 +107,15 @@ namespace Esp.Net.Reactive
         [Test]
         public void CanMergeEventStreams()
         {
-            var subject1 = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
-            var subject2 = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
+            var subject1 = new EventSubject<int, IEventContext, TestModel>(_eventObservationRegistrar);
+            var subject2 = new EventSubject<int, IEventContext, TestModel>(_eventObservationRegistrar);
             var stream = EventObservable.Merge(subject1, subject2);
             List<int> received = new List<int>();
-            stream.Observe((m, e, c) => received.Add(e));
-            subject1.OnNext(_model, 1, _eventContext);
-            subject2.OnNext(_model, 2, _eventContext);
-            subject1.OnNext(_model, 3, _eventContext);
-            subject2.OnNext(_model, 4, _eventContext);
+            stream.Observe((e, c, m) => received.Add(e));
+            subject1.OnNext(1, _eventContext, _model);
+            subject2.OnNext(2, _eventContext, _model);
+            subject1.OnNext(3, _eventContext, _model);
+            subject2.OnNext(4, _eventContext, _model);
             Assert.IsTrue(received.SequenceEqual(new[] {1, 2, 3, 4}));
         }
 
@@ -124,12 +123,12 @@ namespace Esp.Net.Reactive
         public void TakeOnlyTakesGivenNumberOfEvents()
         {
             List<int> received = new List<int>();
-            var subject1 = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
-            subject1.Take(3).Observe((m, e, c) => received.Add(e));
-            subject1.OnNext(_model, 1, _eventContext);
-            subject1.OnNext(_model, 2, _eventContext);
-            subject1.OnNext(_model, 3, _eventContext);
-            subject1.OnNext(_model, 4, _eventContext);
+            var subject1 = new EventSubject<int, IEventContext, TestModel>(_eventObservationRegistrar);
+            subject1.Take(3).Observe((e, c, m) => received.Add(e));
+            subject1.OnNext(1, _eventContext, _model);
+            subject1.OnNext(2, _eventContext, _model);
+            subject1.OnNext(3, _eventContext, _model);
+            subject1.OnNext(4, _eventContext, _model);
             Assert.IsTrue(received.SequenceEqual(new[] {1, 2, 3}));
         }
 
@@ -137,7 +136,7 @@ namespace Esp.Net.Reactive
         public void TakeChainsSourceDisposableOnDispose()
         {
             var mockIEventObservable = new StubEventObservable<TestModel>();
-            var disposable = mockIEventObservable.Take(3).Observe((m, e, c) => { });
+            var disposable = mockIEventObservable.Take(3).Observe((e, c, m) => { });
             disposable.Dispose();
             Assert.IsTrue(mockIEventObservable.IsDisposed);
         }
@@ -151,45 +150,18 @@ namespace Esp.Net.Reactive
         [Test]
         public void IncrementsObservationRegistrarOnObserve()
         {
-            var subject1 = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
-            subject1.Observe((m, e, c) => { });
-            _eventObservationRegistrar.Register[typeof(int)].ShouldBe(1);
+            var subject1 = new EventSubject<int, IEventContext, TestModel>(_eventObservationRegistrar);
+            subject1.Observe((e, c, m) => { });
+            _eventObservationRegistrar.Register[typeof (int)].ShouldBe(1);
         }
 
         [Test]
         public void DecrementsObservationRegistrarOnObserve()
         {
-            var subject1 = new EventSubject<TestModel, int, IEventContext>(_eventObservationRegistrar);
-            IDisposable disposable = subject1.Observe((m, e, c) => { });
+            var subject1 = new EventSubject<int, IEventContext, TestModel>(_eventObservationRegistrar);
+            IDisposable disposable = subject1.Observe((e, c, m) => { });
             disposable.Dispose();
-            _eventObservationRegistrar.Register[typeof(int)].ShouldBe(0);
-        }
-
-        private class StubEventObservationRegistrar : IEventObservationRegistrar
-        {
-            public StubEventObservationRegistrar()
-            {
-                Register = new Dictionary<Type, int>();
-            }
-
-            public Dictionary<Type, int> Register { get; private set; }
-          
-            public void IncrementRegistration<TEvent>()
-            {
-                if (Register.ContainsKey(typeof (TEvent)))
-                {
-                    Register[typeof (TEvent)]++;
-                }
-                else
-                {
-                    Register[typeof(TEvent)] = 1;
-                }
-            }
-
-            public void DecrementRegistration<TEvent>()
-            {
-                Register[typeof(TEvent)]--;
-            }
+            _eventObservationRegistrar.Register[typeof (int)].ShouldBe(0);
         }
     }
 }

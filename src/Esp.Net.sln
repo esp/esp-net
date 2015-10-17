@@ -13,7 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Esp.Net.Workflow", "Esp.Net.Workflow\Esp.Net.Workflow.csproj", "{E9844144-0F47-40D3-BC35-6135AF535732}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Esp.Net.Rx", "Esp.Net.Rx\Esp.Net.Rx.csproj", "{E9844144-0F47-40D3-BC35-6135AF535732}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Esp.Net.Dispatchers", "Esp.Net.Dispatchers\Esp.Net.Dispatchers.csproj", "{769ECEB6-57D8-47B9-8E5F-651F003F609A}"
 EndProject

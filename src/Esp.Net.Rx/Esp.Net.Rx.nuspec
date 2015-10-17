@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>esp-net-workflow</id>
+    <id>esp-net-rx</id>
     <version>$version$</version>
-    <title>esp-net-workflow</title>
+    <title>esp-net-rx</title>
     <authors>Keith Woods</authors>
     <owners>Keith Woods</owners>
     <licenseUrl>https://github.com/esp/esp-net/LICENSE.txt</licenseUrl>
@@ -16,9 +16,9 @@
   </metadata>
   <files>
 	<!-- target taken from here based on the profile used in the project http://embed.plnkr.co/03ck2dCtnJogBKHJ9EjY/preview -->
-    <file src="bin\$target$\Esp.Net.Workflow.dll" target="lib\portable-net45+sl50+netcore45+wp8\Esp.Net.Workflow.dll" />
-    <file src="bin\$target$\Esp.Net.Workflow.pdb" target="lib\portable-net45+sl50+netcore45+wp8\Esp.Net.Workflow.pdb" />
-    <file src="bin\$target$\Esp.Net.Workflow.xml" target="lib\portable-net45+sl50+netcore45+wp8\Esp.Net.Workflow.xml" />
+    <file src="bin\$target$\Esp.Net.Rx.dll" target="lib\portable-net45+sl50+netcore45+wp8\Esp.Net.Rx.dll" />
+    <file src="bin\$target$\Esp.Net.Rx.pdb" target="lib\portable-net45+sl50+netcore45+wp8\Esp.Net.Rx.pdb" />
+    <file src="bin\$target$\Esp.Net.Rx.xml" target="lib\portable-net45+sl50+netcore45+wp8\Esp.Net.Rx.xml" />
     <file src="**\*.cs" target="src" />
   </files>
 </package>

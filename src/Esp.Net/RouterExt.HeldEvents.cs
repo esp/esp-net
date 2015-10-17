@@ -26,72 +26,58 @@ namespace Esp.Net
     {
         private static readonly MethodInfo GetEventObservableMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(RouterExt), "GetEventObservable", 2, 2);
 
-        public static IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TEvent, TBaseEvent>(
-            this IRouter router,
-            Guid modelId,
-            IEventHoldingStrategy<TModel, TEvent, TBaseEvent> strategy
-        )
+        public static IEventObservable<TBaseEvent, IEventContext, TModel> GetEventObservable<TEvent, TBaseEvent, TModel>(this IRouter router, Guid modelId, IEventHoldingStrategy<TEvent, TBaseEvent, TModel> strategy)
             where TEvent : TBaseEvent, IIdentifiableEvent
             where TModel : IHeldEventStore
         {
-            var modelRouter = router.CreateModelRouter<TModel>(modelId);
+            var modelRouter = new Router<TModel>(modelId, router);
             return modelRouter.GetEventObservable(strategy);
         }
 
-        public static IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TModel, TEvent, TBaseEvent>(
-            this IRouter<TModel> router,
-            IEventHoldingStrategy<TModel, TEvent, TBaseEvent> strategy
-        )
+        public static IEventObservable<TBaseEvent, IEventContext, TModel> GetEventObservable<TEvent, TBaseEvent, TModel>(this IRouter<TModel> router, IEventHoldingStrategy<TEvent, TBaseEvent, TModel> strategy)
             where TEvent : TBaseEvent, IIdentifiableEvent
             where TModel : IHeldEventStore
         {
             object[] parameters = new object[] { router, strategy };
-            return EventObservable.Create<TModel, TBaseEvent, IEventContext>(
+            return EventObservable.Create<TBaseEvent, IEventContext, TModel>(
                 o =>
                 {
-                    var getEventStreamMethod = GetEventObservableMethodInfo.MakeGenericMethod(typeof(TModel), typeof(TEvent));
+                    var getEventStreamMethod = GetEventObservableMethodInfo.MakeGenericMethod(typeof(TEvent), typeof(TModel));
                     dynamic observable = getEventStreamMethod.Invoke(null, parameters);
                     return (IDisposable)observable.Observe(o);                    
                 }
             );
         }
 
-        public static IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TModel, TEvent>(
-            this IRouter router,
-            Guid modelId,
-            IEventHoldingStrategy<TModel, TEvent> strategy
-        )
+        public static IEventObservable<TEvent, IEventContext, TModel> GetEventObservable<TEvent, TModel>(this IRouter router, Guid modelId, IEventHoldingStrategy<TEvent, TModel> strategy)
             where TEvent : IIdentifiableEvent
             where TModel : IHeldEventStore
         {
-            var modelRouter = router.CreateModelRouter<TModel>(modelId);
+            var modelRouter = new Router<TModel>(modelId, router);
             return modelRouter.GetEventObservable(strategy);
         }
 
-        public static IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TModel, TEvent>(
-            this IRouter<TModel> router,
-            IEventHoldingStrategy<TModel, TEvent> strategy
-        )
+        public static IEventObservable<TEvent, IEventContext, TModel> GetEventObservable<TEvent, TModel>(this IRouter<TModel> router, IEventHoldingStrategy<TEvent, TModel> strategy)
             where TEvent : IIdentifiableEvent
             where TModel : IHeldEventStore
         {
-            return EventObservable.Create<TModel, TEvent, IEventContext>(
+            return EventObservable.Create<TEvent, IEventContext, TModel>(
                 o =>
                 {
                     var heldEvents = new Dictionary<Guid, HeldEventData<TEvent>>();
                     var releasedEvents = new HashSet<Guid>();
                     var disposables = new CollectionDisposable();
-                    disposables.Add(router.GetEventObservable<TEvent>(ObservationStage.Preview).Observe((m, e, c) =>
+                    disposables.Add(router.GetEventObservable<TEvent>(ObservationStage.Preview).Observe((e, c, m) =>
                     {
                         // Have we already re-published this event? If so we don't want to hold it again.
                         if (releasedEvents.Contains(e.Id))
                         {
                             releasedEvents.Remove(e.Id);
-                            o.OnNext(m, e, c);
+                            o.OnNext(e, c, m);
                         }
                         else
                         {
-                            var shouldHoldEvent = strategy.ShouldHold(m, e, c);
+                            var shouldHoldEvent = strategy.ShouldHold(e, c, m);
                             if (shouldHoldEvent)
                             {
                                 // Cancel the event so no other observers will receive it.
@@ -99,14 +85,14 @@ namespace Esp.Net
                                 // Model that we've cancelled it, other code can now reflect the newly modelled values.
                                 // That is other code needs to determine what to do with these held events on the model. 
                                 // When it figures that out it should raise a HeldEventActionEvent so we can proceed here.
-                                IEventDescription eventDescription = strategy.GetEventDescription(m, e);
+                                IEventDescription eventDescription = strategy.GetEventDescription(e, m);
                                 m.AddHeldEventDescription(eventDescription);
                                 // finally we hold the event locally
                                 heldEvents.Add(e.Id, new HeldEventData<TEvent>(eventDescription, e));
                             }
                         }
                     }));
-                    disposables.Add(router.GetEventObservable<HeldEventActionEvent>().Observe((m, e, c) =>
+                    disposables.Add(router.GetEventObservable<HeldEventActionEvent>().Observe((e, c, m) =>
                     {
                         HeldEventData<TEvent> heldEventData;
                         // Since we're listening to a pipe of all events we need to filter out anything we don't know about.

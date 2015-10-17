@@ -61,7 +61,7 @@ namespace Esp.Net
                 public void DispatchesAModelCloneIfTheModelImplementsIClonable()
                 {
                     var receivedModels = new List<TestModel4>();
-                    _router.GetEventObservable<TestModel4, int>(_model4.Id).Observe((m, e) => { /*noop*/ });
+                    _router.GetEventObservable<int, TestModel4>(_model4.Id).Observe((m, e) => { /*noop*/ });
                     _router.GetModelObservable<TestModel4>(_model4.Id).Observe(m => receivedModels.Add(m));
                     _router.PublishEvent(_model4.Id, 2);
                     _router.PublishEvent(_model4.Id, 4);

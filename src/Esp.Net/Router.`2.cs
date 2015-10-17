@@ -18,30 +18,27 @@ using System;
 
 namespace Esp.Net
 {
-    internal class ModelRouter<TModel> : IRouter<TModel>
+    internal class Router<TModel, TSubModel> : IRouter<TSubModel>
     {
+        private readonly Func<TModel, TSubModel> _selector;
         private readonly object _modelIid;
         private readonly IRouter _underlying;
 
-        public ModelRouter(object modelIid, IRouter underlying)
+        public Router(object modelIid, IRouter underlying, Func<TModel, TSubModel> selector)
         {
-            _modelIid = modelIid;
             _underlying = underlying;
+            _modelIid = modelIid;
+            _selector = selector;
         }
 
-        public IModelObservable<TModel> GetModelObservable()
+        public IModelObservable<TSubModel> GetModelObservable()
         {
-            return _underlying.GetModelObservable<TModel>(_modelIid);
+            return _underlying.GetModelObservable<TModel>(_modelIid).Select(_selector);
         }
 
-        public IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal)
+        public IEventObservable<TEvent, IEventContext, TSubModel> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal)
         {
-            return _underlying.GetEventObservable<TModel, TEvent>(_modelIid, observationStage);
-        }
-
-        public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal)
-        {
-            return _underlying.GetEventObservable<TModel, TBaseEvent>(_modelIid, eventType, observationStage);
+            return _underlying.GetEventObservable<TEvent, TModel>(_modelIid, observationStage).Select(_selector);
         }
 
         public void PublishEvent<TEvent>(TEvent @event)
@@ -64,14 +61,14 @@ namespace Esp.Net
             _underlying.ExecuteEvent(_modelIid, @event);
         }
 
-        public void BroadcastEvent<TEvent>(TEvent @event)
+        public void RunAction(Action<TSubModel> action)
         {
-            _underlying.BroadcastEvent(@event);
+            _underlying.RunAction(_modelIid, action);
         }
 
-        public void BroadcastEvent(object @event)
+        public void RunAction(Action action)
         {
-            _underlying.BroadcastEvent(@event);
+            _underlying.RunAction(_modelIid, action);
         }
     }
 }

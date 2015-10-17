@@ -26,13 +26,15 @@ namespace Esp.Net
 {
     public partial class Router
     {
-        private interface IModelEntry
+        private interface IModelRouter
         {
             object Id { get; }
             bool HadEvents { get; }
             bool IsRemoved { get; }
             void TryEnqueue<TEvent>(TEvent @event);
             void ExecuteEvent<TEvent>(TEvent @event);
+            void RunAction(Action action);
+            void RunAction<TModel>(Action<TModel> action);
             void PurgeEventQueue();
             void RunPreProcessor();
             void RunPostProcessor();
@@ -41,11 +43,10 @@ namespace Esp.Net
             void BroadcastModelChangedEvent();
         }
 
-        private interface IModelEntry<out TModel> : IModelEntry
+        private interface IModelRouter<out TModel> : IModelRouter
         {
             IModelObservable<TModel> GetModelObservable();
-            IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal);
-            IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type subEventType, ObservationStage observationStage = ObservationStage.Normal);
+            IEventObservable<TEvent, IEventContext, TModel> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal);
         }
 
         private interface IModelChangedEventPublisher
@@ -53,7 +54,7 @@ namespace Esp.Net
             void BroadcastEvent<TModel>(ModelChangedEvent<TModel> @event);
         }
 
-        private class ModelEntry<TModel> : IModelEntry<TModel>
+        private class ModelRouter<TModel> : IModelRouter<TModel>
         {
             private readonly TModel _model;
             private readonly IPreEventProcessor<TModel> _preEventProcessor;
@@ -63,13 +64,12 @@ namespace Esp.Net
             private readonly State _state;
             private readonly IEventObservationRegistrar _eventObservationRegistrar;
             private readonly IModelChangedEventPublisher _modelChangedEventPublisher;
-            private readonly Queue<dynamic> _eventDispatchQueue = new Queue<dynamic>();
+            private readonly Queue<Action> _eventDispatchQueue = new Queue<Action>();
             private readonly Dictionary<Type, dynamic> _eventSubjects = new Dictionary<Type, dynamic>();
             private readonly ModelSubject<TModel> _modelUpdateSubject = new ModelSubject<TModel>();
             private readonly object _gate = new object();
-            private static readonly MethodInfo GetEventObservableMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(ModelEntry<TModel>), "GetEventObservable", 1, 1);
 
-            public ModelEntry(
+            public ModelRouter(
                 object id, 
                 TModel model, 
                 IPreEventProcessor<TModel> preEventProcessor, 
@@ -98,11 +98,23 @@ namespace Esp.Net
 
             public void TryEnqueue<TEvent>(TEvent @event)
             {
+                var eventType = typeof (TEvent);
                 lock (_gate)
                 {
-                    if (!_eventSubjects.ContainsKey(typeof (TEvent))) return;
+                    bool foundObserver = _eventSubjects.ContainsKey(eventType);
+                    if(!foundObserver)
+                    {
+                        var baseEventType = eventType.BaseType;
+                        while (baseEventType != null)
+                        {
+                            foundObserver = _eventSubjects.ContainsKey(baseEventType);
+                            if (foundObserver) break;
+                            baseEventType = baseEventType.BaseType;
+                        }
+                    }
+                    if (!foundObserver) return;
                 }
-                if (typeof (ModelChangedEvent<TModel>).IsAssignableFrom(typeof (TEvent)))
+                if (typeof (ModelChangedEvent<TModel>).IsAssignableFrom(eventType))
                 {
                     var message = string.Format("The event stream observing event ModelChangedEvent<{0}> against model of type [{0}] is unsupported. Observing a ModelChangedEvent<T> where T is the same as the target models type is not supported.", typeof(TModel).Name);
                     throw new NotSupportedException(message);
@@ -116,12 +128,23 @@ namespace Esp.Net
                 dispatchAction();
             }
 
+            public void RunAction(Action action)
+            {
+                _eventDispatchQueue.Enqueue(action);
+            }
+
+            public void RunAction<TModel1>(Action<TModel1> action)
+            {
+                dynamic dAction = action;
+                _eventDispatchQueue.Enqueue(() => dAction(_model));
+            }
+
             public void PurgeEventQueue()
             {
                 bool hasEvents = _eventDispatchQueue.Count > 0;
                 while (hasEvents)
                 {
-                    var dispatchAction = _eventDispatchQueue.Dequeue();
+                    dynamic dispatchAction = _eventDispatchQueue.Dequeue();
                     dispatchAction();
                     hasEvents = _eventDispatchQueue.Count > 0;
                 }
@@ -181,56 +204,31 @@ namespace Esp.Net
             }
 
             /// <summary>
-            /// Returns an event IEventObservable typed against TBaseEvent for the sub event of subEventType. This is useful when you combine mutiple events into a single stream 
-            /// and care little for the high level type of the event.
-            /// </summary>
-            /// <typeparam name="TBaseEvent"></typeparam>
-            /// <param name="subEventType"></param>
-            /// <param name="observationStage"></param>
-            /// <returns></returns>
-            public IEventObservable<TModel, TBaseEvent, IEventContext> GetEventObservable<TBaseEvent>(Type subEventType, ObservationStage observationStage = ObservationStage.Normal)
-            {
-                Guard.Requires<ArgumentException>(typeof(TBaseEvent).IsAssignableFrom(subEventType), "Event type {0} must derive from {1}", subEventType, typeof(TBaseEvent));
-                return EventObservable.Create<TModel, TBaseEvent, IEventContext>(o =>
-                {
-                    var getEventStreamMethod = GetEventObservableMethodInfo.MakeGenericMethod(subEventType);
-                    try
-                    {
-                        dynamic observable = getEventStreamMethod.Invoke(this, new object[] { observationStage });
-                        return (IDisposable)observable.Observe(o);
-                    }
-                    catch (RuntimeBinderException ex)
-                    {
-                        throw new Exception(string.Format("Error observing event of type [{0}]. Is this event scoped as private or internal? The Router uses the DLR to dispatch/observe events not reflection, it can't dispatch/observe internally scoped events without using a InternalsVisibleTo attribute.", subEventType.FullName), ex);
-                    }
-                });
-            }
-
-            /// <summary>
             /// Returns an IEventObservable that will yield events of type TEvent when observed.
             /// </summary>
             /// <typeparam name="TEvent">Type type of event to observe</typeparam>
             /// <param name="observationStage">The stage in the event processing workflow you wish to observe at</param>
             /// <returns></returns>
-            public IEventObservable<TModel, TEvent, IEventContext> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal)
+            public IEventObservable<TEvent, IEventContext, TModel> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal)
             {
-                return EventObservable.Create<TModel, TEvent, IEventContext>(o =>
+                return EventObservable.Create<TEvent, IEventContext, TModel>(o =>
                 {
                     _state.ThrowIfHalted();
                     EventSubjects<TEvent> eventSubjects;
                     lock (_gate)
                     {
-                        if (!_eventSubjects.ContainsKey(typeof (TEvent)))
+                        var eventType = typeof(TEvent);
+                        if (!_eventSubjects.ContainsKey(eventType))
                         {
                             eventSubjects = new EventSubjects<TEvent>(_eventObservationRegistrar);
-                            _eventSubjects[typeof (TEvent)] = eventSubjects;
+                            _eventSubjects[eventType] = eventSubjects;
                         }
                         else
                         {
-                            eventSubjects = (EventSubjects<TEvent>) _eventSubjects[typeof (TEvent)];
+                            eventSubjects = (EventSubjects<TEvent>) _eventSubjects[eventType];
                         }
                     }
-                    EventSubject<TModel, TEvent, IEventContext> subject;
+                    EventSubject<TEvent, IEventContext, TModel> subject;
                     switch (observationStage)
                     {
                         case ObservationStage.Preview:
@@ -255,26 +253,36 @@ namespace Esp.Net
                 {
                     try
                     {
-                        dynamic eventSubjects;
+                        List<dynamic> eventSubjectss = new List<dynamic>();
                         lock (_gate)
                         {
-                            _eventSubjects.TryGetValue(typeof(TEvent), out eventSubjects);
+                            var mostDerivedEventType = @event.GetType();
+                            while (mostDerivedEventType != null)
+                            {
+                                dynamic eventSubjects;
+                                if(_eventSubjects.TryGetValue(mostDerivedEventType, out eventSubjects))
+                                    eventSubjectss.Add(eventSubjects);
+                                mostDerivedEventType = mostDerivedEventType.BaseType;
+                            }
                         }
-                        if (eventSubjects != null)
+                        if (eventSubjectss.Count > 0)
                         {
                             var eventContext = new EventContext();
                             eventContext.CurrentStage = ObservationStage.Preview;
-                            eventSubjects.PreviewSubject.OnNext(_model, @event, eventContext);
+                            foreach (dynamic subjects in eventSubjectss)
+                                subjects.PreviewSubject.OnNext(@event, eventContext, _model);
                             if (eventContext.IsCommitted) throw new InvalidOperationException(string.Format("Committing event [{0}] at the ObservationStage.Preview is invalid", @event.GetType().Name));
                             if (!eventContext.IsCanceled && !IsRemoved)
                             {
                                 eventContext.CurrentStage = ObservationStage.Normal;
-                                eventSubjects.NormalSubject.OnNext(_model, @event, eventContext);
+                                foreach (dynamic subjects in eventSubjectss)
+                                    subjects.NormalSubject.OnNext(@event, eventContext, _model);
                                 if (eventContext.IsCanceled) throw new InvalidOperationException(string.Format("Cancelling event [{0}] at the ObservationStage.Normal is invalid", @event.GetType().Name));
                                 if (eventContext.IsCommitted && !IsRemoved)
                                 {
                                     eventContext.CurrentStage = ObservationStage.Committed;
-                                    eventSubjects.CommittedSubject.OnNext(_model, @event, eventContext);
+                                    foreach (dynamic subjects in eventSubjectss)
+                                        subjects.CommittedSubject.OnNext(@event, eventContext, _model);
                                     if (eventContext.IsCanceled) throw new InvalidOperationException(string.Format("Cancelling event [{0}] at the ObservationStage.Committed is invalid", @event.GetType().Name));
                                 }
                             }
@@ -291,14 +299,14 @@ namespace Esp.Net
             {
                 public EventSubjects(IEventObservationRegistrar observationRegistrar)
                 {
-                    PreviewSubject = new EventSubject<TModel, TEvent, IEventContext>(observationRegistrar);
-                    NormalSubject = new EventSubject<TModel, TEvent, IEventContext>(observationRegistrar);
-                    CommittedSubject = new EventSubject<TModel, TEvent, IEventContext>(observationRegistrar);
+                    PreviewSubject = new EventSubject<TEvent, IEventContext, TModel>(observationRegistrar);
+                    NormalSubject = new EventSubject<TEvent, IEventContext, TModel>(observationRegistrar);
+                    CommittedSubject = new EventSubject<TEvent, IEventContext, TModel>(observationRegistrar);
                 }
 
-                public EventSubject<TModel, TEvent, IEventContext> PreviewSubject { get; private set; }
-                public EventSubject<TModel, TEvent, IEventContext> NormalSubject { get; private set; }
-                public EventSubject<TModel, TEvent, IEventContext> CommittedSubject { get; private set; }
+                public EventSubject<TEvent, IEventContext, TModel> PreviewSubject { get; private set; }
+                public EventSubject<TEvent, IEventContext, TModel> NormalSubject { get; private set; }
+                public EventSubject<TEvent, IEventContext, TModel> CommittedSubject { get; private set; }
             }
         }
     }
