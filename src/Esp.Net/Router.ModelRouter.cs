@@ -98,11 +98,23 @@ namespace Esp.Net
 
             public void TryEnqueue<TEvent>(TEvent @event)
             {
+                var eventType = typeof (TEvent);
                 lock (_gate)
                 {
-                    if (!_eventSubjects.ContainsKey(typeof (TEvent))) return;
+                    bool foundObserver = _eventSubjects.ContainsKey(eventType);
+                    if(!foundObserver)
+                    {
+                        var baseEventType = eventType.BaseType;
+                        while (baseEventType != null)
+                        {
+                            foundObserver = _eventSubjects.ContainsKey(baseEventType);
+                            if (foundObserver) break;
+                            baseEventType = baseEventType.BaseType;
+                        }
+                    }
+                    if (!foundObserver) return;
                 }
-                if (typeof (ModelChangedEvent<TModel>).IsAssignableFrom(typeof (TEvent)))
+                if (typeof (ModelChangedEvent<TModel>).IsAssignableFrom(eventType))
                 {
                     var message = string.Format("The event stream observing event ModelChangedEvent<{0}> against model of type [{0}] is unsupported. Observing a ModelChangedEvent<T> where T is the same as the target models type is not supported.", typeof(TModel).Name);
                     throw new NotSupportedException(message);

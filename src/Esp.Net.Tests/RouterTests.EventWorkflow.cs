@@ -232,6 +232,15 @@ namespace Esp.Net
                     _router.PublishEvent(_model1.Id, new Event3());
                     receivedEvents.Count.ShouldBe(5); // stream 1 and 3 should procure 
                 }
+
+                [Test]
+                public void Issue45TestCase()
+                {
+                    var router = new Router<TestModel>(new TestModel());
+                    router.GetEventObservable<BaseEvent>().Observe((ev, model) => Assert.Pass());
+                    router.PublishEvent(new Event1());
+                    Assert.Fail();
+                }
             }
 
             public class ExecuteEvent : RouterTests
