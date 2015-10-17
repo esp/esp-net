@@ -75,11 +75,11 @@ namespace Esp.Net
             return _underlying.GetEventObservable<TEvent, TModel>(_modelIid, observationStage);
         }
 
-        public IEventObservable<TBaseEvent, IEventContext, TModel> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal)
-        {
-            if (_modelIid == null) ThrowAsModelNotSet();
-            return _underlying.GetEventObservable<TBaseEvent, TModel>(_modelIid, eventType, observationStage);
-        }
+//        public IEventObservable<TBaseEvent, IEventContext, TModel> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal)
+//        {
+//            if (_modelIid == null) ThrowAsModelNotSet();
+//            return _underlying.GetEventObservable<TBaseEvent, TModel>(_modelIid, eventType, observationStage);
+//        }
 
         public void PublishEvent<TEvent>(TEvent @event)
         {

@@ -69,7 +69,6 @@
     <Compile Include="ModelChangedEvent.cs" />
     <Compile Include="Router.`1.cs" />
     <Compile Include="ObservationStage.cs" />
-    <Compile Include="ObserveBaseEventAttribute.cs" />
     <Compile Include="ObserveEventAttribute.cs" />
     <Compile Include="HeldEvents\HeldEventAction.cs" />
     <Compile Include="HeldEvents\HeldEventActionEvent.cs" />

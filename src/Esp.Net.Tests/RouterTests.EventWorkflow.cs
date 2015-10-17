@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Esp.Net.Meta;
 using Esp.Net.Reactive;
 using NUnit.Framework;
 using Shouldly;
@@ -204,16 +205,11 @@ namespace Esp.Net
                 {
                     var receivedEventCount = 0;
                     _router
-                        .GetEventObservable<BaseEvent, TestModel>(_model1.Id, typeof(Event1))
+                        .GetEventObservable<BaseEvent, TestModel>(_model1.Id)
                         .Observe((e, c, m) => receivedEventCount++);
                     _router.PublishEvent(_model1.Id, new Event1());
-                    receivedEventCount.ShouldBe(1);
-                }
-
-                [Test]
-                public void ThrowsIfSubTypeDoesntDeriveFromBase()
-                {
-                    Assert.Throws<ArgumentException>(() => _router.GetEventObservable<BaseEvent, TestModel>(_model1.Id, typeof(string)));
+                    _router.PublishEvent(_model1.Id, new Event2());
+                    receivedEventCount.ShouldBe(2);
                 }
 
                 [Test]
@@ -221,18 +217,20 @@ namespace Esp.Net
                 {
                     var receivedEvents = new List<BaseEvent>();
                     var stream = EventObservable.Merge(
-                        _router.GetEventObservable<BaseEvent, TestModel>(_model1.Id, typeof(Event1)),
-                        _router.GetEventObservable<BaseEvent, TestModel>(_model1.Id, typeof(Event2)),
-                        _router.GetEventObservable<BaseEvent, TestModel>(_model1.Id, typeof(Event3))
+                        _router.GetEventObservable<BaseEvent, TestModel>(_model1.Id), // stream 1
+                        _router.GetEventObservable<Event2, TestModel>(_model1.Id, ObservationStage.Preview), // stream 2
+                        _router.GetEventObservable<Event3, TestModel>(_model1.Id) // stream 3
                     );
                     stream.Observe((baseEvent, context, model) =>
                     {
                         receivedEvents.Add(baseEvent);
                     });
                     _router.PublishEvent(_model1.Id, new Event1());
+                    receivedEvents.Count.ShouldBe(1); // stream 1 should procure 
                     _router.PublishEvent(_model1.Id, new Event2());
+                    receivedEvents.Count.ShouldBe(3); // stream 1 and 2 should procure 
                     _router.PublishEvent(_model1.Id, new Event3());
-                    receivedEvents.Count.ShouldBe(3);
+                    receivedEvents.Count.ShouldBe(5); // stream 1 and 3 should procure 
                 }
             }
 

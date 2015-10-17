@@ -23,7 +23,7 @@ namespace Esp.Net
         IModelObservable<TModel> GetModelObservable();
 
         IEventObservable<TEvent, IEventContext, TModel> GetEventObservable<TEvent>(ObservationStage observationStage = ObservationStage.Normal);
-        IEventObservable<TBaseEvent, IEventContext, TModel> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal);
+        // IEventObservable<TBaseEvent, IEventContext, TModel> GetEventObservable<TBaseEvent>(Type eventType, ObservationStage observationStage = ObservationStage.Normal);
 
         void PublishEvent<TEvent>(TEvent @event);
         void PublishEvent(object @event);

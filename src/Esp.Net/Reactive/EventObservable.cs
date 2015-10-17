@@ -152,6 +152,24 @@ namespace Esp.Net
                 }
             );
         }
+
+        public static IEventObservable<TOtherEvent, TContext, TModel> Cast<TEvent, TContext, TModel, TOtherEvent>(
+            this IEventObservable<TEvent, TContext, TModel> source)
+            where TOtherEvent : TEvent
+        {
+            return Create<TOtherEvent, TContext, TModel>(
+                o =>
+                {
+                    return source.Observe(
+                        (e, c, m) =>
+                        {
+                            o.OnNext((TOtherEvent)e, c, m);
+                        },
+                        o.OnCompleted
+                    );
+                }
+            );
+        }
     }
 
     internal class EventObservable<TEvent, TContext, TModel> : IEventObservable<TEvent, TContext, TModel>

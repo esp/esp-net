@@ -17,7 +17,7 @@ using System;
 
 namespace Esp.Net
 {
-    [AttributeUsage(AttributeTargets.Method)]
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
     public class ObserveEventAttribute : Attribute
     {
         public ObserveEventAttribute(Type eventType) : this(eventType, ObservationStage.Normal)

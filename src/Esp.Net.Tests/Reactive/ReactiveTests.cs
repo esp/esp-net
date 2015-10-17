@@ -17,7 +17,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Esp.Net.Meta;
 using NUnit.Framework;
 using Shouldly;
 
@@ -35,7 +34,7 @@ namespace Esp.Net.Reactive
         private IEventContext _eventContext;
 
         private StubEventObservationRegistrar _eventObservationRegistrar;
-        
+
         [SetUp]
         public void SetUp()
         {
@@ -153,7 +152,7 @@ namespace Esp.Net.Reactive
         {
             var subject1 = new EventSubject<int, IEventContext, TestModel>(_eventObservationRegistrar);
             subject1.Observe((e, c, m) => { });
-            _eventObservationRegistrar.Register[typeof(int)].ShouldBe(1);
+            _eventObservationRegistrar.Register[typeof (int)].ShouldBe(1);
         }
 
         [Test]
@@ -162,34 +161,7 @@ namespace Esp.Net.Reactive
             var subject1 = new EventSubject<int, IEventContext, TestModel>(_eventObservationRegistrar);
             IDisposable disposable = subject1.Observe((e, c, m) => { });
             disposable.Dispose();
-            _eventObservationRegistrar.Register[typeof(int)].ShouldBe(0);
-        }
-
-        private class StubEventObservationRegistrar : IEventObservationRegistrar
-        {
-            public StubEventObservationRegistrar()
-            {
-                Register = new Dictionary<Type, int>();
-            }
-
-            public Dictionary<Type, int> Register { get; private set; }
-          
-            public void IncrementRegistration<TEvent>()
-            {
-                if (Register.ContainsKey(typeof (TEvent)))
-                {
-                    Register[typeof (TEvent)]++;
-                }
-                else
-                {
-                    Register[typeof(TEvent)] = 1;
-                }
-            }
-
-            public void DecrementRegistration<TEvent>()
-            {
-                Register[typeof(TEvent)]--;
-            }
+            _eventObservationRegistrar.Register[typeof (int)].ShouldBe(0);
         }
     }
 }

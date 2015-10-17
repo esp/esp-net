@@ -24,12 +24,17 @@ namespace Esp.Net.Utils
     {
         public static MethodInfo GetGenericMethodByArgumentCount(Type declaringType, string methodName, int numberOfTypeArguments, int numberOfArguments)
         {
-            return GetGenericMethodByArgumentCountInternal(declaringType, methodName, numberOfTypeArguments, numberOfArguments, null);
+            return GetGenericMethodByArgumentCountInternal(declaringType, methodName, numberOfTypeArguments, numberOfArguments, null, null);
         }
 
         public static MethodInfo GetGenericMethodByArgumentCount(Type declaringType, string methodName, int numberOfTypeArguments, int numberOfArguments, BindingFlags bindingFlags)
         {
-            return GetGenericMethodByArgumentCountInternal(declaringType, methodName, numberOfTypeArguments, numberOfArguments, bindingFlags);
+            return GetGenericMethodByArgumentCountInternal(declaringType, methodName, numberOfTypeArguments, numberOfArguments, null, bindingFlags);
+        }
+
+        public static MethodInfo GetGenericMethodByArgumentCount(Type declaringType, string methodName, int numberOfTypeArguments, int numberOfArguments, BindingFlags bindingFlags, Func<ParameterInfo[], bool> paramPredicate)
+        {
+            return GetGenericMethodByArgumentCountInternal(declaringType, methodName, numberOfTypeArguments, numberOfArguments, paramPredicate, bindingFlags);
         }
 
         public static MethodInfo GetGenericMethodByArgumentCountInternal(
@@ -37,8 +42,10 @@ namespace Esp.Net.Utils
             string methodName,
             int numberOfTypeArguments, 
             int numberOfArguments, 
+            Func<ParameterInfo[], bool> predicate,
             BindingFlags? bindingFlags)
         {
+            predicate = predicate ?? (p => true);
             MethodInfo[] methodInfos = bindingFlags.HasValue 
                 ? declaringType.GetMethods(bindingFlags.Value) 
                 : declaringType.GetMethods();
@@ -48,6 +55,7 @@ namespace Esp.Net.Utils
                     m.Name == methodName &&
                     m.GetGenericArguments().Length == numberOfTypeArguments &&
                     m.GetParameters().Length == numberOfArguments
+                    && predicate(m.GetParameters())
                 select m;
             return query.Single();
         }

@@ -59,7 +59,7 @@ namespace Esp.Net
             {
                 var ex = Assert.Throws<Exception>(() =>
                 {
-                    _router.GetEventObservable<PrivateBaseEvent, TestModel>(_model1.Id, typeof(PrivateEvent)).Observe((model, ev) => { });
+                    _router.GetEventObservable<PrivateBaseEvent, TestModel>(_model1.Id).Observe((model, ev) => { });
                 });
                 ex.Message.ShouldContain("Is this event scoped as private or internal");
             }
