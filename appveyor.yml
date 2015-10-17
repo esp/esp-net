@@ -27,9 +27,6 @@ after_build:
   - cmd: nuget pack .\src\Esp.Net\Esp.Net.nuspec -version "%nuget_version%" -prop "target=%CONFIGURATION%"
   - cmd: nuget pack .\src\Esp.Net\Esp.Net.nuspec -version "%nuget_version%" -prop "target=%CONFIGURATION%" -Symbols
   - cmd: nuget pack .\src\Esp.Net\Esp.Net.SourcePackage.nuspec -version "%nuget_version%"
-  - cmd: nuget pack .\src\Esp.Net.Workflow\Esp.Net.Workflow.nuspec -version "%nuget_version%" -prop "target=%CONFIGURATION%"
-  - cmd: nuget pack .\src\Esp.Net.Workflow\Esp.Net.Workflow.nuspec -version "%nuget_version%" -prop "target=%CONFIGURATION%" -Symbols
-  - cmd: nuget pack .\src\Esp.Net.Workflow\Esp.Net.Workflow.SourcePackage.nuspec -version "%nuget_version%"  
   - cmd: nuget pack .\src\Esp.Net.Dispatchers\Esp.Net.Dispatchers.nuspec -version "%nuget_version%" -prop "target=%CONFIGURATION%"
   - cmd: nuget pack .\src\Esp.Net.Dispatchers\Esp.Net.Dispatchers.nuspec -version "%nuget_version%" -prop "target=%CONFIGURATION%" -Symbols
   - cmd: nuget pack .\src\Esp.Net.Dispatchers\Esp.Net.Dispatchers.SourcePackage.nuspec -version "%nuget_version%"  
