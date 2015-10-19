@@ -84,7 +84,7 @@ namespace Esp.Net.Examples.ReactiveModel.TraderApp
             builder.RegisterInstance(modelRouter);
             builder.Update(_container);
             var model = _container.Resolve<RfqScreen>();
-            router.RegisterModel(modelId, model);
+            router.AddModel(modelId, model);
         }
 
         private void StartUi()

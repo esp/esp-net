@@ -100,7 +100,7 @@ namespace Esp.Net.Examples.ReactiveModel.ClientApp
             builder.RegisterInstance(modelRouter);
             builder.Update(_container);
             var model = _container.Resolve<OrderScreen>();
-            router.RegisterModel(modelId, model);
+            router.AddModel(modelId, model);
         }
 
         private void StartUi()

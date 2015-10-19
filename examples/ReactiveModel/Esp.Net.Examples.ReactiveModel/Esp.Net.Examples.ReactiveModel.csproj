@@ -43,8 +43,8 @@
       <HintPath>..\packages\Autofac.3.5.2\lib\net40\Autofac.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Esp.Net, Version=0.4.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\esp-net.0.4.3-alpha\lib\portable-net45+sl50+netcore45+wpa81+wp8\Esp.Net.dll</HintPath>
+    <Reference Include="Esp.Net, Version=0.5.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\esp-net.0.5.3\lib\portable-net45+sl50+netcore45+wpa81+wp8\Esp.Net.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="log4net, Version=1.2.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
