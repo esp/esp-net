@@ -100,11 +100,11 @@ namespace Esp.Net
 
     internal class ModelObservable<T> : IModelObservable<T>
     {
-        private readonly Func<IModelObserver<T>, IDisposable> _subscribe;
+        private readonly Func<IModelObserver<T>, IDisposable> _observe;
 
-        public ModelObservable(Func<IModelObserver<T>, IDisposable> subscribe)
+        public ModelObservable(Func<IModelObserver<T>, IDisposable> observe)
         {
-            _subscribe = subscribe;
+            _observe = observe;
         }
 
         public IDisposable Observe(Action<T> onNext)
@@ -121,7 +121,7 @@ namespace Esp.Net
 
         public IDisposable Observe(IModelObserver<T> observer)
         {
-            return _subscribe(observer);
+            return _observe(observer);
         }
     }
 }

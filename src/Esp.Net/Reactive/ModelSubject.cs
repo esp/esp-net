@@ -25,9 +25,13 @@ namespace Esp.Net
         readonly List<IModelObserver<T>> _observers = new List<IModelObserver<T>>();
         private readonly object _gate = new object();
         private bool _hasCompleted = false;
+        private T _lastValue = default(T);
+        private bool _lastValueSet = false;
 
         public void OnNext(T item)
         {
+            _lastValue = item;
+            _lastValueSet = true;
             var observers = _observers.ToArray();
             foreach(var observer in observers) 
 			{
@@ -67,6 +71,7 @@ namespace Esp.Net
             {
                 _observers.Add(observer);
             }
+            if (_lastValueSet) observer.OnNext(_lastValue);
             return EspDisposable.Create(() =>
             {
                 lock (_gate)

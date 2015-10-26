@@ -1,5 +1,5 @@
 environment:
-  nuget_version: 0.5.3
+  nuget_version: 0.6.0
 
 platform: Any CPU
 configuration: Release

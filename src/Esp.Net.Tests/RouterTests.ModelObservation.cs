@@ -55,20 +55,33 @@ namespace Esp.Net
                 _model1Controller.ReceivedModels.Count.ShouldBe(2);
             }
 
-            public class ModelCloning : RouterTests
+            [Test]
+            public void ModelIsDeliveredToObserversImmediately()
             {
-                [Test]
-                public void DispatchesAModelCloneIfTheModelImplementsIClonable()
-                {
-                    var receivedModels = new List<TestModel4>();
-                    _router.GetEventObservable<int, TestModel4>(_model4.Id).Observe((m, e) => { /*noop*/ });
-                    _router.GetModelObservable<TestModel4>(_model4.Id).Observe(m => receivedModels.Add(m));
-                    _router.PublishEvent(_model4.Id, 2);
-                    _router.PublishEvent(_model4.Id, 4);
-                    receivedModels.Count.ShouldBe(2);
-                    receivedModels[0].IsClone.ShouldBe(true);
-                    receivedModels[1].IsClone.ShouldBe(true);
-                }
+                _model1Controller.ReceivedModels.Count.ShouldBe(0);
+                _router.PublishEvent(_model1.Id, new Event1());
+                _model1Controller.ReceivedModels.Count.ShouldBe(1);
+                int receivedCount = 0;
+                _router
+                    .GetModelObservable<TestModel>(_model1.Id)
+                    .Observe(m => receivedCount++);
+                receivedCount.ShouldBe(1);
+            }
+        }
+
+        public class ModelCloning : RouterTests
+        {
+            [Test]
+            public void DispatchesAModelCloneIfTheModelImplementsIClonable()
+            {
+                var receivedModels = new List<TestModel4>();
+                _router.GetEventObservable<int, TestModel4>(_model4.Id).Observe((m, e) => { /*noop*/ });
+                _router.GetModelObservable<TestModel4>(_model4.Id).Observe(m => receivedModels.Add(m));
+                _router.PublishEvent(_model4.Id, 2);
+                _router.PublishEvent(_model4.Id, 4);
+                receivedModels.Count.ShouldBe(2);
+                receivedModels[0].IsClone.ShouldBe(true);
+                receivedModels[1].IsClone.ShouldBe(true);
             }
         }
     }
