@@ -14,7 +14,6 @@
 // limitations under the License.
 #endregion
 
-#if ESP_EXPERIMENTAL
 using System;
 // ReSharper disable once CheckNamespace
 namespace Esp.Net
@@ -26,4 +25,3 @@ namespace Esp.Net
         string Description { get; }
     }
 }
-#endif

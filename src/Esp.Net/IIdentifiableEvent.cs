@@ -14,10 +14,8 @@
 // limitations under the License.
 #endregion
 
-
 using System;
 
-#if ESP_EXPERIMENTAL
 namespace Esp.Net
 {
     public interface IIdentifiableEvent
@@ -25,4 +23,3 @@ namespace Esp.Net
         Guid Id { get; }
     }
 }
-#endif

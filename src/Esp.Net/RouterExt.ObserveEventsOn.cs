@@ -121,8 +121,8 @@ namespace Esp.Net
                 Type baseEventType = null;
                 foreach (ParameterInfo parameterInfo in methodWithAttributes.GetParameters())
                 {
-                    if (typeof (TModel).IsAssignableFrom(parameterInfo.GetType()) ||
-                        typeof (IEventContext).IsAssignableFrom(parameterInfo.GetType()))
+                    if (typeof (TModel).IsAssignableFrom(parameterInfo.ParameterType) ||
+                        typeof (IEventContext).IsAssignableFrom(parameterInfo.ParameterType))
                         continue;
                     baseEventType = parameterInfo.ParameterType;
                     break;
