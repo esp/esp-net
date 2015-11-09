@@ -33,5 +33,10 @@ namespace Esp.Net
         public Type EventType { get; private set; }
 
         public ObservationStage Stage { get; private set; }
+
+        public override string ToString()
+        {
+            return string.Format("Observe event [{0}] at stage [{1}]", EventType.FullName, Stage);
+        }
     }
 }

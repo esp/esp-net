@@ -383,7 +383,7 @@ namespace Esp.Net
             protected override void RunTest()
             {
                 InvalidOperationException ex = Assert.Throws<InvalidOperationException>(ObserveEventsOnThis);
-                ex.Message.ShouldContain("Events don't share common base type");
+                ex.Message.ShouldContain("Could not determine a common base event type");
             }
 
             // here the code has to infer the events from the attributes AND ensure the BaseEvent in the method is correct
@@ -399,7 +399,7 @@ namespace Esp.Net
             protected override void RunTest()
             {
                 InvalidOperationException ex = Assert.Throws<InvalidOperationException>(ObserveEventsOnThis);
-                ex.Message.ShouldContain("Events don't share common base type");
+                ex.Message.ShouldContain("Could not determine a common base event type");
             }
 
             // here the code has to infer the events from the attributes alone

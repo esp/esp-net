@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
 using Esp.Net.Utils;
 
 namespace Esp.Net
@@ -129,14 +130,27 @@ namespace Esp.Net
                 if (baseEventType != null)
                 {
                     var shareSameBaseType = ReflectionHelper.SharesBaseType(baseEventType, Enumerable.Select<ObserveEventAttribute, Type>(observeEventAttributes, a => a.EventType));
-                    Guard.Requires<InvalidOperationException>(shareSameBaseType, "Events don't share common base type");
+                    if (!shareSameBaseType) ThrowOnInvalidBaseType(methodWithAttributes, observeEventAttributes);
                 }
                 else
                 {
                     ReflectionHelper.TryGetCommonBaseType(out baseEventType, Enumerable.Select<ObserveEventAttribute, Type>(observeEventAttributes, a => a.EventType));
                 }
-                Guard.Requires<InvalidOperationException>(baseEventType != null, "Events don't share common base type");
+                if (baseEventType == null) ThrowOnInvalidBaseType(methodWithAttributes, observeEventAttributes);
                 return baseEventType;
+            }
+
+            private void ThrowOnInvalidBaseType(MethodInfo declaringMethod, ObserveEventAttribute[] observeEventAttributes)
+            {
+                var message = new StringBuilder("Could not determine a common base event type for events declared using the ObserveEvent attribute on method ");
+                message.AppendFormat("[{0}.{1}]", declaringMethod.DeclaringType.FullName, declaringMethod.Name);
+                message.AppendLine(".");
+                message.AppendLine(" Events that don't share a base type:");
+                foreach (ObserveEventAttribute attribute in observeEventAttributes)
+                {
+                    message.AppendLine(attribute.EventType.FullName);
+                }
+                throw new InvalidOperationException(message.ToString());
             }
 
             // creates a delegate that matches the largest signature from IEventObservable.Observe, it will proxy 'method' passing the required args

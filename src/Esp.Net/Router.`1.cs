@@ -25,28 +25,36 @@ namespace Esp.Net
         private readonly IRouter _underlying;
         
         public Router()
+            : this(new CurrentThreadDispatcher())
         {
-            _underlying = new Router(new CurrentThreadDispatcher());
         }
 
         public Router(IRouterDispatcher routerDispatcher)
+            : this(routerDispatcher, null)
+        {
+        }
+
+        public Router(IRouterDispatcher routerDispatcher, ITerminalErrorHandler errorHandler)
         {
             Guard.Requires<ArgumentNullException>(routerDispatcher != null, "routerDispatcher can not be null");
-            _underlying = new Router(routerDispatcher);
+            _underlying = new Router(routerDispatcher, errorHandler);
         }
 
         public Router(TModel model)
+            : this(model, new CurrentThreadDispatcher())
         {
-            Guard.Requires<ArgumentNullException>(model != null, "model can not be null");
-            _underlying = new Router(new CurrentThreadDispatcher());
-            AddModelInternal(model);
         }
 
         public Router(TModel model, IRouterDispatcher routerDispatcher)
+            : this(model, routerDispatcher, null)
+        {
+        }
+
+        public Router(TModel model, IRouterDispatcher routerDispatcher, ITerminalErrorHandler errorHandler)
         {
             Guard.Requires<ArgumentNullException>(model != null, "model can not be null");
             Guard.Requires<ArgumentNullException>(routerDispatcher != null, "routerDispatcher can not be null");
-            _underlying = new Router(routerDispatcher);
+            _underlying = new Router(routerDispatcher, errorHandler);
             AddModelInternal(model);
         }
 
