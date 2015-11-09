@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using Shouldly;
 
@@ -58,8 +59,9 @@ namespace Esp.Net
                     throw exception;
                 });
                 AssertPublishEventThrows();
-                _terminalErrorHandler.Errors.Count.ShouldBe(1);
+                _terminalErrorHandler.Errors.Count.ShouldBe(2);
                 _terminalErrorHandler.Errors[0].ShouldBe(exception);
+                _terminalErrorHandler.Errors[1].InnerException.ShouldBe(exception);
             }
 
             private void AssertPublishEventThrows()
@@ -69,17 +71,17 @@ namespace Esp.Net
                 _terminalErrorHandler.Errors[0].ShouldBeOfType<Exception>();
                 _terminalErrorHandler.Errors[0].Message.ShouldBe("Boom");
 
-                Exception ex2 = Assert.Throws<Exception>(() => _router.PublishEvent(_model1.Id, new Event2()));
-                ex2.Message.ShouldBe("Router halted due to previous error");
-                ex2.InnerException.Message.ShouldBe("Boom");
+                _router.PublishEvent(_model1.Id, new Event2());
+
+                _terminalErrorHandler.Errors.Count.ShouldBe(2);
+                _terminalErrorHandler.Errors[1].ShouldBeOfType<Exception>();
+                _terminalErrorHandler.Errors[1].Message.ShouldBe("Router halted due to previous error");
             }
 
-            public class WhenHalted : RouterTests
+            public abstract class HaltedTestBase : RouterTests
             {
-                [SetUp]
-                public override void SetUp()
+                protected void HaltRouter()
                 {
-                    base.SetUp();
                     var exceptionThrow = false;
                     _model1PreEventProcessor.RegisterAction(m =>
                     {
@@ -101,29 +103,29 @@ namespace Esp.Net
                 [Test]
                 public void ShouldThrowOnAddModel()
                 {
-                    AssertRethrows(() => _router.AddModel(Guid.NewGuid(), _model1));
-                    AssertRethrows(() => _router.AddModel(Guid.NewGuid(), _model1, (IPreEventProcessor<TestModel>)new StubModelProcessor()));
-                    AssertRethrows(() => _router.AddModel(Guid.NewGuid(), _model1, (IPostEventProcessor<TestModel>)new StubModelProcessor()));
-                    AssertRethrows(() => _router.AddModel(Guid.NewGuid(), _model1, new StubModelProcessor(), new StubModelProcessor()));
+                    DoAssert(() => _router.AddModel(Guid.NewGuid(), _model1));
+                    DoAssert(() => _router.AddModel(Guid.NewGuid(), _model1, (IPreEventProcessor<TestModel>)new StubModelProcessor()));
+                    DoAssert(() => _router.AddModel(Guid.NewGuid(), _model1, (IPostEventProcessor<TestModel>)new StubModelProcessor()));
+                    DoAssert(() => _router.AddModel(Guid.NewGuid(), _model1, new StubModelProcessor(), new StubModelProcessor()));
                 }
 
                 [Test]
                 public void ShouldThrowOnGetModelObservable()
                 {
-                    AssertRethrows(() => _router.GetModelObservable<TestModel>(_model1.Id));
+                    DoAssert(() => _router.GetModelObservable<TestModel>(_model1.Id));
                 }
 
                 [Test]
                 public void ShouldThrowOnGetEventObservable()
                 {
-                    AssertRethrows(() => _router.GetEventObservable<TestModel, Event1>(_model1.Id));
+                    DoAssert(() => _router.GetEventObservable<Event1, TestModel>(_model1.Id));
                 }
 
                 [Test]
                 public void ShouldThrowOnPublishEvent()
                 {
-                    AssertRethrows(() => _router.PublishEvent(_model1.Id, new Event2()));
-                    AssertRethrows(() => _router.PublishEvent(_model1.Id, (object)new Event2()));
+                    DoAssert(() => _router.PublishEvent(_model1.Id, new Event2()));
+                    DoAssert(() => _router.PublishEvent(_model1.Id, (object)new Event2()));
                 }
 
                 [Test]
@@ -136,11 +138,44 @@ namespace Esp.Net
                 [Test]
                 public void ShouldThrowOnBroadcastEvent()
                 {
-                    AssertRethrows(() => _router.BroadcastEvent(new Event2()));
-                    AssertRethrows(() => _router.BroadcastEvent((object)new Event2()));
+                    DoAssert(() => _router.BroadcastEvent(new Event2()));
+                    DoAssert(() => _router.BroadcastEvent((object)new Event2()));
                 }
 
-                private void AssertRethrows(TestDelegate action)
+                protected abstract void DoAssert(TestDelegate test);
+            }
+
+            public class WhenHaltedWithTerminalErrorHandler : HaltedTestBase
+            {
+                public override void SetUp()
+                {
+                    base.SetUp();
+                    HaltRouter();
+                }
+
+                protected override void DoAssert(TestDelegate action)
+                {
+                    var previousErrorCount = _terminalErrorHandler.Errors.Count;
+                    action();
+                    _terminalErrorHandler.Errors.Count.ShouldBe(previousErrorCount + 1);
+                    Exception ex = _terminalErrorHandler.Errors.Last();
+                    ex.Message.ShouldBe("Router halted due to previous error");
+                    ex.InnerException.Message.ShouldBe("Boom");
+                }
+            }
+
+            public class WhenHaltedWithoutTerminalErrorHandler : HaltedTestBase
+            {
+                [SetUp]
+                public override void SetUp()
+                {
+                    _routerDispatcher = new StubRouterDispatcher();
+                    _router = new Router(_routerDispatcher);
+                    AddModel1();
+                    HaltRouter();
+                }
+
+                protected override void DoAssert(TestDelegate action)
                 {
                     Exception ex = Assert.Throws<Exception>(action);
                     ex.Message.ShouldBe("Router halted due to previous error");

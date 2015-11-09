@@ -54,7 +54,15 @@ namespace Esp.Net
             _routerDispatcher = new StubRouterDispatcher();
             _terminalErrorHandler = new TerminalErrorHandler();
             _router = new Router(_routerDispatcher, _terminalErrorHandler);
+            AddModel1();
+            AddModel2();
+            AddModel3();
+            AddModel4();
+            AddModel5();
+        }
 
+        private void AddModel1()
+        {
             _model1 = new TestModel();
             _model1PreEventProcessor = new StubModelProcessor();
             _model1PostEventProcessor = new StubModelProcessor();
@@ -62,20 +70,32 @@ namespace Esp.Net
             _model1EventProcessor = new GenericModelEventProcessor<TestModel>(_router, _model1.Id, EventProcessor1Id);
             _model1EventProcessor2 = new GenericModelEventProcessor<TestModel>(_router, _model1.Id, EventProcessor2Id);
             _model1Controller = new TestModelController(_router, _model1.Id);
+        }
 
+        private void AddModel2()
+        {
             _model2 = new TestModel();
             _model2PreEventProcessor = new StubModelProcessor();
             _model2PostEventProcessor = new StubModelProcessor();
             _router.AddModel(_model2.Id, _model2, _model2PreEventProcessor, _model2PostEventProcessor);
             _model2EventProcessor = new GenericModelEventProcessor<TestModel>(_router, _model2.Id, EventProcessor3Id);
             _model2Controller = new TestModelController(_router, _model2.Id);
+        }
 
+        private void AddModel3()
+        {
             _model3 = new TestModel3();
             _router.AddModel(_model3.Id, _model3);
+        }
 
+        private void AddModel4()
+        {
             _model4 = new TestModel4();
             _router.AddModel(_model4.Id, _model4);
+        }
 
+        private void AddModel5()
+        {
             _model5 = new TestModel5();
             _router.AddModel(_model5.Id, _model5);
         }
