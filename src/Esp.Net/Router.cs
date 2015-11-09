@@ -30,7 +30,7 @@ namespace Esp.Net
         private static readonly MethodInfo BroadcastEventMethodInfo = ReflectionHelper.GetGenericMethodByArgumentCount(typeof(Router), "BroadcastEvent", 1, 1);
 
         private readonly object _gate = new object();
-        private readonly State _state = new State();
+        private readonly State _state;
         private readonly IRouterDispatcher _routerDispatcher;
         private readonly ITerminalErrorHandler _errorHandler;
         private readonly ModelsEventsObservations _modelsEventsObservations;
@@ -57,6 +57,7 @@ namespace Esp.Net
             _routerDispatcher = routerDispatcher;
             _errorHandler = errorHandler;
             _modelsEventsObservations = new ModelsEventsObservations();
+            _state = new State(_errorHandler);
         }
 
         public IEventsObservationRegistrar EventsObservationRegistrar

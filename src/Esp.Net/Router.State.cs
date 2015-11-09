@@ -22,10 +22,12 @@ namespace Esp.Net
     {
         private class State
         {
+            private readonly ITerminalErrorHandler _terminalErrorHandler;
             private object _modelBeingProcessed;
 
-            public State()
+            public State(ITerminalErrorHandler terminalErrorHandler)
             {
+                _terminalErrorHandler = terminalErrorHandler;
                 CurrentStatus = Status.Idle;
             }
 
@@ -95,7 +97,11 @@ namespace Esp.Net
             {
                 if (CurrentStatus == Status.Halted)
                 {
-                    throw new Exception("Router halted due to previous error", HaltingException);
+                    var error = new Exception("Router halted due to previous error", HaltingException);
+                    if (_terminalErrorHandler != null)
+                        _terminalErrorHandler.OnError(error);
+                    else
+                        throw error;
                 }
             }
         }
