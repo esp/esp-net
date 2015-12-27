@@ -4,14 +4,14 @@
     <id>esp-net-source</id>
     <version>$version$</version>
     <title>esp-net-source</title>
-    <authors>Keith Woods</authors>
-    <owners>Keith Woods</owners>
+    <authors>Dev Shop Limited</authors>
+    <owners>Dev Shop Limited</owners>
     <licenseUrl>https://github.com/esp/esp-net/LICENSE.txt</licenseUrl>
     <projectUrl>https://github.com/esp/esp-net</projectUrl>
     <iconUrl>https://raw.github.com/esp/esp-net/master/package_icon.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Source Only Package - Evented State Processor (ESP) adds specific processing workflow around changes to a model's state</description>
-    <copyright>Copyright Keith Woods 2015</copyright>
+    <copyright>Copyright Dev Shop Limited 2015</copyright>
     <tags>evented state processor reactive router event loop</tags>
   </metadata>
   <files>
