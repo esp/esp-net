@@ -128,7 +128,7 @@ namespace Esp.Net
 
         private void ThrowAsModelNotSet()
         {
-            throw new InvalidOperationException("Model not set. You must call ruter.SetModel(model) passing the model.");
+            throw new InvalidOperationException("Model not set. You must call router.SetModel(model) passing the model.");
         }
     }
 }
