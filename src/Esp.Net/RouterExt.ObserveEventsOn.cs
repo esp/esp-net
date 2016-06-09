@@ -58,7 +58,7 @@ namespace Esp.Net
             public void ObserveEvents()
             {
                 var methodsWithAttributes =
-                    from methodInfo in _eventProcessor.GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                    from methodInfo in _eventProcessor.GetType().GetMethodsRecursive(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
                     let observeEventAttributes = methodInfo.GetCustomAttributes<ObserveEventAttribute>(true).ToArray()
                     where observeEventAttributes.Length > 0
                     select new { methodInfo, observeEventAttributes };

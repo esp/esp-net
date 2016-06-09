@@ -14,7 +14,6 @@
 // limitations under the License.
 #endregion
 
-#if ESP_EXPERIMENTAL
 using System;
 using System.Collections.Generic;
 using Esp.Net.Reactive;
@@ -329,4 +328,3 @@ namespace Esp.Net.HeldEvents
         }
     }
 }
-#endif

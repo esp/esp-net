@@ -27,7 +27,7 @@ namespace Esp.Net
             {
                 var router = new Router<TestModel>();
                 var ex = Assert.Throws<InvalidOperationException>(() => { router.PublishEvent("SomeEvent"); });
-                ex.Message.ShouldContain("Model not set. You must call ruter.SetModel(model) passing the model.");
+                ex.Message.ShouldContain("Model not set. You must call router.SetModel(model) passing the model.");
             }
         }
 

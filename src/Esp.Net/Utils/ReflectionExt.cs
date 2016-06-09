@@ -43,5 +43,19 @@ namespace Esp.Net.Utils
             return (IEnumerable<Attribute>)Attribute.GetCustomAttributes(element, attributeType, inherit);
         }
 
+        internal static IEnumerable<MethodInfo> GetMethodsRecursive(this Type type, BindingFlags bindingAttr)
+        {
+            if(type == null) yield break;
+            var children = type.GetMethods(bindingAttr);
+            foreach (MethodInfo methodInfo in children)
+            {
+                yield return methodInfo;
+            }
+            var grandChildren = type.BaseType.GetMethodsRecursive(bindingAttr);
+            foreach (MethodInfo methodInfo in grandChildren)
+            {
+                yield return methodInfo;
+            }
+        }
     }
 }

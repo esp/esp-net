@@ -13,7 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #endregion
-#if ESP_EXPERIMENTAL
 
 using System;
 using System.Collections.Generic;
@@ -127,6 +126,12 @@ namespace Esp.Net
             public void CanObserveMultipleEventsByBaseEventTypeAtCorrectStaage()
             {
                 new CanObserveMultipleEventsByBaseEventTypeAtCorrectStaage().Run();
+            }
+
+            [Test]
+            public void CanObserveEventsOnPrivateMethodsOnBaseType()
+            {
+                new CanObserveEventsOnPrivateMethodsOnBaseType().Run();
             }
         }
 
@@ -482,6 +487,51 @@ namespace Esp.Net
             }
         }
 
+        public class CanObserveEventsOnPrivateMethodsOnBaseType : CanObserveEventsOnPrivateMethodsOnBaseType_Base1
+        {
+            // here the code has to infer the events from the attributes alone
+            [ObserveEvent(typeof(FooEvent))]
+            private void ObserveFooEvent(FooEvent e)
+            {
+                ReceivedEvents.Add(e);
+            }
+
+            protected override void RunTest()
+            {
+                ObserveEventsOnThis();
+                var fooEvent = new FooEvent();
+                var barEvent = new BarEvent();
+                var buzzEvent = new BuzzEvent();
+                Router.PublishEvent(fooEvent);
+                Router.PublishEvent(barEvent);
+                Router.PublishEvent(buzzEvent);
+                ReceivedEvents.Count.ShouldBe(3);
+                ReceivedEvents[0].ShouldBe(fooEvent);
+                ReceivedEvents[1].ShouldBe(barEvent);
+                ReceivedEvents[2].ShouldBe(buzzEvent);
+            }
+        }
+
+        public abstract class CanObserveEventsOnPrivateMethodsOnBaseType_Base1 : CanObserveEventsOnPrivateMethodsOnBaseType_Base
+        {
+            [ObserveEvent(typeof(BarEvent))]
+            private void ObserveBarEvent(BarEvent e)
+            {
+                ReceivedEvents.Add(e);
+            }
+        }
+
+        public abstract class CanObserveEventsOnPrivateMethodsOnBaseType_Base : ObserveEventsOnBase
+        {
+            protected List<BaseEvent> ReceivedEvents = new List<BaseEvent>();
+
+            [ObserveEvent(typeof(BuzzEvent))]
+            private void ObserveBuzzEvent(BuzzEvent e)
+            {
+                ReceivedEvents.Add(e);
+            }
+        }
+
         // Because the event wire up is done for all method in one shot (when you call ObserveEventsOn(obj)) it makes sense to have each test in it's own class. 
         // This helps find issues as each test only deals with attributed method at a time. 
         // Without this setup, with all the attributed methods in one class, you have a lot of event wire-up logic running  for every tests, makes it hard to see where it issues are.
@@ -519,4 +569,3 @@ namespace Esp.Net
         }
     }
 }
-#endif
